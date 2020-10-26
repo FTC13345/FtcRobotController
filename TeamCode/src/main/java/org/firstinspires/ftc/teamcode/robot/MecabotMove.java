@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.robot;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -9,7 +10,7 @@ import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 
 
-public class MecabotMove {
+public class MecabotMove extends Mecabot {
 
     enum WheelPosition { LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK }
     public enum DriveType {TANK, MECANUM, DIAGONAL}
@@ -45,17 +46,19 @@ public class MecabotMove {
     public static final double TIMEOUT_QUICK        = 1.0; // seconds
 
     // member variables for state
-    private LinearOpMode        myOpMode;       // Access to the OpMode object
-    private Mecabot             robot;          // Access to the Robot hardware
-    private OdometryGlobalPosition globalPosition; // Robot global position tracker
-    private Thread              globalPositionThread;
-    private String              movementStatus          = "";
+    protected Mecabot             robot;          // Access to the Robot hardware
+    protected LinearOpMode        myOpMode;       // Access to the OpMode object
+    protected OdometryGlobalPosition globalPosition; // Robot global position tracker
+    private   Thread              globalPositionThread;
+    protected String              movementStatus          = "";
+
 
     /* Constructor */
-    public MecabotMove(LinearOpMode opMode, Mecabot aRobot) {
+    public MecabotMove(HardwareMap ahwMap, LinearOpMode opMode) {
+        super(ahwMap);
         // Save reference to OpMode and Hardware map
         myOpMode = opMode;
-        robot = aRobot;
+        robot = this;
         globalPosition = robot.initOdometry();
     }
 

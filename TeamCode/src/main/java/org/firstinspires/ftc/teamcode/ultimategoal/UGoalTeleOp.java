@@ -14,10 +14,9 @@ public class UGoalTeleOp extends LinearOpMode {
 
     static final int    CYCLE_MS    =   50;     // period of each cycle
     static final double TURN_FACTOR =   0.6;    // slow down turning speed
-    private boolean     bIgnoreLiftStops = false;
 
     /* Declare OpMode members. */
-    UGoalRobot robot = new UGoalRobot();
+    UGoalRobot robot;
     MecabotMove nav;
     OdometryGlobalPosition globalPosition;
 
@@ -31,10 +30,10 @@ public class UGoalTeleOp extends LinearOpMode {
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
-        robot.init(hardwareMap);
+        robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
 
-        nav = new MecabotMove(this, robot);
+        nav = (MecabotMove)robot;
         globalPosition = nav.getPosition();
 
         // Send telemetry message to signify robot waiting;
@@ -89,21 +88,11 @@ public class UGoalTeleOp extends LinearOpMode {
         /*
          * Use special key combinations to toggle override controls
          */
-        // Allow the lift stops to be overridden
-        // This is necessary and useful when Robot is powered off with lift still raised high
-        // and next power up initializes the lift bottom stop in that raised position
-        if ((gamepad1.x) && (gamepad2.x)) {
-            bIgnoreLiftStops = true;
-        }
-        // Enforces the lift stops (top and bottom) as normal function
-        if ((gamepad1.y) && (gamepad2.y)) {
-            bIgnoreLiftStops = false;
-        }
         // Toggle which face of the Robot is front for driving
-        if ((gamepad1.dpad_up) || (gamepad1.dpad_right)) {  // dpad_right means green INTAKE wheels is front of robot
+        if ((gamepad1.dpad_up) || (gamepad1.dpad_right)) {  // dpad_up or dpad_right means green INTAKE wheels is front of robot
             robot.setDirectionForward();
         } else if ((gamepad1.dpad_down) || (gamepad1.dpad_left)) {
-            robot.setDirectionReverse(); // dpad_left means Liftarm face is front of robot
+            robot.setDirectionReverse(); // dpad_down or dpad_left means REVERSE direction, ring shooter is front of robot
         }
         if ((gamepad1.x) && (!gamepad2.x)) {
             xpos = globalPosition.getXinches();

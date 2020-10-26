@@ -92,8 +92,9 @@ public class Mecabot {
     BNO055IMU imu;
 
     /* Constructor */
-    public Mecabot() {
+    public Mecabot(HardwareMap ahwMap) {
         direction = DIRECTION.FORWARD;
+        this.init(ahwMap);
     }
 
     /*
