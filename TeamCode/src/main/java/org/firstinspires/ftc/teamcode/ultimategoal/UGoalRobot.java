@@ -77,7 +77,7 @@ public class UGoalRobot extends MecabotMove {
 
     public void shoot(int x, int y) {
 
-        odometryRotateToHeading(robotAngleToShoot(x, y), 0.5, 5, true);\
+        odometryRotateToHeading(robotAngleToShoot(x, y), 0.5, 5, true);
 
         double launcherAngle = launcherAngleToShoot(x, y);
 
