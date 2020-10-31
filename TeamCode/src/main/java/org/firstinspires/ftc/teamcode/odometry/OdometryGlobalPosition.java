@@ -9,7 +9,8 @@ import java.io.File;
 
 /**
  * Created by Sarthak on 6/1/2019.
- * Modified by Vishesh Goyal on 12/24/2019
+ * Modified by Vishesh Goyal for Skystone on 12/24/2019
+ * Adapted for UltimateGoal robot hardware on 10/30/2020
  *
  * All the position values are initialized to zero, including the robot orientation angle theta.
  * The implemention by Sarthak computed the change in robot angle using (left encoder count - right encoder count) indicating clockwise turn is positive angle.
@@ -207,7 +208,7 @@ public class OdometryGlobalPosition implements Runnable{
         verticalRightEncoderDirection *= -1;
     }
 
-    public void reverseNormalEncoder(){
+    public void reverseHorizontalEncoder(){
         horizontalEncoderDirection *= -1;
     }
 

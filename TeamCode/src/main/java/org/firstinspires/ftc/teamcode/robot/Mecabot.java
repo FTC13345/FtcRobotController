@@ -30,10 +30,8 @@
 package org.firstinspires.ftc.teamcode.robot;
 
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
@@ -62,7 +60,7 @@ public class Mecabot {
     // odometry encoder wheels
     public DcMotor leftEncoder = null;
     public DcMotor rightEncoder = null;
-    public DcMotor horizontalEncoder = null;
+    public DcMotor backEncoder = null;
 
     // Lights control
     public RevBlinkinLedDriver lights = null;
@@ -145,9 +143,11 @@ public class Mecabot {
         leftBackDrive = hwMap.get(DcMotor.class, "leftBackDrive");
         rightFrontDrive = hwMap.get(DcMotor.class, "rightFrontDrive");
         rightBackDrive = hwMap.get(DcMotor.class, "rightBackDrive");
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+        // Left side set to REVERSE if using AndyMark or goBilda 5202 yellow jacket motors
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+        // Right side set to FORWARD if using AndyMark or goBilda 5202 yellow jacket motors
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE); // special fix, this motor power cable is wired in opposite polarity
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -161,9 +161,9 @@ public class Mecabot {
         setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Odometry encoders
-        leftEncoder = leftFrontDrive;   // we are using the encoder port of leftFrontDrive motor for odometry
-        rightEncoder = rightFrontDrive; // we are using the encoder port of rightFrontDrive motor for odometry
-        horizontalEncoder = leftBackDrive; // we are using the encoder port of left Back Drivetrain motor
+        leftEncoder = leftBackDrive;   // we are using the encoder port of leftBackDrive motor for odometry
+        rightEncoder = rightBackDrive; // we are using the encoder port of rightBackDrive motor for odometry
+        backEncoder = rightFrontDrive; // we are using the encoder port of rightFrontDrive motor
 
         // lights
         lights = hwMap.get(RevBlinkinLedDriver.class, "lights");
@@ -174,21 +174,21 @@ public class Mecabot {
 
     public OdometryGlobalPosition initOdometry() throws IllegalStateException {
 
-        if ((leftEncoder == null) || (rightEncoder == null) || (horizontalEncoder == null)) {
+        if ((leftEncoder == null) || (rightEncoder == null) || (backEncoder == null)) {
             throw new IllegalStateException("Mecabot hardware must be initialized before Odometry.");
         }
 
         //Create and start GlobalPosition thread to constantly update the global position coordinates.
-        OdometryGlobalPosition globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, horizontalEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
+        OdometryGlobalPosition globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, backEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
 
         // Set direction of odometry encoders.
         // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
-        // Left encoder value, robot forward movement should produce positive encoder count
+        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
         globalPosition.reverseLeftEncoder();
-        // Right encoder value, robot forward movement should produce positive encoder count
-        globalPosition.reverseRightEncoder();
-        // Horizontal encoder value, robot right sideways movement should produce positive encoder count values
-        globalPosition.reverseNormalEncoder();
+        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        //globalPosition.reverseRightEncoder();
+        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
+        //globalPosition.reverseHorizontalEncoder();
 
         return globalPosition;
     }

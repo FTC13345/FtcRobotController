@@ -34,7 +34,7 @@ public class OdometryCalibration extends LinearOpMode {
 
     //Hardware Map Names for drive motors and odometry wheels. THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
     String rfName = "rightFrontDrive", rbName = "rightBackDrive", lfName = "leftFrontDrive", lbName = "leftBackDrive";
-    String verticalLeftEncoderName = "leftIntake", verticalRightEncoderName = "rightIntake", horizontalEncoderName = "horizontalEncoder";
+    String verticalLeftEncoderName = "leftBackDrive", verticalRightEncoderName = "rightBackDrive", horizontalEncoderName = "rightFrontDrive";
 
     final double PIVOT_SPEED = 0.4;
 
@@ -102,8 +102,8 @@ public class OdometryCalibration extends LinearOpMode {
         Horizontal encoder ticks may also need sign reversal, in this code clockwise rotation of robot should produce positive tick count
         THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
        */
-        double verticalLeftCount = verticalLeft.getCurrentPosition();
-        double verticalRightCount = -verticalRight.getCurrentPosition();
+        double verticalLeftCount = -verticalLeft.getCurrentPosition();
+        double verticalRightCount = verticalRight.getCurrentPosition();
         double horizontalCount = horizontal.getCurrentPosition();
 
         // The Robot pivoted around its own center for a certain angle and we recorded the encoder ticks on left and right

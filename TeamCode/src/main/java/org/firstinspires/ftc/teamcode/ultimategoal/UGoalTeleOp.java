@@ -27,9 +27,7 @@ public class UGoalTeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
-         */
+        // Initialize the hardware variables.
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
 
@@ -58,6 +56,22 @@ public class UGoalTeleOp extends LinearOpMode {
                 .addData("Angle", "%4.2f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getOrientationDegrees();
+                    }
+                });
+        telemetry.addLine("Odometry ")
+                .addData("L", "%4.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return globalPosition.getVerticalLeftCount();
+                    }
+                })
+                .addData("R", "%4.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return globalPosition.getVerticalRightCount();
+                    }
+                })
+                .addData("X", "%4.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return globalPosition.getHorizontalCount();
                     }
                 });
         telemetry.addLine("Move ")
