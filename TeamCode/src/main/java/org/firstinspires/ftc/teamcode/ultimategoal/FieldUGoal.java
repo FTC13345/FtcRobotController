@@ -18,6 +18,8 @@ public class FieldUGoal {
     public static final double  ANGLE_NEG_X_AXIS = 180.0;
     public static final double  ANGLE_NEG_Y_AXIS = -90.0;
 
+
+
     // field distances between objects
     static final double     HALF_TAB                    = 0.75 / 2;
     static final double     TILE_LENGTH                 = 23.5;
@@ -30,5 +32,8 @@ public class FieldUGoal {
     static final double     TILE_3_CENTER               = TILE_2_CENTER + TILE_LENGTH;
 
     // field elements dimensions or distances go here
-
+    // TARGETS
+    public static final double HIGH_GOAL = 48;
+    public static final double MED_GOAL = 36;
+    public static final double LOW_GOAL = 24;
 }

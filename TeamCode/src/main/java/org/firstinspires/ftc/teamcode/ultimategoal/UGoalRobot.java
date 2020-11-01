@@ -8,10 +8,6 @@ import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 public class UGoalRobot extends MecabotMove {
 
-    // TARGETS
-    public static final double HIGH_GOAL = 48;
-    public static final double MED_GOAL = 36;
-    public static final double LOW_GOAL = 24;
 
     public UGoalRobot(HardwareMap ahwMap, LinearOpMode opMode) {
         super(ahwMap, opMode);
