@@ -24,13 +24,24 @@ public class FieldUGoal {
     static final double     HALF_TAB                    = 0.75 / 2;
     static final double     TILE_LENGTH                 = 23.5;
     static final double     TILE_WITHOUT_TABS           = 22.75;
+    static final double     ROBOT_RADIUS                = 9;
+    static final double     POWERSHOT_1_Y               = 19;
+    static final double     POWERSHOT_2_Y               = POWERSHOT_1_Y-7.5;
+    static final double     POWERSHOT_3_Y               = POWERSHOT_2_Y-7.5;
     static final double     TILE_1_FROM_ORIGIN          = HALF_TAB + TILE_WITHOUT_TABS;
     static final double     TILE_2_FROM_ORIGIN          = TILE_1_FROM_ORIGIN + TILE_LENGTH;
     static final double     TILE_3_FROM_ORIGIN          = TILE_2_FROM_ORIGIN + TILE_LENGTH;
     static final double     TILE_1_CENTER               = HALF_TAB + (TILE_WITHOUT_TABS / 2);
     static final double     TILE_2_CENTER               = TILE_1_CENTER + TILE_LENGTH;
     static final double     TILE_3_CENTER               = TILE_2_CENTER + TILE_LENGTH;
+    static final double     BEHIND_LAUNCH_LINE          = TILE_1_CENTER - ROBOT_RADIUS;
 
+    static final double     TARGET_ZONE_A_X             = TILE_1_CENTER;
+    static final double     TARGET_ZONE_A_Y             = TILE_3_CENTER;
+    static final double     TARGET_ZONE_B_X             = TILE_2_CENTER;
+    static final double     TARGET_ZONE_B_Y             = TILE_2_CENTER;
+    static final double     TARGET_ZONE_C_X             = TILE_3_CENTER;
+    static final double     TARGET_ZONE_C_Y             = TILE_3_CENTER;
     // field elements dimensions or distances go here
     // TARGETS
     public static final double HIGH_GOAL = 48;

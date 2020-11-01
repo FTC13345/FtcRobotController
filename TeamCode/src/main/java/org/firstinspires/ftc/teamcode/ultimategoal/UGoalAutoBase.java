@@ -124,8 +124,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         stopRingStackDetection();
 
         // Start moving to do rest of the work
-        //** TODO: do variouss tasks in autonomous period **//
-
+        powerShot();
+        // highGoal(); only if powershot is inaccurate
+        deliverWobble(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         parkAtInsideLane();
         // parkAtOutsideLane();
@@ -221,6 +222,41 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         ElapsedTime runTime = new ElapsedTime();
         while (runTime.seconds() < timeout) {
         }
+    }
+
+    public void powerShot(){
+        //first powershot angle
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_1_Y));
+        robot.shoot(FieldUGoal.HIGH_GOAL); //highgoal for now, replace with correct constant
+        // second powershot
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_2_Y));
+        robot.shoot(FieldUGoal.HIGH_GOAL);
+        //third powershot
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_3_Y));
+        robot.shoot(FieldUGoal.HIGH_GOAL);
+
+    }
+
+    public void highGoal(){
+        //distance
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.TILE_2_CENTER));
+        for (int i = 0; i < 3; i++){
+            robot.shoot(FieldUGoal.HIGH_GOAL);
+        }
+    }
+    public void deliverWobble(int count){
+        if (count == 0){
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flipX4Red(FieldUGoal.TARGET_ZONE_A_Y));
+        }
+        else if(count == 4){
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_B_X,flipX4Red(FieldUGoal.TARGET_ZONE_B_Y));
+        }
+        //default is 1, if our camera doesn't work we will go to target zone B
+        else {
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_C_X,flipX4Red(FieldUGoal.TARGET_ZONE_C_Y));
+        }
+        placeWobble();
+
     }
 
 
