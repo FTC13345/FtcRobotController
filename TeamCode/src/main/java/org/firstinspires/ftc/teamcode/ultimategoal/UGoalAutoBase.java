@@ -32,7 +32,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     //** TODO: image recognition variables **//
     // private OpenCvCamera phoneCam;
-
     protected AllianceColor aColor;
     protected String actionString = "Inactive";
     protected String message = "NO";
@@ -227,19 +226,24 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void powerShot(){
         //first powershot angle
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_1_Y));
+        robot.odometryRotateToHeading(0);
         robot.shoot(FieldUGoal.HIGH_GOAL); //highgoal for now, replace with correct constant
         // second powershot
-        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_2_Y));
+        //robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_2_Y));
+        //robot.odometryRotateToHeading(0);
+        robot.odometryMoveDistance(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT, FieldUGoal.DriveType.MECANUM);
         robot.shoot(FieldUGoal.HIGH_GOAL);
         //third powershot
-        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_3_Y));
+        //robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_3_Y));
+        //robot.odometryRotateToHeading(0);
+        robot.odometryMoveDistance(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT, FieldUGoal.DriveType.MECANUM);
         robot.shoot(FieldUGoal.HIGH_GOAL);
-
     }
 
     public void highGoal(){
         //distance
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.TILE_2_CENTER));
+        robot.odometryRotateToHeading(0);
         for (int i = 0; i < 3; i++){
             robot.shoot(FieldUGoal.HIGH_GOAL);
         }
