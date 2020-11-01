@@ -21,7 +21,7 @@ import java.io.File;
  * Vector projection formula used for calculating global position, now uses robot angle (robotAngleRad) measured CCW from X-Axis
  *
  */
-public class OdometryGlobalPosition implements Runnable{
+public class OdometryGlobalPosition implements Runnable {
 
     //Odometry wheels
     private DcMotor verticalLeftEncoder, verticalRightEncoder, horizontalEncoder;

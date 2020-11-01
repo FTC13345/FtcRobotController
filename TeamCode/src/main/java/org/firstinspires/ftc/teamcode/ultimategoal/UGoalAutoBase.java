@@ -4,9 +4,15 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Func;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
+
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
 /**
  * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
@@ -195,6 +201,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //** TODO: Implement ring stack count detection using some image recognition technology *//
         return 1;   // hard coded until image recognition is implemented
     }
+
+    protected void placeWobble() {
+
+    }
+
     /**
      * printRingStackDetection()
      * This method prints all the internal variables using ABC techhnology for image recognition and

@@ -8,6 +8,11 @@ import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 public class UGoalRobot extends MecabotMove {
 
+    // TARGETS
+    public static final double HIGH_GOAL = 48;
+    public static final double MED_GOAL = 36;
+    public static final double LOW_GOAL = 24;
+
     public UGoalRobot(HardwareMap ahwMap, LinearOpMode opMode) {
         super(ahwMap, opMode);
         this.init(ahwMap);
@@ -39,7 +44,7 @@ public class UGoalRobot extends MecabotMove {
 
     // This assumes shooting at red goal
     // This method gives the horizontal distance to goal, in other words the distance on the ground
-    public double distanceToShoot(int x, int y) {
+    public double distanceToShoot(double x, double y) {
         double robotX = x;
         double robotY = y;
 
@@ -54,7 +59,7 @@ public class UGoalRobot extends MecabotMove {
 
     // This assumes shooting at red goal
     // This method gives the angel from the robot to the goal
-    public double robotAngleToShoot(int x, int y) {
+    public double robotAngleToShoot(double x, double y) {
         double robotX = x;
         double robotY = y;
 
@@ -68,18 +73,18 @@ public class UGoalRobot extends MecabotMove {
         return Math.atan2(xDiff, yDiff);
     }
 
-    public double launcherAngleToShoot(int x, int y) {
+    public double launcherAngleToShoot(double x, double y) {
         double xDist = distanceToShoot(x, y); //Distance on the ground
         double yDist = GOAL_HEIGHT; // HEIGHT of the goal
 
         return Math.atan(yDist/xDist);
     }
 
-    public void shoot(int x, int y) {
+    public void shoot(double target) {
 
-        odometryRotateToHeading(robotAngleToShoot(x, y), 0.5, 5, true);
+        odometryRotateToHeading(robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches()), 0.5, 5, true);
 
-        double launcherAngle = launcherAngleToShoot(x, y);
+        double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches());
 
         // MATH to covert angle to rotation of oval things under launcher
         double ovalRotation = 0;
