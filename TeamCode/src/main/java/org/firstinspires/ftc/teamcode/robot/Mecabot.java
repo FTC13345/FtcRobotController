@@ -89,12 +89,6 @@ public class Mecabot {
     // The IMU sensor object
     BNO055IMU imu;
 
-    /* Constructor */
-    public Mecabot(HardwareMap ahwMap) {
-        direction = DIRECTION.FORWARD;
-        this.init(ahwMap);
-    }
-
     /*
      * Robot front facing direction toggle methods. Robot FRONT direction can be flipped.
      * This is important to understand, to avoid unexpected behavior.
@@ -131,8 +125,9 @@ public class Mecabot {
     }
 
 
-    /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap) {
+    /* Constructor */
+    public Mecabot(HardwareMap ahwMap) {
+        direction = DIRECTION.FORWARD;
         // Save reference to Hardware map
         hwMap = ahwMap;
 
@@ -186,7 +181,7 @@ public class Mecabot {
         // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
         globalPosition.reverseLeftEncoder();
         // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        //globalPosition.reverseRightEncoder();
+        globalPosition.reverseRightEncoder();
         // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
         //globalPosition.reverseHorizontalEncoder();
 
