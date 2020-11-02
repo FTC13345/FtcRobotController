@@ -81,6 +81,17 @@ public class UGoalTeleOp extends LinearOpMode {
                         return nav.getMovementStatus();
                     }
                 });
+        telemetry.addLine("Odometry Inches:")
+                .addData("X", "%4.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return globalPosition.getXinches();
+                    }
+                })
+                .addData("Y", "%4.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return globalPosition.getYinches();
+                    }
+                });
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {

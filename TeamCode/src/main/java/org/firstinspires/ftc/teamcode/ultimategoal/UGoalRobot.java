@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
@@ -15,11 +16,14 @@ public class UGoalRobot extends MecabotMove {
     }
 
     // Motors
+    public DcMotor angleMotor = null;
     public DcMotor launcherMotor = null;
+
+    //Servos
+    public Servo launcherServo = null;
 
 
     //Finals
-    public final double GOAL_HEIGHT = 48;
     static final double ENCODER_TICKS_PER_ROTATION  = 537.6f; // goBilda 5202 series Yellow Jacket Planetary 19.2:1 gear ratio, 312 RPM
 
 
@@ -29,10 +33,14 @@ public class UGoalRobot extends MecabotMove {
     // Initialization
     public void init(HardwareMap ahwMap) {
 
-        launcherMotor = ahwMap.get(DcMotor.class, "launcherMotor");
-        launcherMotor.setDirection(DcMotor.Direction.REVERSE);
-        launcherMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        launcherMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        angleMotor = ahwMap.get(DcMotor.class, "launcherMotor");
+        launcherMotor = ahwMap.get(DcMotor.class, "flywheelMotor");
+        angleMotor.setDirection(DcMotor.Direction.REVERSE);
+        angleMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        launcherMotor.setZeroPowerBehavior((DcMotor.ZeroPowerBehavior.BRAKE));
+        angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        launcherServo = ahwMap.get(Servo.class, "launcherServo");
     }
 
 
@@ -69,27 +77,41 @@ public class UGoalRobot extends MecabotMove {
         return Math.atan2(xDiff, yDiff);
     }
 
-    public double launcherAngleToShoot(double x, double y) {
+    public double launcherAngleToShoot(double x, double y, double targetHeight) {
         double xDist = distanceToShoot(x, y); //Distance on the ground
-        double yDist = GOAL_HEIGHT; // HEIGHT of the goal
+        double yDist = targetHeight; // HEIGHT of the goal
 
         return Math.atan(yDist/xDist);
     }
 
-    public void shoot(double target) {
+    public void aim(double target) {
 
         odometryRotateToHeading(robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches()), 0.5, 5, true);
 
-        double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches());
+        double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), target);
 
         // MATH to covert angle to rotation of oval things under launcher
-        double ovalRotation = 0;
+        double ovalRotation = (launcherAngle - 20) * 7.2; // 7.2 scales 25 to 180 (range is 20-45 transformed to 0-180)
 
         // Convertion of rotation to encoder ticks
         double ovalRotationTicks = ENCODER_TICKS_PER_ROTATION / ovalRotation;
 
         // Encoder movement for launcher motor (not drivetrain encoder methods)
-        launcherMotor.setTargetPosition((int) ovalRotationTicks);
-        launcherMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        angleMotor.setTargetPosition((int) ovalRotationTicks);
+        angleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
+
+    public void runLauncherMotor() {
+        launcherMotor.setPower(1);
+    }
+
+    public void stopLauncherMotor() {
+        launcherMotor.setPower(0);
+    }
+
+    public void shootRing() {
+        launcherServo.setPosition(Servo.MIN_POSITION);
+        launcherServo.setPosition(Servo.MAX_POSITION);
+    }
+
 }
