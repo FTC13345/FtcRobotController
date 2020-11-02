@@ -42,6 +42,8 @@ public class UGoalTeleOp extends LinearOpMode {
         waitForStart();
         nav.startOdometry();
 
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_2_FROM_ORIGIN - FieldUGoal.ROBOT_RADIUS, 90);
+
         telemetry.addLine("Global Position ")
                 .addData("X", "%3.2f", new Func<Double>() {
                     @Override public Double value() {
@@ -98,6 +100,7 @@ public class UGoalTeleOp extends LinearOpMode {
             setup();
             autodrive();
             operdrive();
+            shoot();
             telemetry.update();
             idle();
         }
@@ -209,5 +212,14 @@ public class UGoalTeleOp extends LinearOpMode {
             telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
         }
     }
+    public void shoot(){
+        if (gamepad1.y){
+            robot.runLauncherMotor();
+            robot.shootRing();
+            robot.stopLauncherMotor();
+            robot.aim(FieldUGoal.HIGH_GOAL);
+        }
+    }
+
 
 }

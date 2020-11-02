@@ -46,7 +46,7 @@ public class FieldUGoal {
     static final double     TARGET_ZONE_C_Y             = TILE_3_CENTER;
     // field elements dimensions or distances go here
     // TARGETS
-    public static final double HIGH_GOAL = 48;
-    public static final double MED_GOAL = 36;
-    public static final double LOW_GOAL = 24;
+    public static final double HIGH_GOAL = 35.5;
+    public static final double MED_GOAL = 27;
+    public static final double LOW_GOAL = 17;
 }

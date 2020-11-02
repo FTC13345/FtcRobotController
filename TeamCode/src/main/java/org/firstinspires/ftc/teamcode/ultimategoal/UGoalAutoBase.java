@@ -36,7 +36,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     protected String actionString = "Inactive";
     protected String message = "NO";
     private int previousCount = 0;
-    boolean haveSkystone = false;
 
     /*
      * Abstract methods, must be implemented by the sub-classes
@@ -113,6 +112,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         // this is already set in init() but in case someone moved the robot location manually.
         setOdometryStartingPosition();
+        robot.runLauncherMotor();
 
         // start Ring stack detection counts only after play
         startRingStackDetection();
@@ -122,13 +122,18 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         int count = detectRingStackCount();
         stopRingStackDetection();
 
-        // Start moving to do rest of the work
-        powerShot();
-        // highGoal(); only if powershot is inaccurate
+        // Start doing the tasks for points
+        // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
+
+        //Uncomment if we are going for powershot
+        // powerShot();
+        //Uncomment if we are going for Highgoal because powershot wasn't inaccurate
+        // highGoal();
         deliverWobble(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         parkAtInsideLane();
         // parkAtOutsideLane();
+        robot.stopLauncherMotor();
     }
 
     protected void setupTelemetry() {
@@ -224,28 +229,29 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     }
 
     public void powerShot(){
-        //first powershot angle
+        //first powershot
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_1_Y));
         robot.odometryRotateToHeading(0);
-        robot.shoot(FieldUGoal.HIGH_GOAL); //highgoal for now, replace with correct constant
+        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.shootRing();
         // second powershot
-        //robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_2_Y));
-        //robot.odometryRotateToHeading(0);
-        robot.odometryMoveDistance(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT, FieldUGoal.DriveType.MECANUM);
-        robot.shoot(FieldUGoal.HIGH_GOAL);
-        //third powershot
-        //robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_3_Y));
-        //robot.odometryRotateToHeading(0);
-        robot.odometryMoveDistance(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT, FieldUGoal.DriveType.MECANUM);
-        robot.shoot(FieldUGoal.HIGH_GOAL);
+        robot.odometryMoveRightLeft(flipX4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
+        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.shootRing();
+        // third powershot
+        robot.odometryMoveRightLeft(flipX4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
+        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.shootRing();
     }
 
     public void highGoal(){
         //distance
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.TILE_2_CENTER));
         robot.odometryRotateToHeading(0);
+        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.shootRing();
         for (int i = 0; i < 3; i++){
-            robot.shoot(FieldUGoal.HIGH_GOAL);
+
         }
     }
     public void deliverWobble(int count){
