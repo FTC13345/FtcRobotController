@@ -112,7 +112,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         // this is already set in init() but in case someone moved the robot location manually.
         setOdometryStartingPosition();
-        robot.runLauncherMotor();
 
         // start Ring stack detection counts only after play
         startRingStackDetection();
@@ -121,19 +120,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // there should be several image frames collected now to detect number of rings in stack
         int count = detectRingStackCount();
         stopRingStackDetection();
-
+        robot.runLauncherMotor();
         // Start doing the tasks for points
         // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
 
         //Uncomment if we are going for powershot
-        // powerShot();
-        //Uncomment if we are going for Highgoal because powershot wasn't inaccurate
-        // highGoal();
+        // goShootPowerShot();
+        //Uncomment if we are going for Highgoal because powershot wasn't accurate
+        // GoShootHighGoal();
+        robot.stopLauncherMotor();
         deliverWobble(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         parkAtInsideLane();
         // parkAtOutsideLane();
-        robot.stopLauncherMotor();
     }
 
     protected void setupTelemetry() {
@@ -228,27 +227,27 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         }
     }
 
-    public void powerShot(){
+    public void goShootPowerShot(){//*ToDo: Split in  smaller functions, one for shooting, one for movement and shooting that calls the shooting*//
         //first powershot
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_1_Y));
         robot.odometryRotateToHeading(0);
-        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
         robot.shootRing();
         // second powershot
         robot.odometryMoveRightLeft(flipX4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
-        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
         robot.shootRing();
         // third powershot
         robot.odometryMoveRightLeft(flipX4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
-        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
         robot.shootRing();
     }
 
-    public void highGoal(){
+    public void goShootHighGoal(){
         //distance
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.TILE_2_CENTER));
         robot.odometryRotateToHeading(0);
-        robot.aim(FieldUGoal.HIGH_GOAL);
+        robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL);
         robot.shootRing();
         for (int i = 0; i < 3; i++){
 
@@ -258,12 +257,15 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (count == 0){
             robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flipX4Red(FieldUGoal.TARGET_ZONE_A_Y));
         }
-        else if(count == 4){
+        else if (count == 1){
             robot.goToPosition(FieldUGoal.TARGET_ZONE_B_X,flipX4Red(FieldUGoal.TARGET_ZONE_B_Y));
+        }
+        else if(count == 4){
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_C_X,flipX4Red(FieldUGoal.TARGET_ZONE_C_Y));
         }
         //default is 1, if our camera doesn't work we will go to target zone B
         else {
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_C_X,flipX4Red(FieldUGoal.TARGET_ZONE_C_Y));
+            //print error message
         }
         placeWobble();
 

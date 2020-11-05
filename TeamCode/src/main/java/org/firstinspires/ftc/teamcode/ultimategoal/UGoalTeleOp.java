@@ -8,6 +8,8 @@ import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
+import java.lang.reflect.Field;
+
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
 public class UGoalTeleOp extends LinearOpMode {
@@ -40,6 +42,8 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        //release the intake
+        robot.releaseIntake();
         nav.startOdometry();
 
         globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_2_FROM_ORIGIN - FieldUGoal.ROBOT_RADIUS, 90);
@@ -100,6 +104,7 @@ public class UGoalTeleOp extends LinearOpMode {
             setup();
             autodrive();
             operdrive();
+            intake();
             shoot();
             telemetry.update();
             idle();
@@ -217,9 +222,19 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.runLauncherMotor();
             robot.shootRing();
             robot.stopLauncherMotor();
-            robot.aim(FieldUGoal.HIGH_GOAL);
+            robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL);
         }
     }
+    public void intake(){
+        if (gamepad2.right_trigger > 0){ //run intake
+            robot.intakeMotor.setPower(1);
+        }
+        else { //stop intake motors
+            robot.intakeMotor.setPower(0);
+
+        }
+    }
+
 
 
 }
