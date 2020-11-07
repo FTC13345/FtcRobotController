@@ -11,6 +11,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
+import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
@@ -52,7 +53,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         return message;
     }
 
-    protected double flipX4Red(double value) {
+    protected double flip4Red(double value) {
         return (aColor == AllianceColor.BLUE) ? value : -value;
     }
 
@@ -120,6 +121,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // there should be several image frames collected now to detect number of rings in stack
         int count = detectRingStackCount();
         stopRingStackDetection();
+        robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
         robot.runLauncherMotor();
         // Start doing the tasks for points
         // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
@@ -131,8 +133,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.stopLauncherMotor();
         deliverWobble(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
-        parkAtInsideLane();
-        // parkAtOutsideLane();
+        //if we are blue, reverse direction to just drive backward to the launch line instead of turning
+        if (aColor == AllianceColor.BLUE){
+            robot.setDirectionReverse();
+        }
+        parkAtInsideLane(count);
+        // parkAtOutsideLane(count);
     }
 
     protected void setupTelemetry() {
@@ -206,9 +212,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         return 1;   // hard coded until image recognition is implemented
     }
 
-    protected void placeWobble() {
-
-    }
 
     /**
      * printRingStackDetection()
@@ -227,25 +230,26 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         }
     }
 
-    public void goShootPowerShot(){//*ToDo: Split in  smaller functions, one for shooting, one for movement and shooting that calls the shooting*//
+    public void goShoot3Powershot(){
         //first powershot
-        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.POWERSHOT_1_Y));
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.POWERSHOT_1_Y));
         robot.odometryRotateToHeading(0);
-        robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
-        robot.shootRing();
+        shootPowerShot();
         // second powershot
-        robot.odometryMoveRightLeft(flipX4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
-        robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
-        robot.shootRing();
+        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
+        shootPowerShot();
         // third powershot
-        robot.odometryMoveRightLeft(flipX4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
+        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
+        shootPowerShot();
+    }
+    public void shootPowerShot(){
         robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
         robot.shootRing();
     }
 
     public void goShootHighGoal(){
         //distance
-        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flipX4Red(FieldUGoal.TILE_2_CENTER));
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.TILE_2_CENTER));
         robot.odometryRotateToHeading(0);
         robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL);
         robot.shootRing();
@@ -253,49 +257,59 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         }
     }
+
+    // distance between center of robot and where wobble is placed is 15 inches
+    // 8.5 is robot radius and 6.5 is length of wobble finger arm
     public void deliverWobble(int count){
         if (count == 0){
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flipX4Red(FieldUGoal.TARGET_ZONE_A_Y));
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flip4Red(FieldUGoal.TARGET_ZONE_A_Y - 15));
+
         }
         else if (count == 1){
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_B_X,flipX4Red(FieldUGoal.TARGET_ZONE_B_Y));
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_B_X,flip4Red(FieldUGoal.TARGET_ZONE_B_Y - 15));
         }
         else if(count == 4){
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_C_X,flipX4Red(FieldUGoal.TARGET_ZONE_C_Y));
+            robot.goToPosition(FieldUGoal.TARGET_ZONE_C_X,flip4Red(FieldUGoal.TARGET_ZONE_C_Y - 15));
         }
-        //default is 1, if our camera doesn't work we will go to target zone B
         else {
-            //print error message
+            telemetry.addData("detectRingStackCount did not return 0, 1, or 4", "");
         }
-        placeWobble();
+        //Wobble is delivered on left side, for red target zones, we need to turn robot to deliver on the right side
+        if (aColor == AllianceColor.RED){
+            robot.odometryRotateToHeading(180);
+        }
+        robot.placeWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
 
     }
-
-
-    public void parkAtInsideLane() {
+    // if we are blue, we will be facing backward, and need to reverse heading to not have to turn
+    // inside lane is the point on the launch line right between power goal and power shot
+    public void parkAtInsideLane(int count) {
         actionString = "Park";
         message = String.format("start (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
-        // go to middle of a tile in inside lane
-        //nav.goToPosition(flipX4Red(-23), 35);
-        // straighten up to travel along the X-Axis or the player alliance wall
-        //nav.odometryRotateToHeading(flipAngle4Red(FieldSkystone.ANGLE_POS_X_AXIS));
-
-        // now go park on the launch line close to center of the field
-        robot.goToPosition(FieldUGoal.TILE_1_CENTER, flipX4Red(FieldUGoal.TILE_1_FROM_ORIGIN));
-        message = String.format("end (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
+        //if count is 0, stay in place because we are already over launch line
+        if (count == 0){
+            //do nothing
+        }
+        //if in other target zones, just drive directly
+        else { // now go park on the launch line close to center of the field
+            robot.goToPosition(FieldUGoal.TILE_1_CENTER, flip4Red(FieldUGoal.TILE_1_FROM_ORIGIN));
+            message = String.format("end (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
+        }
     }
-
-    public void parkAtOutsideLane() {
+    // if we are blue, we will be facing backward, and need to reverse heading to not have to turn
+    // outside lane is the point on the launch line at the center of the tile on the edge of the field.
+    public void parkAtOutsideLane(int count) {
         actionString = "Park";
         message = String.format("start (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
-        //
-        // assumption is that starting position is approximately ( -43, 18)
-        // therefore we are fairly straight angle to the outside lane
-        //
-        // now go park on the launch line close to center of the field
-        robot.goToPosition(FieldUGoal.TILE_1_CENTER, flipX4Red(FieldUGoal.TILE_3_CENTER));
-        message = String.format("end (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
+        //if count is 0, stay in place because we are already over launch line
+        if (count == 0){
+            //do nothing
+        }
+        //if in other target zones, just drive directly
+        else { // now go park on the launch line close to center of the field
+            robot.goToPosition(FieldUGoal.TILE_1_CENTER, flip4Red(FieldUGoal.TILE_3_CENTER));
+            message = String.format("end (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
+        }
     }
 
 }
-

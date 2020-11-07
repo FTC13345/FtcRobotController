@@ -227,13 +227,31 @@ public class UGoalTeleOp extends LinearOpMode {
     }
     public void intake(){
         if (gamepad2.right_trigger > 0){ //run intake
-            robot.intakeMotor.setPower(1);
+            robot.runIntake();
         }
         else { //stop intake motors
-            robot.intakeMotor.setPower(0);
+            robot.stopIntake();
 
         }
     }
+
+    /*public void runPutRingsOnWobble(){
+        if (){//what controls to use?
+            robot.putRingsOnWobble();
+        }
+    }
+    public void runPickupWobble(){
+        if(){//what controls to use?
+            robot.pickUpWobble();
+        }
+    }
+
+    public void runPlaceWobble(){
+        if() {//what controls to use?
+            robot.placeWobble();
+        }
+    }
+    */
 
 
 

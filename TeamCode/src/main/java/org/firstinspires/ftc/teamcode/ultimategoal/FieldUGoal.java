@@ -14,8 +14,6 @@ public class FieldUGoal {
     // FTC Team alliance color, BLUE or RED, the field is mirror images for each side
     // therefore lot of robot movement calculations are affected by which color you are on
     enum AllianceColor { BLUE, RED}
-    enum DriveType {TANK, MECANUM, DIAGONAL}
-
     public static final double  ANGLE_POS_X_AXIS = 0.0;
     public static final double  ANGLE_POS_Y_AXIS = 90.0;
     public static final double  ANGLE_NEG_X_AXIS = 180.0;
@@ -41,6 +39,20 @@ public class FieldUGoal {
     static final double     BEHIND_LAUNCH_LINE          = TILE_1_CENTER - ROBOT_RADIUS;
     static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
     static final double     PUSHER_REST_POSITION        = Servo.MIN_POSITION;
+    static final double     WOBBLE_FINGER_CLOSED        = Servo.MAX_POSITION;
+    static final double     WOBBLE_FINGER_OPEN          = 0.5; //middle to save time
+    static final double     WOBBLE_CLAW_OPEN            = Servo.MAX_POSITION;
+    static final double     WOBBLE_CLAW_CLOSED          = 0;//CHANGE WITH TESTING
+    static final double     WOBBLE_CLAW_ARM_INSIDE      = Servo.MIN_POSITION;//needs to be 180 degrees
+    static final double     WOBBLE_CLAW_ARM_OUTSIDE     = 0;// 0 degrees
+    static final int        ENCODER_TICKS_PER_REVOLUTION        = 288;
+
+
+
+    static final int        FINGER_ARM_HORIZONTAL       = ENCODER_TICKS_PER_REVOLUTION/2;
+    static final int        FINGER_ARM_UP               = ENCODER_TICKS_PER_REVOLUTION/4;
+    static final int        FINGER_ARM_DOWN             = 0;
+
 
     static final double     TARGET_ZONE_A_X             = TILE_1_CENTER;
     static final double     TARGET_ZONE_A_Y             = TILE_3_CENTER;
