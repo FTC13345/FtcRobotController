@@ -47,12 +47,14 @@ public class FieldUGoal {
     static final double     WOBBLE_CLAW_ARM_OUTSIDE     = 0;// 0 degrees
     static final int        ENCODER_TICKS_PER_REVOLUTION        = 288;
 
-
-
     static final int        FINGER_ARM_HORIZONTAL       = ENCODER_TICKS_PER_REVOLUTION/2;
     static final int        FINGER_ARM_UP               = ENCODER_TICKS_PER_REVOLUTION/4;
     static final int        FINGER_ARM_DOWN             = 0;
 
+    //*TODO FIND LIFT TOP AND BOTTOM VALUES, AND TEST FOR WOBBLE RINGS DISTANCE
+    static final int        LIFT_TOP                    = 0;
+    static final int        LIFT_BOTTOM                 = 0;
+    static final int        LIFT_UP_RINGS_HEIGHT        = 0;
 
     static final double     TARGET_ZONE_A_X             = TILE_1_CENTER;
     static final double     TARGET_ZONE_A_Y             = TILE_3_CENTER;

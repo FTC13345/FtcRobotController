@@ -106,6 +106,7 @@ public class UGoalTeleOp extends LinearOpMode {
             operdrive();
             intake();
             shoot();
+            runLift();
             telemetry.update();
             idle();
         }
@@ -232,6 +233,68 @@ public class UGoalTeleOp extends LinearOpMode {
         else { //stop intake motors
             robot.stopIntake();
 
+        }
+    }
+
+    // lift for the claw putting loaded rings onto the wobble goal, right side
+    public void runLift(){
+        if (gamepad2.left_stick_y != 0){
+            //joystick gives a negative value when pushed up, we want the lift to go up when positive
+            //temporarily uncomment below and force slow speed while testing for stops
+            //double power = -gamepad2.left_stick_y;
+            double power = 0;
+            if (-gamepad2.left_stick_y>0){
+                //if joystick pushed up, lift goes up
+                power = MecabotMove.DRIVE_SPEED_SLOW;
+            }
+            else{
+                //if joystick pushed down, lift goes down
+                power = -MecabotMove.DRIVE_SPEED_SLOW;
+            }
+
+            // Square the number but retain the sign to convert to logarithmic scale
+            // scale the range to 0.15 <= abs(power) <= 1.0 and preserve the sign
+            power = Math.signum(power) * (0.15 + (0.85 * power * power));
+            int pos = robot.liftMotor.getCurrentPosition();
+
+            //temporary for finding lift stop values
+            if (power>0){
+                robot.liftMotor.setPower(power);
+                pos = robot.liftMotor.getCurrentPosition();
+                telemetry.addData("Lift Up", "%.2f", power, pos);
+            }
+            else if (power<0){
+                robot.liftMotor.setPower(power);
+                pos = robot.liftMotor.getCurrentPosition();
+                telemetry.addData("Lift down", "%.2f", power, pos);
+            }
+            else{
+                robot.stopLift();
+            }
+
+            //uncomment once we have values for stop
+            /* if lift stops are being ignored then simply apply the joystick power to the motor
+            //            if (bIgnoreLiftStops) {
+            //                robot.liftMotor.setPower(power);
+            //                telemetry.addData("LIFT ", "at %3d, IGNORING STOPS", pos);
+            //            }
+            //            // move lift upwards direction but respect the stop to avoid breaking string
+            //            else if (power > 0 && pos < robot.LIFT_TOP) {
+            //                robot.liftMotor.setPower(power);
+            //                telemetry.addData("Lift Up", "%.2f", power);
+            //            }
+            //            // move lift downwards direction but respect the stop to avoid winding string in opposite direction on the spool
+            //            else if (power < 0 && pos > robot.LIFT_BOTTOM) {
+            //                robot.liftMotor.setPower(power);
+            //                telemetry.addData("Lift Down", "%.2f", power);
+            //            }
+            //            else {
+            //                robot.stopLift();
+            //            }
+            */
+        }
+        else{
+            robot.stopLift();
         }
     }
 

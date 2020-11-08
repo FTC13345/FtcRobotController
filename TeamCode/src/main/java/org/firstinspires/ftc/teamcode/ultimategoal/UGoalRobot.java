@@ -50,8 +50,10 @@ public class UGoalRobot extends MecabotMove {
         liftMotor = hwMap.get(DcMotor.class, "liftMotor");
 
         angleMotor.setDirection(DcMotor.Direction.REVERSE);
-        //*TODO is wobbleFingerArm reverse or not to work with positive encoder counts
+        //*TODO is wobbleFingerArm reverse or not? to work with positive encoder counts
         //wobbleFingerArm.setDirection(DcMotor.Direction.REVERSE);
+        //*TODO does the motor need to turn clockwise or counter for the lift to go up
+        //liftMotor.setDirection(DcMotor.Direction.REVERSE);
 
         angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         launcherMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -131,24 +133,44 @@ public class UGoalRobot extends MecabotMove {
     //positive power is (up/down?)
     //hard stop needs to be programmed to prevent breaking string
     //for auto, set to RUN_TO_POSITION
-    public void wobbleLift(){
+
+    /**
+     * This is the method for AUTONOMOUS
+     * liftMotor is set to run to position, and uses the parameter to determine that distance
+     * constant LIFT_UP_RINGS_HEIGHT is the height we lift the claw to deposit rings onto wobble goal
+     * @param height is encoder counts that tells the lift how high to go
+     */
+    public void wobbleLift(int height){
+        //*TODO test for stops in teleop first!
+        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor.setTargetPosition(height);
+        liftMotor.setPower(MecabotMove.DRIVE_SPEED_DEFAULT);
+
 
     }
     //rings will be put on the wobble on the RIGHT side of the robot
     //we will have to turn around to grab it on the LEFT side
     //uses lift to lift claw, swings it to outside, then lift to lower rings onto wobble goal
     //when done, it resets by lowering lift and folding the claw and arm back into robot
+
     public void putRingsOnWobble(){
-        //*TODO use lift
+        //pickup rings inside robot
         grabRingsWithClaw();
+        //lift the claw to predetermined height
+        //This gives room to swing out claw and drop the rings onto wobble
+        wobbleLift(FieldUGoal.LIFT_UP_RINGS_HEIGHT);
+        //rotates claw outside to put it outside the robot next to wobble goal
         wobbleClawArm.setPosition(FieldUGoal.WOBBLE_CLAW_ARM_OUTSIDE);
         wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_OPEN);
-        //reset and put claw back into robot out of the way
+        //reset, lower lift and put claw back into robot out of the way
+        wobbleLift(FieldUGoal.LIFT_BOTTOM);
         wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_CLOSED);
         wobbleClawArm.setPosition(FieldUGoal.WOBBLE_CLAW_ARM_INSIDE);
+    }
 
-
-
+    public void stopLift(){
+        //stop and brake lift
+        intakeMotor.setPower(0);
     }
 
     public double distanceToShoot(double robotX, double robotY) {
