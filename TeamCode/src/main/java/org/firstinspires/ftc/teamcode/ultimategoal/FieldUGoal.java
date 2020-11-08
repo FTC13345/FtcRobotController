@@ -22,6 +22,7 @@ public class FieldUGoal {
 
 
     // field distances between objects
+    static final double     CONVERT_RADIANS_TO_DEGREES  = 180/Math.PI;
     static final double     HALF_TAB                    = 0.75 / 2;
     static final double     TILE_LENGTH                 = 23.5;
     static final double     TILE_WITHOUT_TABS           = 22.75;

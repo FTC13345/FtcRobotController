@@ -210,7 +210,7 @@ public class UGoalRobot extends MecabotMove {
         double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetHeight);
 
         // MATH to covert angle to rotation of oval things under launcher
-        double ovalRotation = (launcherAngle - 20) * 7.2; // 7.2 scales 25 to 180 (range is 20-45 transformed to 0-180)
+        double ovalRotation = (launcherAngle*FieldUGoal.CONVERT_RADIANS_TO_DEGREES - 20) * 7.2; // 7.2 scales 25 to 180 (range is 20-45 transformed to 0-180)
 
         // Convertion of rotation to encoder ticks
         double ovalRotationTicks = ENCODER_TICKS_PER_ROTATION / ovalRotation;
