@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
@@ -105,7 +106,10 @@ public class UGoalTeleOp extends LinearOpMode {
             autodrive();
             operdrive();
             intake();
+            lift();
             shoot();
+            wobble();
+
             telemetry.update();
             idle();
         }
@@ -218,21 +222,59 @@ public class UGoalTeleOp extends LinearOpMode {
         }
     }
     public void shoot(){
-        if (gamepad1.y){
-            robot.runLauncherMotor();
+        // Toggle the launcher motor when A is pressed
+        if (gamepad2.a) {
+            if (robot.launcherMotor.getPower() == 0) {
+                robot.runLauncherMotor();
+            }
+            else {
+                robot.stopLauncherMotor();
+            }
+        }
+
+        // Shoot when B is pressed
+        if (gamepad2.b) {
             robot.shootRing();
-            robot.stopLauncherMotor();
+        }
+
+        if (gamepad2.y) {
             robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL);
         }
-    }
-    public void intake(){
-        if (gamepad2.right_trigger > 0){ //run intake
-            robot.runIntake();
-        }
-        else { //stop intake motors
-            robot.stopIntake();
 
+        if (gamepad2.x) {
+            robot.tiltLaunchPlatform(0);
         }
+    }
+
+    public void intake(){
+        if (gamepad2.right_stick_y != 0){ //run intake
+            robot.runIntake(gamepad2.right_stick_y);
+        }
+    }
+
+    public void lift() {
+        if (gamepad2.left_stick_y != 0){ //run lift
+            robot.liftMotor.setPower(gamepad2.left_stick_y);
+        }
+    }
+
+    public void wobble() {
+        // Wobble finger
+        if (gamepad2.right_bumper) {
+            robot.wobbleFinger.setPosition(Servo.MAX_POSITION);
+        }
+        if (gamepad2.left_bumper) {
+            robot.wobbleFinger.setPosition(Servo.MIN_POSITION);
+        }
+
+        if (gamepad2.right_trigger != 0) {
+            robot.wobbleFingerArm.setPower(gamepad2.right_trigger);
+        }
+        else if (gamepad2.left_trigger != 0) {
+            robot.wobbleFingerArm.setPower(-gamepad2.left_trigger);
+        }
+
+        // Wobble claw
     }
 
     /*public void runPutRingsOnWobble(){

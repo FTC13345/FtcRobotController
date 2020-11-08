@@ -225,5 +225,9 @@ public class UGoalRobot extends MecabotMove {
         intakeMotor.setPower(0);
     }
 
+    public void runIntake(double power) {
+        intakeMotor.setPower(power);
+    }
+
 }
 
