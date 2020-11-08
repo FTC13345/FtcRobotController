@@ -50,10 +50,8 @@ public class UGoalRobot extends MecabotMove {
         liftMotor = hwMap.get(DcMotor.class, "liftMotor");
 
         angleMotor.setDirection(DcMotor.Direction.REVERSE);
-        //*TODO is wobbleFingerArm reverse or not? to work with positive encoder counts
-        //wobbleFingerArm.setDirection(DcMotor.Direction.REVERSE);
-        //*TODO does the motor need to turn clockwise or counter for the lift to go up
-        //liftMotor.setDirection(DcMotor.Direction.REVERSE);
+        //reverse with current hardware, but we can just reverse the string on the spool easily to work with positive
+        liftMotor.setDirection(DcMotor.Direction.REVERSE);
 
         angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         launcherMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -105,7 +103,6 @@ public class UGoalRobot extends MecabotMove {
     }
 
 
-    //*TODO delivers wobble X inches from the robot center to the right, assuming launcher is the front
     // This assumes we have a wobble goal held and is held vertically
     // It lowers arm to horizontal position and drops the goal
     // Then it folds arm back into robot
@@ -129,7 +126,6 @@ public class UGoalRobot extends MecabotMove {
         wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_CLOSED);
     }
     //used to lift claw with rings out of robot onto wobble goal
-    //*TODO PROGRAM lift
     //positive power is (up/down?)
     //hard stop needs to be programmed to prevent breaking string
     //for auto, set to RUN_TO_POSITION
