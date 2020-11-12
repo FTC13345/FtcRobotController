@@ -238,7 +238,7 @@ public class UGoalTeleOp extends LinearOpMode {
         }
 
         if (gamepad2.y) {
-            robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL);
+            robot.tiltLaunchPlatform(robot.HIGH_GOAL);
         }
 
         if (gamepad2.x) {

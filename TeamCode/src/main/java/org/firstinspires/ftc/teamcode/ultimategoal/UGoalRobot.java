@@ -16,6 +16,32 @@ public class UGoalRobot extends MecabotMove {
         super(ahwMap, opMode);
         this.init(ahwMap);
     }
+    //constants
+    static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
+    static final double     PUSHER_REST_POSITION        = Servo.MIN_POSITION;
+    static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
+    static final double     WOBBLE_FINGER_OPEN          = 0.5; //middle to save time
+    static final double     WOBBLE_CLAW_OPEN            = Servo.MAX_POSITION;
+    static final double     WOBBLE_CLAW_CLOSED          = 0;//CHANGE WITH TESTING
+    static final double     WOBBLE_CLAW_ARM_INSIDE      = Servo.MIN_POSITION;//needs to be 180 degrees
+    static final double     WOBBLE_CLAW_ARM_OUTSIDE     = 0;// 0 degrees
+    static final int        ENCODER_TICKS_PER_REVOLUTION        = 288;
+
+    static final int        FINGER_ARM_HORIZONTAL       = ENCODER_TICKS_PER_REVOLUTION/2;
+    static final int        FINGER_ARM_UP               = ENCODER_TICKS_PER_REVOLUTION/4;
+    static final int        FINGER_ARM_DOWN             = 0;
+
+    //*TODO FIND LIFT TOP AND BOTTOM VALUES, AND TEST FOR WOBBLE RINGS DISTANCE
+    static final int        LIFT_TOP                    = 0;
+    static final int        LIFT_BOTTOM                 = 0;
+    static final int        LIFT_UP_RINGS_HEIGHT        = 0;
+
+    // field elements dimensions or distances go here
+    // TARGETS
+    public static final double HIGH_GOAL = 35.5;
+    public static final double MED_GOAL = 27;
+    public static final double LOW_GOAL = 17;
+    public static final double POWER_SHOT = 26;
 
     // Motors
     public DcMotor angleMotor = null;
@@ -72,10 +98,10 @@ public class UGoalRobot extends MecabotMove {
         wobbleClawArm = ahwMap.get(Servo.class, "wobbleClawArm");
         launcherServo = ahwMap.get(Servo.class, "launcherServo");
 
-        launcherServo.setPosition(FieldUGoal.PUSHER_REST_POSITION);
-        wobbleFinger.setPosition(FieldUGoal.WOBBLE_FINGER_CLOSED);
-        wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_OPEN);
-        wobbleClawArm.setPosition(FieldUGoal.WOBBLE_CLAW_ARM_INSIDE);
+        launcherServo.setPosition(PUSHER_REST_POSITION);
+        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
+        wobbleClaw.setPosition(WOBBLE_CLAW_OPEN);
+        wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_INSIDE);
 
     }
 
@@ -91,14 +117,14 @@ public class UGoalRobot extends MecabotMove {
 
         //finger arm motor 0 position will be straight down, folded inside the robot when we put the robot on start line
         //open to get ready to pickup
-        wobbleFinger.setPosition(FieldUGoal.WOBBLE_FINGER_OPEN);
+        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
         //wobble arm motor needs to unfold 90 degrees to horizontal position
-        wobbleFingerArm.setTargetPosition(FieldUGoal.FINGER_ARM_HORIZONTAL);
+        wobbleFingerArm.setTargetPosition(FINGER_ARM_HORIZONTAL);
         wobbleFingerArm.setPower(speed);
         //grab wobble
-        wobbleFinger.setPosition(FieldUGoal.WOBBLE_FINGER_CLOSED);
+        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
         //bring the wobble arm up 180 degrees all the way up so we don't drag it
-        wobbleFingerArm.setTargetPosition(FieldUGoal.FINGER_ARM_UP);
+        wobbleFingerArm.setTargetPosition(FINGER_ARM_UP);
         wobbleFingerArm.setPower(speed);
     }
 
@@ -112,18 +138,18 @@ public class UGoalRobot extends MecabotMove {
         wobbleFingerArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         //brings wobble arm down to 90 degrees
-        wobbleFingerArm.setTargetPosition(FieldUGoal.FINGER_ARM_HORIZONTAL);
+        wobbleFingerArm.setTargetPosition(FINGER_ARM_HORIZONTAL);
         wobbleFingerArm.setPower(speed);
-        wobbleFinger.setPosition(FieldUGoal.WOBBLE_FINGER_OPEN);
+        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
 
         //reset and put Finger Arm back into the robot out of the way
-        wobbleFingerArm.setTargetPosition(FieldUGoal.FINGER_ARM_DOWN);
+        wobbleFingerArm.setTargetPosition(FINGER_ARM_DOWN);
         wobbleFingerArm.setPower(speed);
-        wobbleFinger.setPosition(FieldUGoal.WOBBLE_FINGER_CLOSED);
+        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
     }
     //picks up stored rings in robot to put on wobble goal in the endgame
     public void grabRingsWithClaw(){
-        wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_CLOSED);
+        wobbleClaw.setPosition(WOBBLE_CLAW_CLOSED);
     }
     //used to lift claw with rings out of robot onto wobble goal
     //positive power is (up/down?)
@@ -154,14 +180,14 @@ public class UGoalRobot extends MecabotMove {
         grabRingsWithClaw();
         //lift the claw to predetermined height
         //This gives room to swing out claw and drop the rings onto wobble
-        wobbleLift(FieldUGoal.LIFT_UP_RINGS_HEIGHT);
+        wobbleLift(LIFT_UP_RINGS_HEIGHT);
         //rotates claw outside to put it outside the robot next to wobble goal
-        wobbleClawArm.setPosition(FieldUGoal.WOBBLE_CLAW_ARM_OUTSIDE);
-        wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_OPEN);
+        wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_OUTSIDE);
+        wobbleClaw.setPosition(WOBBLE_CLAW_OPEN);
         //reset, lower lift and put claw back into robot out of the way
-        wobbleLift(FieldUGoal.LIFT_BOTTOM);
-        wobbleClaw.setPosition(FieldUGoal.WOBBLE_CLAW_CLOSED);
-        wobbleClawArm.setPosition(FieldUGoal.WOBBLE_CLAW_ARM_INSIDE);
+        wobbleLift(LIFT_BOTTOM);
+        wobbleClaw.setPosition(WOBBLE_CLAW_CLOSED);
+        wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_INSIDE);
     }
 
     public void stopLift(){
@@ -234,7 +260,7 @@ public class UGoalRobot extends MecabotMove {
     }
 
     public void releaseIntake(){
-        releaseIntake.setPosition(FieldUGoal.INTAKE_DOWN_ANGLE);
+        releaseIntake.setPosition(INTAKE_DOWN_ANGLE);
     }
     public void runIntake(){
         intakeMotor.setPower(1);

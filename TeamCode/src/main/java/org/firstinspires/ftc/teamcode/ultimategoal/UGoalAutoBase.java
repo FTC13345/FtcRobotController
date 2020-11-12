@@ -243,7 +243,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         shootPowerShot();
     }
     public void shootPowerShot(){
-        robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT);
+        robot.tiltLaunchPlatform(robot.POWER_SHOT);
         robot.shootRing();
     }
 
@@ -251,11 +251,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //distance
         robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.TILE_2_CENTER));
         robot.odometryRotateToHeading(0);
-        robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL);
+        robot.tiltLaunchPlatform(robot.HIGH_GOAL);
         robot.shootRing();
-        for (int i = 0; i < 3; i++){
-
-        }
     }
 
     // distance between center of robot and where wobble is placed is 15 inches
