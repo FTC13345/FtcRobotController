@@ -127,9 +127,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
 
         //Uncomment if we are going for powershot
-        // goShootPowerShot();
+        // goShoot3Powershot();
         //Uncomment if we are going for Highgoal because powershot wasn't accurate
-        // GoShootHighGoal();
+        // goShootHighGoal();
         robot.stopLauncherMotor();
         deliverWobble(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
@@ -229,30 +229,50 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         while (runTime.seconds() < timeout) {
         }
     }
-
+    //for auto going to and shooting the 3 power shots
     public void goShoot3Powershot(){
+        //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
         //first powershot
-        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.POWERSHOT_1_Y));
-        robot.odometryRotateToHeading(0);
-        shootPowerShot();
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.POWERSHOT_1_Y-FieldUGoal.ROBOT_RADIUS));
+        shootPowerShot1();
         // second powershot
-        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
-        shootPowerShot();
+        // In order to not have to turn the robot, we just use mecanum to drive the distance to the next powershot, which is only a few inches to the left or right
+        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT-FieldUGoal.ROBOT_RADIUS));
+        shootPowerShot2();
         // third powershot
-        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT));
-        shootPowerShot();
+        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT-FieldUGoal.ROBOT_RADIUS));
+        shootPowerShot3();
     }
-    public void shootPowerShot(){
-        robot.tiltLaunchPlatform(robot.POWER_SHOT);
+    //Power shot 1 is furthest power shot from center
+    public void shootPowerShot1(){
+        robot.tiltLaunchPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_1_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
+    //Power shot 2 is in the middle
+    public void shootPowerShot2(){
+        robot.tiltLaunchPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_2_Y), FieldUGoal.POWER_SHOT_HEIGHT);
+        robot.shootRing();
+    }
+    //Power shot 3 is closest to center
+    public void shootPowerShot3(){
+        robot.tiltLaunchPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
+        robot.shootRing();
+    }
+    //aim and shoot at the highgoal
+    public void shootHighGoal(){
+        robot.tiltLaunchPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
+        robot.shootRing();
+    }
+    //go to and shoot three rings into the high goal
 
     public void goShootHighGoal(){
         //distance
-        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.TILE_2_CENTER));
+        //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
+        robot.goToPosition(FieldUGoal.BEHIND_LAUNCH_LINE, flip4Red(FieldUGoal.TILE_2_CENTER-FieldUGoal.ROBOT_RADIUS));
         robot.odometryRotateToHeading(0);
-        robot.tiltLaunchPlatform(robot.HIGH_GOAL);
-        robot.shootRing();
+        for (int i = 0; i<3; i++){
+            shootHighGoal();
+        }
     }
 
     // distance between center of robot and where wobble is placed is 15 inches

@@ -236,13 +236,14 @@ public class UGoalTeleOp extends LinearOpMode {
         if (gamepad2.b) {
             robot.shootRing();
         }
-
+        //auto aim for High Goal
         if (gamepad2.y) {
-            robot.tiltLaunchPlatform(robot.HIGH_GOAL);
+            robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL_HEIGHT);
         }
 
+        //auto aim for Powershot
         if (gamepad2.x) {
-            robot.tiltLaunchPlatform(0);
+            robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT_HEIGHT);
         }
     }
 

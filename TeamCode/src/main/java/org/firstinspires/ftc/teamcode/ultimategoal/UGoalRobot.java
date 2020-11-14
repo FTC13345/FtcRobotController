@@ -7,8 +7,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
-import java.lang.reflect.Field;
-
 public class UGoalRobot extends MecabotMove {
 
 
@@ -35,13 +33,6 @@ public class UGoalRobot extends MecabotMove {
     static final int        LIFT_TOP                    = 0;
     static final int        LIFT_BOTTOM                 = 0;
     static final int        LIFT_UP_RINGS_HEIGHT        = 0;
-
-    // field elements dimensions or distances go here
-    // TARGETS
-    public static final double HIGH_GOAL = 35.5;
-    public static final double MED_GOAL = 27;
-    public static final double LOW_GOAL = 17;
-    public static final double POWER_SHOT = 26;
 
     // Motors
     public DcMotor angleMotor = null;
@@ -205,15 +196,13 @@ public class UGoalRobot extends MecabotMove {
 
         return Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2));
     }
-
-    // This assumes shooting at red goal
+    //only for autonomous, for teleop use function that doens't call this
+    // This assumes blue, for red use flip4Red when calling
     // This method gives the angel from the robot to the goal
-    public double robotAngleToShoot(double x, double y) {
+    public double robotAngleToShoot(double x, double y, int targetX, int targetY) {
         double robotX = x;
         double robotY = y;
 
-        double targetX = 72;
-        double targetY = -36;
 
         double xDiff = targetX - robotX;
         double yDiff = targetY - robotY;
@@ -221,7 +210,7 @@ public class UGoalRobot extends MecabotMove {
 
         return Math.atan2(xDiff, yDiff);
     }
-
+    //returns angle that launch platform needs to be tilted to aim at the target
     public double launcherAngleToShoot(double x, double y, double targetHeight) {
         double xDist = distanceToShoot(x, y); //Distance on the ground
         double yDist = targetHeight; // HEIGHT of the goal
@@ -229,9 +218,25 @@ public class UGoalRobot extends MecabotMove {
         return Math.atan(yDist/xDist);
     }
 
-    public void tiltLaunchPlatform(double targetHeight) {
+    public void tiltLaunchPlatform(double targetX, double targetY, double targetHeight) {
 
-        odometryRotateToHeading(robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches()), 0.5, 5, true);
+        odometryRotateToHeading(robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetX, targetY), 0.5, 5, true);
+
+        double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetHeight);
+
+        // MATH to covert angle to rotation of oval things under launcher
+        double ovalRotation = (launcherAngle*FieldUGoal.CONVERT_RADIANS_TO_DEGREES - 20) * 7.2; // 7.2 scales 25 to 180 (range is 20-45 transformed to 0-180)
+
+        // Convertion of rotation to encoder ticks
+        double ovalRotationTicks = ENCODER_TICKS_PER_ROTATION / ovalRotation;
+
+        // Encoder movement for launcher motor (not drivetrain encoder methods)
+        angleMotor.setTargetPosition((int) ovalRotationTicks);
+        angleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    }
+    // If we don't want to turn the robot, in TeleOp usually, don't pass the target x and y
+    // We can't use this in teleop because we can't differentiate red and blue y coords, and there aren't enough buttons for each powershot.
+    public void tiltLaunchPlatform(double targetHeight) {
 
         double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetHeight);
 

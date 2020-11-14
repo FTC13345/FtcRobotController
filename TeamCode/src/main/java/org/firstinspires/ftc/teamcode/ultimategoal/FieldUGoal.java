@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 
-import com.qualcomm.robotcore.hardware.Servo;
-
 /** Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
  *  X Axis is parallel to red alliance wall with positive values towards the tower goals and powershots
@@ -26,10 +24,7 @@ public class FieldUGoal {
     static final double     HALF_TAB                    = 0.75 / 2;
     static final double     TILE_LENGTH                 = 23.5;
     static final double     TILE_WITHOUT_TABS           = 22.75;
-    static final double     ROBOT_RADIUS                = 9;
-    static final double     POWERSHOT_1_Y               = 19;
-    static final double     POWERSHOT_2_Y               = POWERSHOT_1_Y-7.5;
-    static final double     POWERSHOT_3_Y               = POWERSHOT_2_Y-7.5;
+    static final double     ROBOT_RADIUS                = 8.5;
     static final double     DISTANCE_BETWEEN_POWERSHOT  = 7.5;
     static final double     TILE_1_FROM_ORIGIN          = HALF_TAB + TILE_WITHOUT_TABS;
     static final double     TILE_2_FROM_ORIGIN          = TILE_1_FROM_ORIGIN + TILE_LENGTH;
@@ -46,6 +41,22 @@ public class FieldUGoal {
     static final double     TARGET_ZONE_B_Y             = TILE_2_CENTER;
     static final double     TARGET_ZONE_C_X             = TILE_3_CENTER;
     static final double     TARGET_ZONE_C_Y             = TILE_3_CENTER;
+
+    // TARGETS
+    public static final double HIGH_GOAL_HEIGHT = 35.5;
+    public static final double MED_GOAL_HEIGHT = 27;
+    public static final double LOW_GOAL_HEIGHT = 17;
+    public static final double POWER_SHOT_HEIGHT = 26;
+
+    public static final double GOALX                    = TILE_3_FROM_ORIGIN;
+    public static final double GOALY                    = TILE_2_CENTER;
+    public static final double POWERSHOTX               = TILE_3_FROM_ORIGIN;
+    //power shot 1 is furthest from center
+    public static final double POWERSHOT_1_Y            = 19;
+    public static final double POWERSHOT_2_Y            = POWERSHOT_1_Y-7.5;
+    public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-7.5;
+
+
 
 
 }
