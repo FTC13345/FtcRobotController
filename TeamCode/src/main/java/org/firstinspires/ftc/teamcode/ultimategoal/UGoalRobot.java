@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.qualcomm.hardware.rev.RevSPARKMini;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -36,8 +38,12 @@ public class UGoalRobot extends MecabotMove {
 
     // Motors
     public DcMotor angleMotor = null;
-    public DcMotor launcherMotor = null;
     public DcMotor liftMotor = null;
+    public DcMotor intakeMotor = null;
+    public DcMotor wobbleFingerArm = null;
+    // THis is a motor driven by Spark Mini controller which takes Servo PWM input
+    // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
+    public DcMotorSimple launcherMotorSparkMini = null;
 
     //Servos
     public Servo launcherServo = null;
@@ -46,39 +52,33 @@ public class UGoalRobot extends MecabotMove {
     public Servo wobbleFinger = null;
     public Servo wobbleClaw = null;
     public Servo wobbleClawArm = null;
-    // intake motor and servo
-    public DcMotor intakeMotor = null;
-    public DcMotor wobbleFingerArm = null;
 
     //Finals
+    static final double LAUNCHER_MOTOR_RUN          = 1.0;
+    static final double LAUNCHER_MOTOR_STOP         = 0.0;
     static final double ENCODER_TICKS_PER_ROTATION  = 537.6f; // goBilda 5202 series Yellow Jacket Planetary 19.2:1 gear ratio, 312 RPM
-
-
-    // The hardware map obtained from OpMode
-    HardwareMap hwMap;
 
     // Initialization
     public void init(HardwareMap ahwMap) {
 
-        angleMotor = ahwMap.get(DcMotor.class, "launcherMotor");
-        launcherMotor = ahwMap.get(DcMotor.class, "flywheelMotor");
-        intakeMotor = hwMap.get(DcMotor.class, "intakeMotor");
-        wobbleFingerArm = hwMap.get(DcMotor.class, "wobbleFingerArm");
-        liftMotor = hwMap.get(DcMotor.class, "liftMotor");
+        angleMotor = ahwMap.get(DcMotor.class, "angleMotor");
+        intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");
+        wobbleFingerArm = ahwMap.get(DcMotor.class, "wobbleFingerArm");
+        liftMotor = ahwMap.get(DcMotor.class, "liftMotor");
+        launcherMotorSparkMini = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
 
         angleMotor.setDirection(DcMotor.Direction.REVERSE);
-        //reverse with current hardware, but we can just reverse the string on the spool easily to work with positive
+        // reverse with current hardware, but we can just reverse the string on the spool easily to work with positive
         liftMotor.setDirection(DcMotor.Direction.REVERSE);
+        // direction depends on hardware
+        launcherMotorSparkMini.setDirection(DcMotor.Direction.REVERSE);
 
         angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        launcherMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         wobbleFingerArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-
         angleMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        launcherMotor.setZeroPowerBehavior((DcMotor.ZeroPowerBehavior.BRAKE));
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         wobbleFingerArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         liftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -199,7 +199,7 @@ public class UGoalRobot extends MecabotMove {
     //only for autonomous, for teleop use function that doens't call this
     // This assumes blue, for red use flip4Red when calling
     // This method gives the angel from the robot to the goal
-    public double robotAngleToShoot(double x, double y, int targetX, int targetY) {
+    public double robotAngleToShoot(double x, double y, double targetX, double targetY) {
         double robotX = x;
         double robotY = y;
 
@@ -218,24 +218,29 @@ public class UGoalRobot extends MecabotMove {
         return Math.atan(yDist/xDist);
     }
 
+    /**
+     * This method allows Robot to shoot from any position on the field, and tilt the launch platform accordingly.
+     * First we rotate the robot heading in the direction of the target and then we tilt the launch platform
+     * Also see the overloaded method below which assumes that the robot is already facing the target straight ahead
+     *
+     * @param targetX       target X co-ordinate on the field
+     * @param targetY       target y co-ordinate on the field
+     * @param targetHeight  target height from the field floor
+     */
     public void tiltLaunchPlatform(double targetX, double targetY, double targetHeight) {
 
-        odometryRotateToHeading(robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetX, targetY), 0.5, 5, true);
-
-        double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetHeight);
-
-        // MATH to covert angle to rotation of oval things under launcher
-        double ovalRotation = (launcherAngle*FieldUGoal.CONVERT_RADIANS_TO_DEGREES - 20) * 7.2; // 7.2 scales 25 to 180 (range is 20-45 transformed to 0-180)
-
-        // Convertion of rotation to encoder ticks
-        double ovalRotationTicks = ENCODER_TICKS_PER_ROTATION / ovalRotation;
-
-        // Encoder movement for launcher motor (not drivetrain encoder methods)
-        angleMotor.setTargetPosition((int) ovalRotationTicks);
-        angleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        double heading = robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetX, targetY);
+        odometryRotateToHeading(heading, 0.5, 5, true);
+        tiltLaunchPlatform(targetHeight);
     }
-    // If we don't want to turn the robot, in TeleOp usually, don't pass the target x and y
-    // We can't use this in teleop because we can't differentiate red and blue y coords, and there aren't enough buttons for each powershot.
+
+    /**
+     * This method allows Robot to shoot from a position directly in front of the target, and tilt the launch platform accordingly.
+     * Therefore we do NOT rotate the robot heading and simply tilt the launch platform
+     * Also see the overloaded method above which rotates the robot heading
+     *
+     * @param targetHeight  target height from the field floor
+     */
     public void tiltLaunchPlatform(double targetHeight) {
 
         double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetHeight);
@@ -252,31 +257,34 @@ public class UGoalRobot extends MecabotMove {
     }
 
     public void runLauncherMotor() {
-        launcherMotor.setPower(1);
+        launcherMotorSparkMini.setPower(LAUNCHER_MOTOR_RUN);
     }
 
     public void stopLauncherMotor() {
-        launcherMotor.setPower(0);
+        launcherMotorSparkMini.setPower(LAUNCHER_MOTOR_STOP);
+    }
+
+    public boolean isLauncherMotorRunning() {
+        return (launcherMotorSparkMini.getPower() != LAUNCHER_MOTOR_STOP);
     }
 
     public void shootRing() {
         launcherServo.setPosition(Servo.MIN_POSITION);
+    }
+    public void loadRing() {
         launcherServo.setPosition(Servo.MAX_POSITION);
     }
 
     public void releaseIntake(){
         releaseIntake.setPosition(INTAKE_DOWN_ANGLE);
     }
-    public void runIntake(){
-        intakeMotor.setPower(1);
-    }
-    public void stopIntake(){
-        intakeMotor.setPower(0);
-    }
 
     public void runIntake(double power) {
         intakeMotor.setPower(power);
     }
 
+    public void stopIntake(){
+        intakeMotor.setPower(0);
+    }
 }
 

@@ -9,8 +9,6 @@ import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
-import java.lang.reflect.Field;
-
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
 public class UGoalTeleOp extends LinearOpMode {
@@ -224,17 +222,20 @@ public class UGoalTeleOp extends LinearOpMode {
     public void shoot(){
         // Toggle the launcher motor when A is pressed
         if (gamepad2.a) {
-            if (robot.launcherMotor.getPower() == 0) {
-                robot.runLauncherMotor();
+            if (robot.isLauncherMotorRunning()) {
+                robot.stopLauncherMotor();
             }
             else {
-                robot.stopLauncherMotor();
+                robot.runLauncherMotor();
             }
         }
 
         // Shoot when B is pressed
         if (gamepad2.b) {
             robot.shootRing();
+            sleep(500);
+            robot.loadRing();
+
         }
         //auto aim for High Goal
         if (gamepad2.y) {
@@ -248,12 +249,15 @@ public class UGoalTeleOp extends LinearOpMode {
     }
 
     public void intake(){
-        if (gamepad2.right_stick_y != 0){ //run intake
-            robot.runIntake(gamepad2.right_stick_y);
+        double power = -gamepad2.right_stick_y;
+        if (power > 0) {
+            robot.runIntake(power);
+            telemetry.addData("Intake Power ", "%.2f", power);
+        }
+        else {
+            robot.stopIntake();
         }
     }
-
-
 
     public void wobble() {
         // Wobble finger
@@ -264,11 +268,16 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.wobbleFinger.setPosition(Servo.MIN_POSITION);
         }
 
-        if (gamepad2.right_trigger != 0) {
-            robot.wobbleFingerArm.setPower(gamepad2.right_trigger);
+        double power = 0;
+        if (gamepad2.right_trigger > 0) {
+            power = gamepad2.right_trigger;
+            robot.wobbleFingerArm.setPower(power);
+            telemetry.addData("Wobble Arm ", "%.2f", power);
         }
-        else if (gamepad2.left_trigger != 0) {
-            robot.wobbleFingerArm.setPower(-gamepad2.left_trigger);
+        else if (gamepad2.left_trigger > 0) {
+            power = -gamepad2.left_trigger;
+            robot.wobbleFingerArm.setPower(power);
+            telemetry.addData("Wobble Arm ", "%.2f", power);
         }
 
         // Wobble claw
