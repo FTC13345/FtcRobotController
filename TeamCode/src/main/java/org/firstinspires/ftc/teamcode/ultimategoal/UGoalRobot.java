@@ -270,7 +270,13 @@ public class UGoalRobot extends MecabotMove {
 
     public void shootRing() {
         launcherServo.setPosition(Servo.MIN_POSITION);
+        myOpMode.sleep(500);
+        launcherServo.setPosition(Servo.MAX_POSITION);
     }
+
+    /**
+     * Move the ring pusher arm to its default resting position (not pushing the ring just yet)
+     */
     public void loadRing() {
         launcherServo.setPosition(Servo.MAX_POSITION);
     }

@@ -233,8 +233,6 @@ public class UGoalTeleOp extends LinearOpMode {
         // Shoot when B is pressed
         if (gamepad2.b) {
             robot.shootRing();
-            sleep(500);
-            robot.loadRing();
 
         }
         //auto aim for High Goal
