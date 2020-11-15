@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.qualcomm.hardware.rev.RevSPARKMini;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -48,6 +49,7 @@ public class UGoalRobot extends MecabotMove {
     //Servos
     public Servo launcherServo = null;
     public Servo releaseIntake = null;
+    public CRServo intakeServo = null;
     //finger is for wobble pickup, claw is for putting rings on wobble
     public Servo wobbleFinger = null;
     public Servo wobbleClaw = null;
@@ -88,6 +90,7 @@ public class UGoalRobot extends MecabotMove {
         wobbleClaw = ahwMap.get(Servo.class, "wobbleClaw");
         wobbleClawArm = ahwMap.get(Servo.class, "wobbleClawArm");
         launcherServo = ahwMap.get(Servo.class, "launcherServo");
+        intakeServo = ahwMap.get(CRServo.class, "intakeServo");
 
         launcherServo.setPosition(PUSHER_REST_POSITION);
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
@@ -287,9 +290,11 @@ public class UGoalRobot extends MecabotMove {
 
     public void runIntake(double power) {
         intakeMotor.setPower(power);
+        intakeServo.setPower(power);
     }
 
     public void stopIntake(){
+        intakeServo.setPower(0);
         intakeMotor.setPower(0);
     }
 }
