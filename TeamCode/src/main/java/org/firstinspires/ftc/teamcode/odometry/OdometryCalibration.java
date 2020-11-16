@@ -5,6 +5,7 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
@@ -14,8 +15,8 @@ import java.io.File;
 
 /**
  * Created by Sarthak on 6/1/2019.
- * Modified by Vishesh Goyal on 12/24/2019
- * - adaptation to Team13345 Mecabot hardware using goBilda strafer kit v2 on 10/25/2020
+ * Modified by Vishesh Goyal on 12/24/2019 for the Skystone Season
+ * Adaptation to Team13345 Mecabot hardware using goBilda strafer kit v2 on 10/25/2020 for the Ultimate Goal season
  * - Detailed comments to explain the calculation of wheel base separation. Improved variable names for better understanding.
  * - Bug fixes in code and comments
  *
@@ -38,8 +39,9 @@ public class OdometryCalibration extends LinearOpMode {
 
     final double PIVOT_SPEED = 0.4;
 
-    //The amount of encoder ticks for each inch the robot moves. THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
-    final double ENCODER_COUNT_PER_INCH = (537.6f * 25.4f) / (Math.PI * 38.0f);  // FTC Team 13345 Mecabot encoder has 537.6 ticks per rotation, odometry wheel has 38mm diameter
+    // THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE (change the ticks per rotation and the wheel diameter
+    // The amount of encoder ticks for each inch the robot moves.
+    final double ENCODER_COUNT_PER_INCH = (1440.0f * 25.4f) / (Math.PI * 38.0f);  // FTC Team 13345 Mecabot odometry encoder (USRobotics) has 1440 ticks per rotation, odometry wheel has 38mm diameter
 
     //Text files to write the values to. The files are stored in the robot controller under Internal Storage\FIRST\settings
     File wheelBaseSeparationFile = AppUtil.getInstance().getSettingsFile("wheelBaseSeparation.txt");
@@ -96,14 +98,12 @@ public class OdometryCalibration extends LinearOpMode {
         //Record IMU and encoder values to calculate the constants for the global position algorithm
         double angle = getZAngle();
 
-        /*
-        Since the orientation of encoders on each side is opposite, one of the encoder value
-        needs to be reversed so that both side encoders produced positive ticks with forward movement.
-        Horizontal encoder ticks may also need sign reversal, in this code clockwise rotation of robot should produce positive tick count
-        THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
-       */
+        // THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE (only sign change)
+        // Since the orientation of encoders on each side is opposite, one of the encoder value
+        // needs to be reversed so that both side encoders produced positive ticks with forward movement.
+        // Horizontal encoder ticks may also need sign reversal, in this code clockwise rotation of robot should produce positive tick count
         double verticalLeftCount = -verticalLeft.getCurrentPosition();
-        double verticalRightCount = verticalRight.getCurrentPosition();
+        double verticalRightCount = -verticalRight.getCurrentPosition();
         double horizontalCount = horizontal.getCurrentPosition();
 
         // The Robot pivoted around its own center for a certain angle and we recorded the encoder ticks on left and right
@@ -174,9 +174,11 @@ public class OdometryCalibration extends LinearOpMode {
         left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
+        // Left side set to REVERSE if using AndyMark or goBilda 5202 yellow jacket motors
         left_front.setDirection(DcMotor.Direction.REVERSE);
         left_back.setDirection(DcMotor.Direction.REVERSE);
-        right_front.setDirection(DcMotor.Direction.FORWARD);
+        // Right side set to FORWARD if using AndyMark or goBilda 5202 yellow jacket motors
+        right_front.setDirection(DcMotor.Direction.REVERSE); // special fix, this motor power cable is wired in opposite polarity
         right_back.setDirection(DcMotor.Direction.FORWARD);
 
 
