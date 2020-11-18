@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Func;
@@ -43,9 +44,13 @@ public class UGoalTeleOp extends LinearOpMode {
         waitForStart();
         //release the intake
         robot.releaseIntake();
-        nav.startOdometry();
 
+        // This code assumes Robot starts at a position as follows:
+        // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
+        // Robot Heading is pointing to +ve X-axis  (Launcher Platform is facing the goals)
+        // Robot back is touching the perimeter wall.
         globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_2_FROM_ORIGIN - FieldUGoal.ROBOT_RADIUS, 90);
+        nav.startOdometry();
 
         telemetry.addLine("Global Position ")
                 .addData("X", "%3.2f", new Func<Double>() {
@@ -86,17 +91,6 @@ public class UGoalTeleOp extends LinearOpMode {
                         return nav.getMovementStatus();
                     }
                 });
-        telemetry.addLine("Odometry Inches:")
-                .addData("X", "%4.2f", new Func<Double>() {
-                    @Override public Double value() {
-                        return globalPosition.getXinches();
-                    }
-                })
-                .addData("Y", "%4.2f", new Func<Double>() {
-                    @Override public Double value() {
-                        return globalPosition.getYinches();
-                    }
-                });
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -105,7 +99,7 @@ public class UGoalTeleOp extends LinearOpMode {
             operdrive();
             intake();
             shoot();
-            wobble();
+            wobblePickup();
 
             runLift();
             telemetry.update();
@@ -246,39 +240,44 @@ public class UGoalTeleOp extends LinearOpMode {
         }
     }
 
-    public void intake(){
-        double power = -gamepad2.right_stick_y;
-        if (power > 0) {
-            robot.runIntake(power);
-            telemetry.addData("Intake Power ", "%.2f", power);
-        }
-        else {
-            robot.stopIntake();
-        }
-    }
-
-    public void wobble() {
-        // Wobble finger
-        if (gamepad2.right_bumper) {
-            robot.wobbleFinger.setPosition(Servo.MAX_POSITION);
-        }
-        if (gamepad2.left_bumper) {
-            robot.wobbleFinger.setPosition(Servo.MIN_POSITION);
-        }
+    public void intake() {
 
         double power = 0;
-        if (gamepad2.right_trigger > 0) {
+        if (gamepad2.right_trigger > 0) { // intake is sucking the ring in to the robot
             power = gamepad2.right_trigger;
-            robot.wobbleFingerArm.setPower(power);
-            telemetry.addData("Wobble Arm ", "%.2f", power);
         }
-        else if (gamepad2.left_trigger > 0) {
+        else if (gamepad2.left_trigger > 0) { // intake is ejecting the ring out of the robot
             power = -gamepad2.left_trigger;
-            robot.wobbleFingerArm.setPower(power);
-            telemetry.addData("Wobble Arm ", "%.2f", power);
+        }
+        else { // stop intake motor
+            power = 0.0;
+        }
+        // Square the number but retain the sign to convert to logarithmic scale
+        // scale the range to 0.30 <= abs(power) <= 1.0 and preserve the sign
+        //power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
+        robot.runIntake(power);
+        telemetry.addData("Intake power ", "%.2f", power);
+    }
+
+    public void wobblePickup() {
+        // Wobble finger
+        if (gamepad2.right_bumper) {
+            robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
+        }
+        if (gamepad2.left_bumper) {
+            robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
         }
 
-        // Wobble claw
+        // Wobble arm
+        // Note that when joystick is inactive, this applies brakes
+        // forward press on joystick is negative, backward press (towards human) is positive
+        // reverse sign of joystick values to use positive values to lift up the wobble arm
+        double power = -gamepad2.right_stick_y;
+        // Square the number but retain the sign to convert to logarithmic scale
+        // scale the range to 0.0 <= abs(power) <= 0.3 and preserve the sign
+        power = Math.signum(power) * (0.3 * power * power);
+        robot.wobbleFingerArm.setPower(power);
+        telemetry.addData("Wobble Arm ", "power %.2f | pos %d", power, robot.wobbleFingerArm.getCurrentPosition());
     }
 
     // lift for the claw putting loaded rings onto the wobble goal, right side

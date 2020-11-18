@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
-import com.qualcomm.hardware.rev.RevSPARKMini;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -18,7 +17,7 @@ public class UGoalRobot extends MecabotMove {
     }
     //constants
     static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
-    static final double     PUSHER_REST_POSITION        = Servo.MIN_POSITION;
+    static final double     PUSHER_REST_POSITION        = Servo.MAX_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_OPEN          = 0.5; //middle to save time
     static final double     WOBBLE_CLAW_OPEN            = Servo.MAX_POSITION;
@@ -67,16 +66,17 @@ public class UGoalRobot extends MecabotMove {
         liftMotor = ahwMap.get(DcMotor.class, "liftMotor");
         launcherMotorSparkMini = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
 
+        // direction depends on hardware installation
         angleMotor.setDirection(DcMotor.Direction.REVERSE);
-        // reverse with current hardware, but we can just reverse the string on the spool easily to work with positive
+        intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         liftMotor.setDirection(DcMotor.Direction.REVERSE);
-        // direction depends on hardware
+        wobbleFingerArm.setDirection(DcMotor.Direction.REVERSE);
         launcherMotorSparkMini.setDirection(DcMotor.Direction.REVERSE);
 
-        angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        wobbleFingerArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        angleMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        wobbleFingerArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         angleMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -89,11 +89,12 @@ public class UGoalRobot extends MecabotMove {
         wobbleClawArm = ahwMap.get(Servo.class, "wobbleClawArm");
         launcherServo = ahwMap.get(Servo.class, "launcherServo");
 
-        launcherServo.setPosition(PUSHER_REST_POSITION);
+        // releaseIntake should NOT be initialized to any specific position.
+        // we want to be able to initialize robot regardless whether intake is lifted up or let down
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
         wobbleClaw.setPosition(WOBBLE_CLAW_OPEN);
         wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_INSIDE);
-
+        launcherServo.setPosition(PUSHER_REST_POSITION);
     }
 
 
@@ -183,7 +184,7 @@ public class UGoalRobot extends MecabotMove {
 
     public void stopLift(){
         //stop and brake lift
-        intakeMotor.setPower(0);
+        liftMotor.setPower(0);
     }
 
     public double distanceToShoot(double robotX, double robotY) {
