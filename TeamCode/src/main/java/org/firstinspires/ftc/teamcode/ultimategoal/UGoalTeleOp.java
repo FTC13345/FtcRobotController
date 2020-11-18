@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
@@ -19,7 +18,6 @@ public class UGoalTeleOp extends LinearOpMode {
 
     /* Declare OpMode members. */
     UGoalRobot robot;
-    MecabotMove nav;
     OdometryGlobalPosition globalPosition;
 
     // record position that we need to return to repeatedly
@@ -33,8 +31,7 @@ public class UGoalTeleOp extends LinearOpMode {
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
 
-        nav = (MecabotMove)robot;
-        globalPosition = nav.getPosition();
+        globalPosition = robot.getPosition();
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "Waiting for Start");    //
@@ -47,10 +44,12 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // This code assumes Robot starts at a position as follows:
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
-        // Robot Heading is pointing to +ve X-axis  (Launcher Platform is facing the goals)
+        // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_2_FROM_ORIGIN - FieldUGoal.ROBOT_RADIUS, 90);
-        nav.startOdometry();
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN - FieldUGoal.ROBOT_RADIUS, FieldUGoal.ANGLE_POS_X_AXIS);
+        // Enable this temporarily for Shooter Platform Tilt debugging
+        // globalPosition.initGlobalPosition(FieldUGoal.BEHIND_LAUNCH_LINE, FieldUGoal.TILE_2_CENTER, 0.0);
+        robot.startOdometry();
 
         telemetry.addLine("Global Position ")
                 .addData("X", "%3.2f", new Func<Double>() {
@@ -88,9 +87,32 @@ public class UGoalTeleOp extends LinearOpMode {
                 .addData("", new Func<String>() {
                     @Override
                     public String value() {
-                        return nav.getMovementStatus();
+                        return robot.getMovementStatus();
                     }
                 });
+        telemetry.addLine("Shooter ")
+                .addData("Tilt", "%.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return robot.shooterTiltAngleDesired;
+                    }
+                })
+                .addData("Oval", "%.2f", new Func<Double>() {
+                    @Override public Double value() {
+                        return robot.ovalRotationDegrees;
+                    }
+                })
+                .addData("TPos", "%3d", new Func<Integer>() {
+                    @Override public Integer value() {
+                        return robot.ovalRotationTicks;
+                    }
+                })
+                .addData("CPos", "%3d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.leftFrontDrive.getCurrentPosition();
+                    }
+                });
+
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -98,7 +120,7 @@ public class UGoalTeleOp extends LinearOpMode {
             autodrive();
             operdrive();
             intake();
-            shoot();
+            shootRings();
             wobblePickup();
 
             runLift();
@@ -106,8 +128,10 @@ public class UGoalTeleOp extends LinearOpMode {
             idle();
         }
 
+        // Reset the tilt angle of the shooting platform
+        robot.resetShooterPlatform();
         //Stop the thread
-        nav.stopOdometry();
+        robot.stopOdometry();
 
         // all done, please exit
 
@@ -152,7 +176,7 @@ public class UGoalTeleOp extends LinearOpMode {
     public void autodrive() {
         if (autoDriving) {
             telemetry.addData("Driving Towards", "X %2.2f | Y %2.2f | Angle %3.2f", xpos, ypos, tpos);
-            double distance = nav.goTowardsPosition(xpos, ypos, MecabotMove.DRIVE_SPEED_DEFAULT, true);
+            double distance = robot.goTowardsPosition(xpos, ypos, MecabotMove.DRIVE_SPEED_DEFAULT, true);
             if (distance < MecabotMove.DIST_MARGIN) { // we have reached
                 autoDriving = false;
             }
@@ -210,17 +234,17 @@ public class UGoalTeleOp extends LinearOpMode {
             turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
 
             robot.driveTank(power, turn);
-            telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
+            //telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
         }
     }
-    public void shoot(){
-        // Toggle the launcher motor when A is pressed
+    public void shootRings(){
+       // Toggle the ring shooter flywheel motor when A is pressed
         if (gamepad2.a) {
-            if (robot.isLauncherMotorRunning()) {
-                robot.stopLauncherMotor();
+            if (robot.isShooterFlywheelRunning()) {
+                robot.stopShooterFlywheel();
             }
             else {
-                robot.runLauncherMotor();
+                robot.runShooterFlywheel();
             }
         }
 
@@ -229,14 +253,20 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.shootRing();
 
         }
+
         //auto aim for High Goal
-        if (gamepad2.y) {
-            robot.tiltLaunchPlatform(FieldUGoal.HIGH_GOAL_HEIGHT);
+        if (gamepad2.x) {
+            double heading = robot.calculateRobotHeadingToShoot(globalPosition.getXinches(), globalPosition.getYinches(), FieldUGoal.GOALX, FieldUGoal.GOALY);
+            robot.odometryRotateToHeading(heading, 0.5, 5, true);
+            telemetry.addData("Rotate to Target ", "%2.2f", Math.toDegrees(heading));
+
+            robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         }
 
         //auto aim for Powershot
-        if (gamepad2.x) {
-            robot.tiltLaunchPlatform(FieldUGoal.POWER_SHOT_HEIGHT);
+        // Assumption that human driver will set robot heading, we just need to shoot assuming power shot is straight ahead
+        if (gamepad2.y) {
+            robot.tiltShooterPlatform(FieldUGoal.GOALX, globalPosition.getYinches(), FieldUGoal.POWER_SHOT_HEIGHT);
         }
     }
 
@@ -256,7 +286,7 @@ public class UGoalTeleOp extends LinearOpMode {
         // scale the range to 0.30 <= abs(power) <= 1.0 and preserve the sign
         //power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
         robot.runIntake(power);
-        telemetry.addData("Intake power ", "%.2f", power);
+        //telemetry.addData("Intake power ", "%.2f", power);
     }
 
     public void wobblePickup() {
@@ -277,7 +307,7 @@ public class UGoalTeleOp extends LinearOpMode {
         // scale the range to 0.0 <= abs(power) <= 0.3 and preserve the sign
         power = Math.signum(power) * (0.3 * power * power);
         robot.wobbleFingerArm.setPower(power);
-        telemetry.addData("Wobble Arm ", "power %.2f | pos %d", power, robot.wobbleFingerArm.getCurrentPosition());
+        //telemetry.addData("Wobble Arm ", "power %.2f | pos %d", power, robot.wobbleFingerArm.getCurrentPosition());
     }
 
     // lift for the claw putting loaded rings onto the wobble goal, right side

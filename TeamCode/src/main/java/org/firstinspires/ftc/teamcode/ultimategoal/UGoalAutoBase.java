@@ -4,16 +4,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Func;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
-
-import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
 /**
  * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
@@ -122,7 +116,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         int count = detectRingStackCount();
         stopRingStackDetection();
         robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
-        robot.runLauncherMotor();
+        robot.runShooterFlywheel();
         // Start doing the tasks for points
         // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
 
@@ -130,7 +124,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // goShoot3Powershot();
         //Uncomment if we are going for Highgoal because powershot wasn't accurate
         // goShootHighGoal();
-        robot.stopLauncherMotor();
+        robot.stopShooterFlywheel();
         deliverWobble(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         //if we are blue, reverse direction to just drive backward to the launch line instead of turning
@@ -245,22 +239,22 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     }
     //Power shot 1 is furthest power shot from center
     public void shootPowerShot1(){
-        robot.tiltLaunchPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_1_Y), FieldUGoal.POWER_SHOT_HEIGHT);
+        robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_1_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
     //Power shot 2 is in the middle
     public void shootPowerShot2(){
-        robot.tiltLaunchPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_2_Y), FieldUGoal.POWER_SHOT_HEIGHT);
+        robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_2_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
     //Power shot 3 is closest to center
     public void shootPowerShot3(){
-        robot.tiltLaunchPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
+        robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
     //aim and shoot at the highgoal
     public void shootHighGoal(){
-        robot.tiltLaunchPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
+        robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         robot.shootRing();
     }
     //go to and shoot three rings into the high goal

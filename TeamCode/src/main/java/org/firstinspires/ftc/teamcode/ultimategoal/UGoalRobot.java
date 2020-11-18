@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
@@ -17,7 +19,8 @@ public class UGoalRobot extends MecabotMove {
     }
     //constants
     static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
-    static final double     PUSHER_REST_POSITION        = Servo.MAX_POSITION;
+    static final double     RING_PUSHER_IDLE_POSITION   = Servo.MAX_POSITION;
+    static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_OPEN          = 0.5; //middle to save time
     static final double     WOBBLE_CLAW_OPEN            = Servo.MAX_POSITION;
@@ -35,6 +38,22 @@ public class UGoalRobot extends MecabotMove {
     static final int        LIFT_BOTTOM                 = 0;
     static final int        LIFT_UP_RINGS_HEIGHT        = 0;
 
+    //Finals
+    static final double SHOOTER_FLYWHEEL_RUN = 1.0;
+    static final double SHOOTER_FLYWHEEL_STOP = 0.0;
+    static final double SHOOTER_OVAL_TICKS_PER_ROTATION = 2 * 1425.2f;  // goBilda 5202 series Yellow Jacket Planetary 50.9:1 gear ratio, 117 RPM motor, times 2:1 bevel gear ratio
+    static final double SHOOTER_TILT_ANGLE_MIN = 20.0f;
+    static final double SHOOTER_TILT_ANGLE_MAX = 45.0f;
+
+    // status variables
+    double shooterTiltAngleDesired = SHOOTER_TILT_ANGLE_MIN;
+    double shooterTiltAngleClipped = SHOOTER_TILT_ANGLE_MIN;
+    // MATH to convert platform tilt angle to rotation of oval supports under platform
+    // scales 25 degrees (range is 20-45 degrees) of shooter platform tilt to 180 degrees of oval rotation
+    double ovalRotationDegrees = 0.0f;
+    // Convertion of oval rotation (degrees) to motor encoder ticks
+    int ovalRotationTicks = 0;
+
     // Motors
     public DcMotor angleMotor = null;
     public DcMotor liftMotor = null;
@@ -42,20 +61,15 @@ public class UGoalRobot extends MecabotMove {
     public DcMotor wobbleFingerArm = null;
     // THis is a motor driven by Spark Mini controller which takes Servo PWM input
     // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
-    public DcMotorSimple launcherMotorSparkMini = null;
+    public DcMotorSimple flyWheelMotor = null;
 
     //Servos
-    public Servo launcherServo = null;
+    public Servo ringPusher = null;
     public Servo releaseIntake = null;
     //finger is for wobble pickup, claw is for putting rings on wobble
     public Servo wobbleFinger = null;
     public Servo wobbleClaw = null;
     public Servo wobbleClawArm = null;
-
-    //Finals
-    static final double LAUNCHER_MOTOR_RUN          = 1.0;
-    static final double LAUNCHER_MOTOR_STOP         = 0.0;
-    static final double ENCODER_TICKS_PER_ROTATION  = 537.6f; // goBilda 5202 series Yellow Jacket Planetary 19.2:1 gear ratio, 312 RPM
 
     // Initialization
     public void init(HardwareMap ahwMap) {
@@ -64,14 +78,14 @@ public class UGoalRobot extends MecabotMove {
         intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");
         wobbleFingerArm = ahwMap.get(DcMotor.class, "wobbleFingerArm");
         liftMotor = ahwMap.get(DcMotor.class, "liftMotor");
-        launcherMotorSparkMini = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
+        flyWheelMotor = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
 
         // direction depends on hardware installation
         angleMotor.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         liftMotor.setDirection(DcMotor.Direction.REVERSE);
         wobbleFingerArm.setDirection(DcMotor.Direction.REVERSE);
-        launcherMotorSparkMini.setDirection(DcMotor.Direction.REVERSE);
+        flyWheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
         angleMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -87,14 +101,14 @@ public class UGoalRobot extends MecabotMove {
         wobbleFinger = ahwMap.get(Servo.class, "wobbleFinger");
         wobbleClaw = ahwMap.get(Servo.class, "wobbleClaw");
         wobbleClawArm = ahwMap.get(Servo.class, "wobbleClawArm");
-        launcherServo = ahwMap.get(Servo.class, "launcherServo");
+        ringPusher = ahwMap.get(Servo.class, "launcherServo");
 
         // releaseIntake should NOT be initialized to any specific position.
         // we want to be able to initialize robot regardless whether intake is lifted up or let down
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
         wobbleClaw.setPosition(WOBBLE_CLAW_OPEN);
         wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_INSIDE);
-        launcherServo.setPosition(PUSHER_REST_POSITION);
+        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
     }
 
 
@@ -187,99 +201,117 @@ public class UGoalRobot extends MecabotMove {
         liftMotor.setPower(0);
     }
 
-    public double distanceToShoot(double robotX, double robotY) {
-
-        double targetX = 72;
-        double targetY = -36;
-
-        double xDiff = targetX - robotX;
-        double yDiff = targetY - robotY;
-
-        return Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2));
-    }
     //only for autonomous, for teleop use function that doens't call this
     // This assumes blue, for red use flip4Red when calling
-    // This method gives the angel from the robot to the goal
-    public double robotAngleToShoot(double x, double y, double targetX, double targetY) {
-        double robotX = x;
-        double robotY = y;
-
+    // This method gives the angle from the robot to the goal or powershot target in Radians
+    public double calculateRobotHeadingToShoot(double robotX, double robotY, double targetX, double targetY) {
 
         double xDiff = targetX - robotX;
         double yDiff = targetY - robotY;
-
 
         return Math.atan2(xDiff, yDiff);
     }
-    //returns angle that launch platform needs to be tilted to aim at the target
-    public double launcherAngleToShoot(double x, double y, double targetHeight) {
-        double xDist = distanceToShoot(x, y); //Distance on the ground
-        double yDist = targetHeight; // HEIGHT of the goal
 
-        return Math.atan(yDist/xDist);
+    /**
+     * Calculates and Returns the shooter platform title angle in degrees, to aim at the target
+     *
+     * @param targetX   X coordinate of target location
+     * @param targetY   Y coordinate of target location
+     * @param targetHeight  Height of target from the field floor
+     * @return          Shooter Platform Tilt Angle in Degrees
+     */
+    public double calculateShooterPlatformTiltAngle(double targetX, double targetY, double targetHeight) {
+
+        double xDiff = targetX - globalPosition.getXinches();
+        double yDiff = targetY - globalPosition.getYinches();
+        double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
+
+        double angleRad = Math.atan(targetHeight/distance);
+        return Math.toDegrees(angleRad);
     }
 
     /**
-     * This method allows Robot to shoot from any position on the field, and tilt the launch platform accordingly.
-     * First we rotate the robot heading in the direction of the target and then we tilt the launch platform
-     * Also see the overloaded method below which assumes that the robot is already facing the target straight ahead
+     * This method allows Robot to shoot from any position on the field, and tilt the shooter platform accordingly.
      *
-     * @param targetX       target X co-ordinate on the field
-     * @param targetY       target y co-ordinate on the field
-     * @param targetHeight  target height from the field floor
+     * @param targetX   X coordinate of target location
+     * @param targetY   Y coordinate of target location
+     * @param targetHeight  Height of target from the field floor
      */
-    public void tiltLaunchPlatform(double targetX, double targetY, double targetHeight) {
-
-        double heading = robotAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetX, targetY);
-        odometryRotateToHeading(heading, 0.5, 5, true);
-        tiltLaunchPlatform(targetHeight);
+    public void tiltShooterPlatform(double targetX, double targetY, double targetHeight) {
+        tiltShooterPlatform( calculateShooterPlatformTiltAngle(targetX, targetY, targetHeight) );
     }
 
     /**
-     * This method allows Robot to shoot from a position directly in front of the target, and tilt the launch platform accordingly.
-     * Therefore we do NOT rotate the robot heading and simply tilt the launch platform
-     * Also see the overloaded method above which rotates the robot heading
+     * This method allows Robot to shoot from any position on the field, and tilt the shooter platform accordingly.
      *
-     * @param targetHeight  target height from the field floor
+     * @param tiltAngle     The angle in degrees, at which to tilt the shooting platform
      */
-    public void tiltLaunchPlatform(double targetHeight) {
+    public void tiltShooterPlatform(double tiltAngle) {
 
-        double launcherAngle = launcherAngleToShoot(globalPosition.getXinches(), globalPosition.getYinches(), targetHeight);
+        shooterTiltAngleDesired = tiltAngle;    // record for telemetry printout
 
-        // MATH to covert angle to rotation of oval things under launcher
-        double ovalRotation = (launcherAngle*FieldUGoal.CONVERT_RADIANS_TO_DEGREES - 20) * 7.2; // 7.2 scales 25 to 180 (range is 20-45 transformed to 0-180)
+        shooterTiltAngleClipped = Range.clip(shooterTiltAngleDesired, SHOOTER_TILT_ANGLE_MIN, SHOOTER_TILT_ANGLE_MAX);
 
-        // Convertion of rotation to encoder ticks
-        double ovalRotationTicks = ENCODER_TICKS_PER_ROTATION / ovalRotation;
+        // MATH to convert platform tilt angle to rotation of oval supports under platform
+        // scales 25 degrees (range is 20-45 degrees) of shooter platform movement to 180 degrees of oval rotation
+        ovalRotationDegrees = (shooterTiltAngleClipped - SHOOTER_TILT_ANGLE_MIN) * 180 / (SHOOTER_TILT_ANGLE_MAX - SHOOTER_TILT_ANGLE_MIN);
 
-        // Encoder movement for launcher motor (not drivetrain encoder methods)
-        angleMotor.setTargetPosition((int) ovalRotationTicks);
-        angleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        // Convertion of oval rotation (degrees) to motor encoder ticks
+        ovalRotationTicks = (int) ((SHOOTER_OVAL_TICKS_PER_ROTATION * ovalRotationDegrees) / 360);
+
+        // decide direction of motor depending on current encoder position relative to target ovalRotationTicks
+        // positive power values applied if current positoin pos is smaller than target and pos increments to reach target
+        // negative power values applied if current position is greater than target an pos decrements to reach target
+        int pos = leftFrontDrive.getCurrentPosition();
+        double signum = Math.signum(ovalRotationTicks - pos);
+        angleMotor.setPower(signum * DRIVE_SPEED_SLOW);
+
+        ElapsedTime runTime = new ElapsedTime();
+        // stop when the sign changes of (difference between target and current position)
+        while (((signum * (ovalRotationTicks - pos)) > 0) && (runTime.seconds() < 2.0)){
+            pos = leftFrontDrive.getCurrentPosition();
+            myOpMode.telemetry.addLine("Shooter ")
+                    .addData("Tilt", "%2.2f[%2.2f]", shooterTiltAngleClipped,shooterTiltAngleDesired)
+                    .addData("Oval", "%2.2f",ovalRotationDegrees)
+                    .addData("TPos", "%3d", ovalRotationTicks).addData("CPos", "%3d", pos);
+            myOpMode.telemetry.update();
+        }
+        angleMotor.setPower(0.0);
     }
 
-    public void runLauncherMotor() {
-        launcherMotorSparkMini.setPower(LAUNCHER_MOTOR_RUN);
+    /**
+     * This method resets the shooter platform to its resting position
+     */
+    public void resetShooterPlatform() {
+        tiltShooterPlatform(SHOOTER_TILT_ANGLE_MIN);
+        myOpMode.telemetry.addData("resetShooterPlatform()", "called");
+        myOpMode.telemetry.update();
+        myOpMode.sleep(5000);
     }
 
-    public void stopLauncherMotor() {
-        launcherMotorSparkMini.setPower(LAUNCHER_MOTOR_STOP);
+    public void runShooterFlywheel() {
+        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_RUN);
     }
 
-    public boolean isLauncherMotorRunning() {
-        return (launcherMotorSparkMini.getPower() != LAUNCHER_MOTOR_STOP);
+    public void stopShooterFlywheel() {
+        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_STOP);
+    }
+
+    public boolean isShooterFlywheelRunning() {
+        return (flyWheelMotor.getPower() != SHOOTER_FLYWHEEL_STOP);
     }
 
     public void shootRing() {
-        launcherServo.setPosition(Servo.MIN_POSITION);
+        ringPusher.setPosition(RING_PUSHER_SHOOT_POSITION);
         myOpMode.sleep(500);
-        launcherServo.setPosition(Servo.MAX_POSITION);
+        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
     }
 
     /**
      * Move the ring pusher arm to its default resting position (not pushing the ring just yet)
      */
     public void loadRing() {
-        launcherServo.setPosition(Servo.MAX_POSITION);
+        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
     }
 
     public void releaseIntake(){
