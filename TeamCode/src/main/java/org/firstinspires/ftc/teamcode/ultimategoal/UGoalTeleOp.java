@@ -122,6 +122,8 @@ public class UGoalTeleOp extends LinearOpMode {
             intake();
             shootRings();
             wobblePickup();
+            //calibration methods
+            //runPickupWobble();
 
             runLift();
             telemetry.update();
@@ -287,6 +289,15 @@ public class UGoalTeleOp extends LinearOpMode {
         //power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
         robot.runIntake(power);
         //telemetry.addData("Intake power ", "%.2f", power);
+    }
+
+    //calibration method, remove later
+    public void runPickupWobble(){
+        if (gamepad2.dpad_up) {
+            robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
+        }
+        // no else because pickupWobble already resets by itself
+
     }
 
     public void wobblePickup() {
