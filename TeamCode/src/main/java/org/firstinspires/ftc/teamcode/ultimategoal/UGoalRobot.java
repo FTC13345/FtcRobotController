@@ -24,20 +24,19 @@ public class UGoalRobot extends MecabotMove {
     static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_OPEN          = 0.5; //middle to save time
-    static final double     WOBBLE_CLAW_OPEN            = Servo.MAX_POSITION;
-    static final double     WOBBLE_CLAW_CLOSED          = 0;//CHANGE WITH TESTING
-    static final double     WOBBLE_CLAW_ARM_INSIDE      = Servo.MIN_POSITION;//needs to be 180 degrees
-    static final double     WOBBLE_CLAW_ARM_OUTSIDE     = 0;// 0 degrees
-    static final int        ENCODER_TICKS_PER_REVOLUTION        = 288;
+    static final double     LIFT_CLAW_OPEN              = Servo.MAX_POSITION;
+    static final double     LIFT_CLAW_CLOSED            = Servo.MIN_POSITION;
+    static final double     LIFT_ARM_INSIDE             = Servo.MIN_POSITION;
+    static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
-    static final int        FINGER_ARM_HORIZONTAL       = ENCODER_TICKS_PER_REVOLUTION/2;
-    static final int        FINGER_ARM_UP               = ENCODER_TICKS_PER_REVOLUTION/4;
-    static final int        FINGER_ARM_DOWN             = 0;
+    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;
+    static final int        WOBBLE_ARM_HORIZONTAL       = WOBBLE_ARM_TICKS_PER_REVOLUTION /4;
+    static final int        WOBBLE_ARM_UP               = WOBBLE_ARM_TICKS_PER_REVOLUTION /2;
+    static final int        WOBBLE_ARM_DOWN             = 0;
 
-    //*TODO FIND LIFT TOP AND BOTTOM VALUES, AND TEST FOR WOBBLE RINGS DISTANCE
-    static final int        LIFT_TOP                    = 0;
-    static final int        LIFT_BOTTOM                 = 0;
-    static final int        LIFT_UP_RINGS_HEIGHT        = 0;
+    static final int        LIFT_TOP                    = 320;
+    static final int        LIFT_BOTTOM                 = 10;
+    static final int        LIFT_UP_RINGS_HEIGHT        = LIFT_TOP;
 
     //Finals
     static final double SHOOTER_FLYWHEEL_RUN = 1.0;
@@ -59,7 +58,7 @@ public class UGoalRobot extends MecabotMove {
     public DcMotor angleMotor = null;
     public DcMotor liftMotor = null;
     public DcMotor intakeMotor = null;
-    public DcMotor wobbleFingerArm = null;
+    public DcMotor wobblePickupArm = null;
     // THis is a motor driven by Spark Mini controller which takes Servo PWM input
     // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
     public DcMotorSimple flyWheelMotor = null;
@@ -70,50 +69,130 @@ public class UGoalRobot extends MecabotMove {
     public CRServo intakeServo = null;
     //finger is for wobble pickup, claw is for putting rings on wobble
     public Servo wobbleFinger = null;
-    public Servo wobbleClaw = null;
-    public Servo wobbleClawArm = null;
+    public Servo liftClaw = null;
+    public Servo liftArm = null;
 
     // Initialization
     public void init(HardwareMap ahwMap) {
 
         angleMotor = ahwMap.get(DcMotor.class, "angleMotor");
         intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");
-        wobbleFingerArm = ahwMap.get(DcMotor.class, "wobbleFingerArm");
+        wobblePickupArm = ahwMap.get(DcMotor.class, "wobbleFingerArm");
         liftMotor = ahwMap.get(DcMotor.class, "liftMotor");
         flyWheelMotor = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
 
         // direction depends on hardware installation
         angleMotor.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
-        liftMotor.setDirection(DcMotor.Direction.REVERSE);
-        wobbleFingerArm.setDirection(DcMotor.Direction.REVERSE);
+        liftMotor.setDirection(DcMotor.Direction.FORWARD);
+        wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
         flyWheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
         angleMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        wobbleFingerArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         angleMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        wobbleFingerArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        wobblePickupArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         liftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         releaseIntake = ahwMap.get(Servo.class, "releaseIntake");
         wobbleFinger = ahwMap.get(Servo.class, "wobbleFinger");
-        wobbleClaw = ahwMap.get(Servo.class, "wobbleClaw");
-        wobbleClawArm = ahwMap.get(Servo.class, "wobbleClawArm");
+        liftClaw = ahwMap.get(Servo.class, "wobbleClaw");
+        liftArm = ahwMap.get(Servo.class, "wobbleClawArm");
         ringPusher = ahwMap.get(Servo.class, "launcherServo");
         intakeServo = ahwMap.get(CRServo.class, "intakeServo");
 
         // releaseIntake should NOT be initialized to any specific position.
         // we want to be able to initialize robot regardless whether intake is lifted up or let down
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
-        wobbleClaw.setPosition(WOBBLE_CLAW_OPEN);
-        wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_INSIDE);
+        liftClaw.setPosition(LIFT_CLAW_OPEN);
+        liftArm.setPosition(LIFT_ARM_INSIDE);
+        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
+        intakeServo.setDirection(CRServo.Direction.REVERSE);
+    }
+
+    /*
+     * Ring Intake methods
+     */
+    public void releaseIntake(){
+        releaseIntake.setPosition(INTAKE_DOWN_ANGLE);
+    }
+
+    public void runIntake(double power) {
+        intakeMotor.setPower(power);
+        intakeServo.setPower(power);
+    }
+
+    public void stopIntake(){
+        intakeServo.setPower(0);
+        intakeMotor.setPower(0);
+    }
+
+    /**
+     * Ring Shooter Flywheel and Ring Pusher Arm methods
+     */
+    public void runShooterFlywheel() {
+        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_RUN);
+    }
+
+    public void stopShooterFlywheel() {
+        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_STOP);
+    }
+
+    public boolean isShooterFlywheelRunning() {
+        return (flyWheelMotor.getPower() != SHOOTER_FLYWHEEL_STOP);
+    }
+
+    public void shootRing() {
+        ringPusher.setPosition(RING_PUSHER_SHOOT_POSITION);
+        myOpMode.sleep(500);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
     }
 
+    public void loadRing() {
+        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
+    }
+
+    /*
+     * Lift, arm and claw operation methods
+     */
+    public int getLiftCurrentPosition() {
+        return liftMotor.getCurrentPosition();
+    }
+
+    public void stopLift() {
+        //stop and brake lift
+        liftMotor.setPower(MOTOR_STOP_SPEED);
+        // Get out of the RunMode RUN_TO_POSITION, so manual player control is possible
+        liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+    public void moveLift(int position) {
+        position = Range.clip(position, LIFT_BOTTOM, LIFT_TOP);
+        liftMotor.setTargetPosition(position);
+        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        liftMotor.setPower(DRIVE_SPEED_DEFAULT);
+    }
+
+    public void rotateClawInside() {
+        liftArm.setPosition(LIFT_ARM_INSIDE);
+    }
+    public void rotateClawOutside() {
+        liftArm.setPosition(LIFT_ARM_OUTSIDE);
+    }
+    public void moveClawToPosition(double position) {
+        position = Range.clip(position, LIFT_ARM_INSIDE, LIFT_ARM_OUTSIDE);
+        liftArm.setPosition(position);
+    }
+
+    public void grabRingsWithClaw() {
+        liftClaw.setPosition(LIFT_CLAW_CLOSED);
+    }
+    public void releaseRingsWithClaw() {
+        liftClaw.setPosition(LIFT_CLAW_OPEN);
+    }
 
 
     // This method unfolds the finger arm and grabs the wobble
@@ -122,19 +201,19 @@ public class UGoalRobot extends MecabotMove {
     // Alternative design is for hardware to allow preloading wobble inside robot
     public void pickUpWobble(double speed){//at beginning of auto or for teleop
         //set to run to position for autonomous
-        wobbleFingerArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         //finger arm motor 0 position will be straight down, folded inside the robot when we put the robot on start line
         //open to get ready to pickup
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
         //wobble arm motor needs to unfold 90 degrees to horizontal position
-        wobbleFingerArm.setTargetPosition(FINGER_ARM_HORIZONTAL);
-        wobbleFingerArm.setPower(speed);
+        wobblePickupArm.setTargetPosition(WOBBLE_ARM_HORIZONTAL);
+        wobblePickupArm.setPower(speed);
         //grab wobble
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
         //bring the wobble arm up 180 degrees all the way up so we don't drag it
-        wobbleFingerArm.setTargetPosition(FINGER_ARM_UP);
-        wobbleFingerArm.setPower(speed);
+        wobblePickupArm.setTargetPosition(WOBBLE_ARM_UP);
+        wobblePickupArm.setPower(speed);
     }
 
 
@@ -144,22 +223,19 @@ public class UGoalRobot extends MecabotMove {
     // speed determines how fast the finger arm motor moves
     public void placeWobble(double speed) {
         //set to run to position for autonomous
-        wobbleFingerArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         //brings wobble arm down to 90 degrees
-        wobbleFingerArm.setTargetPosition(FINGER_ARM_HORIZONTAL);
-        wobbleFingerArm.setPower(speed);
+        wobblePickupArm.setTargetPosition(WOBBLE_ARM_HORIZONTAL);
+        wobblePickupArm.setPower(speed);
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
 
         //reset and put Finger Arm back into the robot out of the way
-        wobbleFingerArm.setTargetPosition(FINGER_ARM_DOWN);
-        wobbleFingerArm.setPower(speed);
+        wobblePickupArm.setTargetPosition(WOBBLE_ARM_DOWN);
+        wobblePickupArm.setPower(speed);
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
     }
-    //picks up stored rings in robot to put on wobble goal in the endgame
-    public void grabRingsWithClaw(){
-        wobbleClaw.setPosition(WOBBLE_CLAW_CLOSED);
-    }
+
     //used to lift claw with rings out of robot onto wobble goal
     //positive power is (up/down?)
     //hard stop needs to be programmed to prevent breaking string
@@ -191,17 +267,12 @@ public class UGoalRobot extends MecabotMove {
         //This gives room to swing out claw and drop the rings onto wobble
         wobbleLift(LIFT_UP_RINGS_HEIGHT);
         //rotates claw outside to put it outside the robot next to wobble goal
-        wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_OUTSIDE);
-        wobbleClaw.setPosition(WOBBLE_CLAW_OPEN);
+        liftArm.setPosition(LIFT_ARM_OUTSIDE);
+        liftClaw.setPosition(LIFT_CLAW_OPEN);
         //reset, lower lift and put claw back into robot out of the way
         wobbleLift(LIFT_BOTTOM);
-        wobbleClaw.setPosition(WOBBLE_CLAW_CLOSED);
-        wobbleClawArm.setPosition(WOBBLE_CLAW_ARM_INSIDE);
-    }
-
-    public void stopLift(){
-        //stop and brake lift
-        liftMotor.setPower(0);
+        liftClaw.setPosition(LIFT_CLAW_CLOSED);
+        liftArm.setPosition(LIFT_ARM_INSIDE);
     }
 
     //only for autonomous, for teleop use function that doens't call this
@@ -290,45 +361,6 @@ public class UGoalRobot extends MecabotMove {
         myOpMode.telemetry.addData("resetShooterPlatform()", "called");
         myOpMode.telemetry.update();
         myOpMode.sleep(5000);
-    }
-
-    public void runShooterFlywheel() {
-        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_RUN);
-    }
-
-    public void stopShooterFlywheel() {
-        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_STOP);
-    }
-
-    public boolean isShooterFlywheelRunning() {
-        return (flyWheelMotor.getPower() != SHOOTER_FLYWHEEL_STOP);
-    }
-
-    public void shootRing() {
-        ringPusher.setPosition(RING_PUSHER_SHOOT_POSITION);
-        myOpMode.sleep(500);
-        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
-    }
-
-    /**
-     * Move the ring pusher arm to its default resting position (not pushing the ring just yet)
-     */
-    public void loadRing() {
-        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
-    }
-
-    public void releaseIntake(){
-        releaseIntake.setPosition(INTAKE_DOWN_ANGLE);
-    }
-
-    public void runIntake(double power) {
-        intakeMotor.setPower(power);
-        intakeServo.setPower(power);
-    }
-
-    public void stopIntake(){
-        intakeServo.setPower(0);
-        intakeMotor.setPower(0);
     }
 }
 
