@@ -155,7 +155,6 @@ public class Mecabot {
 
         // Set all motors to zero power
         stopDriving();
-        resetDriveEncoder();
         // Set all drivetrain motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
         setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -251,10 +250,7 @@ public class Mecabot {
 
     }
     public void resetDriveEncoder() {
-        leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
 
     public void setDrivePower(double speed) {
