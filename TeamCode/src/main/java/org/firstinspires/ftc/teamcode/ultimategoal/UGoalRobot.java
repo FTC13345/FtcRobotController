@@ -18,6 +18,14 @@ public class UGoalRobot extends MecabotMove {
         super(ahwMap, opMode);
         this.init(ahwMap);
     }
+    // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
+    // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
+    // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
+    // actually position on the field to the right of the intended Target Y coordinate
+    static final double     ROBOT_SHOOTING_CURVE_OFFSET = 5.5; // inches
+    // Tuning Tuning: Compensation for robot behavior, the platform tilt calculations need few degrees uplift
+    // It may be due to gravity or physical platform tilt does not match mechanical design assumption
+    static final double     ROBOT_PLATFORM_TILT_OFFSET  = 8.0;  // degrees
     //constants
     static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
     static final double     RING_PUSHER_IDLE_POSITION   = Servo.MAX_POSITION;
@@ -275,15 +283,29 @@ public class UGoalRobot extends MecabotMove {
         liftArm.setPosition(LIFT_ARM_INSIDE);
     }
 
-    //only for autonomous, for teleop use function that doens't call this
     // This assumes blue, for red use flip4Red when calling
-    // This method gives the angle from the robot to the goal or powershot target in Radians
-    public double calculateRobotHeadingToShoot(double robotX, double robotY, double targetX, double targetY) {
+    // This method gives the angle from the robot to the goal or powershot target in DEGREES
+    public double calculateRobotHeadingToShoot(double targetX, double targetY) {
+
+        double robotX = globalPosition.getXinches();
+        // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
+        // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
+        // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
+        // actually position on the field to the right of the intended Target Y coordinate
+        double robotY = globalPosition.getYinches() + ROBOT_SHOOTING_CURVE_OFFSET;
+        // This code only works reliably when robot Orientation/Heading is zero, i.e. its facing +ve X-Axis direction
+        // because the compensation of ROBOT_SHOOTING_CURVE_OFFSET only in Y-axis may not be accurate at other headings
 
         double xDiff = targetX - robotX;
         double yDiff = targetY - robotY;
-
-        return Math.atan2(xDiff, yDiff);
+        double heading = Math.atan2(yDiff, xDiff);
+//        // Uncomment below for Debug printout only
+//        myOpMode.telemetry.addLine("Heading to Shoot ")
+//                .addData("xDiff", "%2.2f", xDiff)
+//                .addData("yDiff", "%2.2f", yDiff)
+//                .addData("atan2", "%2.2f", heading)
+//                .addData("deg", "%2.2f", Math.toDegrees(heading));
+        return Math.toDegrees(heading);
     }
 
     /**
@@ -312,7 +334,10 @@ public class UGoalRobot extends MecabotMove {
      * @param targetHeight  Height of target from the field floor
      */
     public void tiltShooterPlatform(double targetX, double targetY, double targetHeight) {
-        tiltShooterPlatform( calculateShooterPlatformTiltAngle(targetX, targetY, targetHeight) );
+        double angle = calculateShooterPlatformTiltAngle(targetX, targetY, targetHeight);
+        // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
+        // It may be due to gravity or physical platform tilt does not match mechanical design assumption
+        tiltShooterPlatform( angle + ROBOT_PLATFORM_TILT_OFFSET );
     }
 
     /**
@@ -322,7 +347,7 @@ public class UGoalRobot extends MecabotMove {
      */
     public void tiltShooterPlatform(double tiltAngle) {
 
-        shooterTiltAngleDesired = tiltAngle;    // record for telemetry printout
+        shooterTiltAngleDesired = tiltAngle;    // record for telemetry printout, do not delete this line
 
         shooterTiltAngleClipped = Range.clip(shooterTiltAngleDesired, SHOOTER_TILT_ANGLE_MIN, SHOOTER_TILT_ANGLE_MAX);
 
@@ -333,24 +358,42 @@ public class UGoalRobot extends MecabotMove {
         // Convertion of oval rotation (degrees) to motor encoder ticks
         ovalRotationTicks = (int) ((SHOOTER_OVAL_TICKS_PER_ROTATION * ovalRotationDegrees) / 360);
 
+        angleMotor.setTargetPosition(ovalRotationTicks);
+        angleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        angleMotor.setPower(DRIVE_SPEED_DEFAULT);
+
+        ElapsedTime runTime = new ElapsedTime();
+        while (angleMotor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < TIMEOUT_SHORT)){
+            myOpMode.sleep(50);
+        }
+        //myOpMode.telemetry.addData("Shooter Tilt ", "Angle=%.2f, pos=%d in %.2fs", tiltAngle, ovalRotationTicks, runTime.seconds());
+
+/*
+        // NOTE: The code block below is used for running motors WITHOUT_ENCODER and measuring the
+        // current position to determine when target position has been reached and motors should be stopped.
+        // The alternate code above using motor in RUN_TO_POSITION mode is superior
+
         // decide direction of motor depending on current encoder position relative to target ovalRotationTicks
         // positive power values applied if current positoin pos is smaller than target and pos increments to reach target
         // negative power values applied if current position is greater than target an pos decrements to reach target
-        int pos = leftFrontDrive.getCurrentPosition();
+        int pos = angleMotor.getCurrentPosition();
         double signum = Math.signum(ovalRotationTicks - pos);
         angleMotor.setPower(signum * DRIVE_SPEED_SLOW);
 
         ElapsedTime runTime = new ElapsedTime();
         // stop when the sign changes of (difference between target and current position)
         while (((signum * (ovalRotationTicks - pos)) > 0) && (runTime.seconds() < 2.0)){
-            pos = leftFrontDrive.getCurrentPosition();
+            pos = angleMotor.getCurrentPosition();
             myOpMode.telemetry.addLine("Shooter ")
                     .addData("Tilt", "%2.2f[%2.2f]", shooterTiltAngleClipped,shooterTiltAngleDesired)
                     .addData("Oval", "%2.2f",ovalRotationDegrees)
-                    .addData("TPos", "%3d", ovalRotationTicks).addData("CPos", "%3d", pos);
+                    .addData("TPos", "%3d", ovalRotationTicks)
+                    .addData("CPos", "%3d", pos);
             myOpMode.telemetry.update();
         }
+        // stop the motor, platform has reached the desired title angle
         angleMotor.setPower(0.0);
+*/
     }
 
     /**
@@ -360,7 +403,40 @@ public class UGoalRobot extends MecabotMove {
         tiltShooterPlatform(SHOOTER_TILT_ANGLE_MIN);
         myOpMode.telemetry.addData("resetShooterPlatform()", "called");
         myOpMode.telemetry.update();
-        myOpMode.sleep(5000);
+        myOpMode.sleep(1000);
+    }
+
+    public void driveToShootHighGoal() {
+        // drive to desired location
+        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET);
+        // rotate to face the goal squarely
+        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        // tilt platform for goal height
+        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
+    }
+    public void driveToShootPowerShot1() {
+        // drive to desired location
+        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        // rotate to face the goal squarely
+        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        // tilt platform for goal height
+        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+    }
+    public void driveToShootPowerShot2() {
+        // drive to desired location
+        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        // rotate to face the goal squarely
+        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        // tilt platform for goal height
+        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_2_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+    }
+    public void driveToShootPowerShot3() {
+        // drive to desired location
+        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        // rotate to face the goal squarely
+        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        // tilt platform for goal height
+        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_3_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }
 }
 

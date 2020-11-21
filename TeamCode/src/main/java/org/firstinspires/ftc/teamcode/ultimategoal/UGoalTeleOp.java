@@ -45,9 +45,9 @@ public class UGoalTeleOp extends LinearOpMode {
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN - FieldUGoal.ROBOT_RADIUS, FieldUGoal.ANGLE_POS_X_AXIS);
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         // Enable this temporarily for Shooter Platform Tilt debugging
-        // globalPosition.initGlobalPosition(FieldUGoal.BEHIND_LAUNCH_LINE, FieldUGoal.TILE_2_CENTER, 0.0);
+        globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
         robot.startOdometry();
 
         telemetry.addLine("Global Position ")
@@ -108,7 +108,7 @@ public class UGoalTeleOp extends LinearOpMode {
                 .addData("CPos", "%3d", new Func<Integer>() {
                     @Override
                     public Integer value() {
-                        return robot.leftFrontDrive.getCurrentPosition();
+                        return robot.angleMotor.getCurrentPosition();
                     }
                 });
 
@@ -149,13 +149,7 @@ public class UGoalTeleOp extends LinearOpMode {
         if ((gamepad2.start) && (gamepad2.right_bumper)) {
             bIgnoreLiftStops = true;
         }
-        // Toggle which face of the Robot is front for driving
-        if ((gamepad1.dpad_up) || (gamepad1.dpad_right)) {  // dpad_up or dpad_right means green INTAKE wheels is front of robot
-            robot.setDirectionForward();
-        } else if ((gamepad1.dpad_down) || (gamepad1.dpad_left)) {
-            robot.setDirectionReverse(); // dpad_down or dpad_left means REVERSE direction, ring shooter is front of robot
-        }
-        if ((gamepad1.x) && (!gamepad2.x)) {
+       if ((gamepad1.x) && (!gamepad2.x)) {
             xpos = globalPosition.getXinches();
             ypos = globalPosition.getYinches();
             tpos = globalPosition.getOrientationDegrees();
@@ -165,20 +159,29 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.setDirectionReverse();
             autoDriving = true;
         }
-        //update speedMultiplier
-        if (gamepad1.right_bumper) {
-            speedMultiplier = MecabotMove.DRIVE_SPEED_MAX;
-            robot.setFastBlue();
-            // as a dual action of this button stop autodriving
-            autoDriving = false;
+        if (gamepad1.start) {
+            // Toggle which face of the Robot is front for driving
+            if (gamepad1.right_bumper) {
+                robot.setDirectionForward();
+            } else if (gamepad1.left_bumper) {
+                robot.setDirectionReverse();
+            }
         }
-        else if (gamepad1.left_bumper) {
-            speedMultiplier = MecabotMove.DRIVE_SPEED_DEFAULT;
-            robot.setSlowBlue();
-            // as a dual action of this button stop autodriving
-            autoDriving = false;
+        else { // !gamepad1.start --> which means bumper buttons pressed alone
+            //update speedMultiplier for FAST or SLOW driving
+            if (gamepad1.right_bumper) {
+                speedMultiplier = MecabotMove.DRIVE_SPEED_MAX;
+                robot.setFastBlue();
+                // as a dual action of this button stop autodriving
+                autoDriving = false;
+            }
+            else if (gamepad1.left_bumper) {
+                speedMultiplier = MecabotMove.DRIVE_SPEED_DEFAULT;
+                robot.setSlowBlue();
+                // as a dual action of this button stop autodriving
+                autoDriving = false;
+            }
         }
-
     }
 
     public void autodrive() {
@@ -262,19 +265,42 @@ public class UGoalTeleOp extends LinearOpMode {
 
         }
 
+        if (gamepad1.a) {
+            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MIN);
+        }
+        if (gamepad1.b) {
+            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MAX);
+        }
         //auto aim for High Goal
         if (gamepad2.x) {
-            double heading = robot.calculateRobotHeadingToShoot(globalPosition.getXinches(), globalPosition.getYinches(), FieldUGoal.GOALX, FieldUGoal.GOALY);
-            robot.odometryRotateToHeading(heading, 0.5, 5, true);
-            telemetry.addData("Rotate to Target ", "%2.2f", Math.toDegrees(heading));
-
+//            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
+//            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
+//            robot.odometryRotateToHeading(targetAngle);
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         }
 
         //auto aim for Powershot
         // Assumption that human driver will set robot heading, we just need to shoot assuming power shot is straight ahead
         if (gamepad2.y) {
-            robot.tiltShooterPlatform(FieldUGoal.GOALX, globalPosition.getYinches(), FieldUGoal.POWER_SHOT_HEIGHT);
+//            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y);
+//            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
+//            robot.odometryRotateToHeading(targetAngle);
+            robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+        }
+
+        if (gamepad1.start) {
+            if (gamepad1.dpad_up) {
+                robot.driveToShootHighGoal();
+            }
+            if (gamepad1.dpad_left) {
+                robot.driveToShootPowerShot1();
+            }
+            if (gamepad1.dpad_down) {
+                robot.driveToShootPowerShot2();
+            }
+            if (gamepad1.dpad_right) {
+                robot.driveToShootPowerShot3();
+            }
         }
     }
 
@@ -295,15 +321,6 @@ public class UGoalTeleOp extends LinearOpMode {
         //power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
         robot.runIntake(power);
         //telemetry.addData("Intake power ", "%.2f", power);
-    }
-
-    //calibration method, remove later
-    public void runPickupWobble(){
-        if (gamepad2.dpad_up) {
-            robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
-        }
-        // no else because pickupWobble already resets by itself
-
     }
 
     public void wobblePickup() {

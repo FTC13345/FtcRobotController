@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 
+import org.firstinspires.ftc.teamcode.robot.Mecabot;
+
 /** Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
  *  X Axis is parallel to red alliance wall with positive values towards the tower goals and powershots
@@ -20,16 +22,16 @@ public class FieldUGoal {
 
 
     // field distances between objects
-    static final double     CONVERT_RADIANS_TO_DEGREES  = 180/Math.PI;
-    static final double     HALF_TAB                    = 0.75 / 2;
+    //static final double     HALF_TAB                    = 0.75 / 2;
     static final double     TILE_LENGTH                 = 23.5;
     static final double     TILE_WITHOUT_TABS           = 22.75;
     static final double     ROBOT_RADIUS                = 8.5;
     static final double     DISTANCE_BETWEEN_POWERSHOT  = 7.5;
-    static final double     TILE_1_FROM_ORIGIN          = HALF_TAB + TILE_WITHOUT_TABS;
+    static final double     ORIGIN                      = 0.0;  // applicable for both X-Axis and Y-Axis
+    static final double     TILE_1_FROM_ORIGIN          = ORIGIN + TILE_LENGTH;
     static final double     TILE_2_FROM_ORIGIN          = TILE_1_FROM_ORIGIN + TILE_LENGTH;
     static final double     TILE_3_FROM_ORIGIN          = TILE_2_FROM_ORIGIN + TILE_LENGTH;
-    static final double     TILE_1_CENTER               = HALF_TAB + (TILE_WITHOUT_TABS / 2);
+    static final double     TILE_1_CENTER               = TILE_LENGTH / 2;
     static final double     TILE_2_CENTER               = TILE_1_CENTER + TILE_LENGTH;
     static final double     TILE_3_CENTER               = TILE_2_CENTER + TILE_LENGTH;
     static final double     BEHIND_LAUNCH_LINE          = TILE_1_CENTER - ROBOT_RADIUS;
