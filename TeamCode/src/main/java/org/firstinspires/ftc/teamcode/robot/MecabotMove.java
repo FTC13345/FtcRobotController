@@ -6,8 +6,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+
+import java.util.Locale;
 
 
 public class MecabotMove extends Mecabot {
@@ -31,8 +37,9 @@ public class MecabotMove extends Mecabot {
     public static final double DRIVE_SPEED_DEFAULT = 0.6;
     public static final double DRIVE_SPEED_FAST    = 0.8;
     public static final double DRIVE_SPEED_MAX     = 1.0;
+    public static final double ROTATE_SPEED_MIN    = 0.15;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
-    public static final double ROTATE_SPEED_DEFAULT= 0.3;
+    public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.5;
     static final double DEFAULT_SPEED       = 0.6;  //default wheel speed, same as motor power
 
@@ -42,6 +49,7 @@ public class MecabotMove extends Mecabot {
     public static final double DIST_SLOWDOWN        = 16.0; // inches
     public static final double TIMEOUT_LONG         = 5.0; // seconds
     public static final double TIMEOUT_DEFAULT      = 3.0; // seconds
+    public static final double TIMEOUT_ROTATE       = 2.0; // seconds
     public static final double TIMEOUT_SHORT        = 1.5; // seconds
     public static final double TIMEOUT_QUICK        = 1.0; // seconds
 
@@ -83,6 +91,66 @@ public class MecabotMove extends Mecabot {
     }
 
     /**
+     * Rotate the robot to desired angle position using the built in gyro in IMU sensor onboard the REV expansion hub
+     * The angle is specified relative to the start position of the robot when the IMU is initialized
+     * and gyro angle is intialized to zero degrees.
+     *
+     * @param targetAngle   The desired target angle position in degrees. Positive value is counter clockwise from initial zero position
+     *                      Negative value is clock wise from initial zero. Angle value wraps around at 180 and -180 degrees.
+     * @param turnSpeed     The speed at which to drive the motors for the rotation. 0.0 < turnSpeed <= 1.0
+     */
+    public void gyroRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
+
+        // determine current angle of the robot
+        Orientation angles = robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double robotAngle = angles.firstAngle;
+        double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
+        double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
+
+        // The overshoot for even small gyro rotation is 0.05 to 0.07 degrees
+        // Within a margin of 0.2 degrees assume we are already facing the targetAngle heading
+        if (delta < 0.2) {
+            movementStatus = String.format(Locale.US,"Rotate: Already at desired Angle =%.2f", targetAngle);
+            return;
+        }
+
+        movementStatus = String.format(Locale.US,"Rotate To Angle =%.1f, Spd=%1.1f TO=%1.1f", targetAngle, turnSpeed, timeout);
+        ElapsedTime runtime = new ElapsedTime();
+        // do while the sign of delta remains unchanged
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0) && (runtime.seconds() < timeout)) {
+
+            // slow down exponentially for the last N degrees rotation remaining
+            if ((Math.abs(delta) < 10)) {
+                turnSpeed = (turnSpeed * delta * delta / 100);
+                if (turnSpeed < ROTATE_SPEED_MIN) {
+                    turnSpeed = ROTATE_SPEED_MIN;
+                }
+            }
+            // the sign of turnSpeed determines the direction of rotation of robot
+            robot.driveTank(0, turnSpeed * direction);
+            myOpMode.sleep(50); // allow some time for the motors to actuate
+            robotAngle = robot.imu.getAngularOrientation().firstAngle;
+            delta = MathFunctions.angleWrap(targetAngle - robotAngle);
+
+            myOpMode.telemetry.addLine("Gyro Rotate ")
+                    .addData("target", "%.2f", targetAngle)
+                    .addData("robot", "%.2f", robotAngle)
+                    .addData("delta", "%.2f", delta);
+            //myOpMode.telemetry.update();
+        }
+        robot.stopDriving();
+        movementStatus = String.format(Locale.US,"Rotated Angle=%.2f,Robot=%.2f,Spd=%1.2f in T=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
+    }
+
+    public void gyroRotateToHeading(double targetAngle, double turnSpeed) {
+        gyroRotateToHeading(targetAngle, turnSpeed, TIMEOUT_ROTATE);
+    }
+
+    public void gyroRotateToHeading(double targetAngle) {
+        gyroRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_ROTATE);
+    }
+
+    /**
      * Rotate the robot to desired angle position using the odometry position feedback
      *
      * @param targetAngle   The desired target angle position in degrees
@@ -90,46 +158,55 @@ public class MecabotMove extends Mecabot {
      */
     public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout, boolean slowDownAtEnd) {
 
-        ElapsedTime runtime = new ElapsedTime();
-
         // determine current angle of the robot
         double robotAngle = globalPosition.getOrientationDegrees();
         double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
-        double prev = delta;
-        double direction = (delta >= 0) ? 1.0 : -1.0; // positive angle requires CCW rotation, negative angle requires CW
+        double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
+        // The overshoot for even small gyro rotation is 0.05 to 0.07 degrees
+        // Within a margin of 0.2 degrees assume we are already facing the targetAngle heading
+        if (delta < 0.2) {
+            movementStatus = String.format(Locale.US,"Rotate: Already at desired Angle =%.2f", targetAngle);
+            return;
+        }
 
-        movementStatus = String.format("Rotate To Angle =%.1f, Spd=%1.1f TO=%1.1f", targetAngle, turnSpeed, timeout);
-        runtime.reset();
-        // while the sign of delta and prev is same (both +ve or both -ve) run loop
-        while (myOpMode.opModeIsActive() && runtime.seconds() < timeout && ((delta > 0) == (prev > 0))) {
+        movementStatus = String.format(Locale.US,"Rotate To Angle =%.2f, Spd=%1.2f TO=%1.2f", targetAngle, turnSpeed, timeout);
+        ElapsedTime runtime = new ElapsedTime();
+        // do while the sign of delta remains unchanged
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0) && (runtime.seconds() < timeout)) {
 
-            if (slowDownAtEnd && (Math.abs(delta) < 5)) { // slow down when last few degrees rotation remaining
-                turnSpeed = DRIVE_SPEED_MIN;
+            // slow down exponentially for the last N degrees rotation remaining
+            if ((Math.abs(delta) < 10)) {
+                turnSpeed = (turnSpeed * delta * delta / 100);
+                if (turnSpeed < ROTATE_SPEED_MIN) {
+                    turnSpeed = ROTATE_SPEED_MIN;
+                }
             }
             // the sign of turnSpeed determines the direction of rotation of robot
             robot.driveTank(0, turnSpeed * direction);
-
+            myOpMode.sleep(50); // allow some time for the motors to actuate
             robotAngle = globalPosition.getOrientationDegrees();
-            prev = delta;
             delta = MathFunctions.angleWrap(targetAngle - robotAngle);
 
-            myOpMode.telemetry.addData("Rotate", "Robot=%.2f, Rel Angle=%.2f", robotAngle, delta);
-            myOpMode.telemetry.update();
+            myOpMode.telemetry.addLine("Odom Rotate ")
+                    .addData("target", "%.2f", targetAngle)
+                    .addData("robot", "%.2f", robotAngle)
+                    .addData("delta", "%.2f", delta);
+            //myOpMode.telemetry.update();
         }
         robot.stopDriving();
-        movementStatus = String.format("Done To Angle=%.1f, Spd=%1.1f in T=%1.1f", targetAngle, turnSpeed, runtime.seconds());
-    }
-
-    public void odometryRotateToHeading(double targetAngle, boolean slowDownAtEnd) {
-        odometryRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_DEFAULT, slowDownAtEnd);
+        movementStatus = String.format(Locale.US,"Rotated Angle=%.2f,Robot=%.2f,Spd=%1.2f in T=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
     }
 
     public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
         odometryRotateToHeading(targetAngle, turnSpeed, timeout, true);
     }
 
+    public void odometryRotateToHeading(double targetAngle, double turnSpeed) {
+        odometryRotateToHeading(targetAngle, turnSpeed, TIMEOUT_ROTATE, true);
+    }
+
     public void odometryRotateToHeading(double targetAngle) {
-        odometryRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_DEFAULT, true);
+        odometryRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_ROTATE, true);
     }
 
     /**
@@ -148,7 +225,7 @@ public class MecabotMove extends Mecabot {
         double distance = 200; // greater than the diagonal length of the FTC field
         double previous;
 
-        movementStatus = String.format("GoToPos X=%3.2f, Y=%2.2f, Spd=%1.1f, TO=%1.1f", x, y, speed, timeout);
+        movementStatus = String.format(Locale.US,"GoToPos X=%3.2f, Y=%2.2f, Spd=%1.1f, TO=%1.1f", x, y, speed, timeout);
         speed = Range.clip(speed, DRIVE_SPEED_MIN, DRIVE_SPEED_MAX);
         runtime.reset();
         // we consider reaching the destination (x,y) position if less than DIST_MARGIN inches away OR
@@ -164,7 +241,7 @@ public class MecabotMove extends Mecabot {
             }
         }
         robot.stopDriving();
-        movementStatus = String.format("Reached X=%3.2f, Y=%2.2f, Spd=%1.1f in T=%1.1f", x, y, speed, runtime.seconds());
+        movementStatus = String.format(Locale.US,"Reached X=%3.2f, Y=%2.2f, Spd=%1.1f in T=%1.1f", x, y, speed, runtime.seconds());
     }
 
     public void goToPosition(double x, double y, boolean slowDownAtEnd) {
@@ -351,7 +428,7 @@ public class MecabotMove extends Mecabot {
         double distance = 0;
         ElapsedTime runtime = new ElapsedTime();
 
-        movementStatus = String.format("Dist %.1f in, from (%.1f, %.1f) S=%1.1f TO=%1.1f", inches, origX, origY, speed, timeout);
+        movementStatus = String.format(Locale.US,"Dist %.1f in, from (%.1f, %.1f) S=%1.1f TO=%1.1f", inches, origX, origY, speed, timeout);
 
         runtime.reset();
         while (myOpMode.opModeIsActive() && (runtime.seconds() < timeout) && (distance < Math.abs(inches))) {
@@ -375,7 +452,7 @@ public class MecabotMove extends Mecabot {
         }
         // Reached within threshold of target distance.
         robot.stopDriving();
-        movementStatus = String.format("Done D=%.1f in, from (%.1f, %.1f) S=%1.1f in T=%1.1f", distance, origX, origY, speed, runtime.seconds());
+        movementStatus = String.format(Locale.US,"Done D=%.1f in, from (%.1f, %.1f) S=%1.1f in T=%1.1f", distance, origX, origY, speed, runtime.seconds());
 
     }
 
