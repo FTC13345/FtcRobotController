@@ -151,7 +151,7 @@ public class Mecabot {
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // Intake motors and servos
 
-
+        initIMU();
 
         // Set all motors to zero power
         stopDriving();

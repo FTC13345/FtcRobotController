@@ -37,7 +37,7 @@ public class MecabotMove extends Mecabot {
     public static final double DRIVE_SPEED_DEFAULT = 0.6;
     public static final double DRIVE_SPEED_FAST    = 0.8;
     public static final double DRIVE_SPEED_MAX     = 1.0;
-    public static final double ROTATE_SPEED_MIN    = 0.15;
+    public static final double ROTATE_SPEED_MIN    = 0.10;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.5;
@@ -106,48 +106,31 @@ public class MecabotMove extends Mecabot {
         double robotAngle = angles.firstAngle;
         double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
+        turnSpeed = Math.abs(turnSpeed);
 
-        // The overshoot for even small gyro rotation is 0.05 to 0.07 degrees
-        // Within a margin of 0.2 degrees assume we are already facing the targetAngle heading
-        if (delta < 0.2) {
-            movementStatus = String.format(Locale.US,"Rotate: Already at desired Angle =%.2f", targetAngle);
-            return;
-        }
-
-        movementStatus = String.format(Locale.US,"Rotate To Angle =%.1f, Spd=%1.1f TO=%1.1f", targetAngle, turnSpeed, timeout);
+        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
-        // do while the sign of delta remains unchanged
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0) && (runtime.seconds() < timeout)) {
+        // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin of 0.2 degrees
+        // Margin is used because the overshoot for even small gyro rotation is 0.05 to 0.15 degrees
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.2) && (runtime.seconds() < timeout)) {
 
-            // slow down exponentially for the last N degrees rotation remaining
-            if ((Math.abs(delta) < 10)) {
-                turnSpeed = (turnSpeed * delta * delta / 100);
-                if (turnSpeed < ROTATE_SPEED_MIN) {
-                    turnSpeed = ROTATE_SPEED_MIN;
-                }
-            }
-            // the sign of turnSpeed determines the direction of rotation of robot
-            robot.driveTank(0, turnSpeed * direction);
+            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
+            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_MIN, turnSpeed);
+            // the sign of delta determines the direction of rotation of robot
+            robot.driveTank(0, direction * speed);
             myOpMode.sleep(50); // allow some time for the motors to actuate
             robotAngle = robot.imu.getAngularOrientation().firstAngle;
             delta = MathFunctions.angleWrap(targetAngle - robotAngle);
 
-            myOpMode.telemetry.addLine("Gyro Rotate ")
-                    .addData("target", "%.2f", targetAngle)
-                    .addData("robot", "%.2f", robotAngle)
-                    .addData("delta", "%.2f", delta);
-            //myOpMode.telemetry.update();
+            myOpMode.telemetry.addLine("Gyro Rot ")
+                    .addData("Tgt", "%.2f", targetAngle)
+                    .addData("Act", "%.2f", robotAngle)
+                    .addData("Dlt", "%.2f", delta)
+                    .addData("Spd", "%.2f", speed);
+            myOpMode.telemetry.update();
         }
         robot.stopDriving();
-        movementStatus = String.format(Locale.US,"Rotated Angle=%.2f,Robot=%.2f,Spd=%1.2f in T=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
-    }
-
-    public void gyroRotateToHeading(double targetAngle, double turnSpeed) {
-        gyroRotateToHeading(targetAngle, turnSpeed, TIMEOUT_ROTATE);
-    }
-
-    public void gyroRotateToHeading(double targetAngle) {
-        gyroRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_ROTATE);
+        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Act=%.2f | Spd=%1.2f | t=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
     }
 
     /**
@@ -156,57 +139,49 @@ public class MecabotMove extends Mecabot {
      * @param targetAngle   The desired target angle position in degrees
      * @param turnSpeed     The speed at which to drive the motors for the rotation. 0.0 < turnSpeed <= 1.0
      */
-    public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout, boolean slowDownAtEnd) {
+    public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
         // determine current angle of the robot
         double robotAngle = globalPosition.getOrientationDegrees();
         double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
-        // The overshoot for even small gyro rotation is 0.05 to 0.07 degrees
-        // Within a margin of 0.2 degrees assume we are already facing the targetAngle heading
-        if (delta < 0.2) {
-            movementStatus = String.format(Locale.US,"Rotate: Already at desired Angle =%.2f", targetAngle);
-            return;
-        }
+        turnSpeed = Math.abs(turnSpeed);
 
-        movementStatus = String.format(Locale.US,"Rotate To Angle =%.2f, Spd=%1.2f TO=%1.2f", targetAngle, turnSpeed, timeout);
+        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
-        // do while the sign of delta remains unchanged
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0) && (runtime.seconds() < timeout)) {
+        // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin of 0.2 degrees
+        // Margin is used because the overshoot for even small gyro rotation is 0.05 to 0.15 degrees
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.2) && (runtime.seconds() < timeout)) {
 
-            // slow down exponentially for the last N degrees rotation remaining
-            if ((Math.abs(delta) < 10)) {
-                turnSpeed = (turnSpeed * delta * delta / 100);
-                if (turnSpeed < ROTATE_SPEED_MIN) {
-                    turnSpeed = ROTATE_SPEED_MIN;
-                }
-            }
-            // the sign of turnSpeed determines the direction of rotation of robot
-            robot.driveTank(0, turnSpeed * direction);
+            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
+            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_MIN, turnSpeed);
+            // the sign of delta determines the direction of rotation of robot
+            robot.driveTank(0, direction * speed);
             myOpMode.sleep(50); // allow some time for the motors to actuate
             robotAngle = globalPosition.getOrientationDegrees();
             delta = MathFunctions.angleWrap(targetAngle - robotAngle);
 
-            myOpMode.telemetry.addLine("Odom Rotate ")
-                    .addData("target", "%.2f", targetAngle)
-                    .addData("robot", "%.2f", robotAngle)
-                    .addData("delta", "%.2f", delta);
-            //myOpMode.telemetry.update();
+            myOpMode.telemetry.addLine("Odom Rot ")
+                    .addData("Tgt", "%.2f", targetAngle)
+                    .addData("Act", "%.2f", robotAngle)
+                    .addData("Dlt", "%.2f", delta)
+                    .addData("Spd", "%.2f", speed);
+            myOpMode.telemetry.update();
         }
         robot.stopDriving();
-        movementStatus = String.format(Locale.US,"Rotated Angle=%.2f,Robot=%.2f,Spd=%1.2f in T=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
+        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Act=%.2f | Spd=%1.2f | t=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
     }
 
-    public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
-        odometryRotateToHeading(targetAngle, turnSpeed, timeout, true);
+    public void rotateToHeading(double targetAngle, double turnSpeed, double timeout) {
+        gyroRotateToHeading(targetAngle, turnSpeed, timeout);
     }
 
-    public void odometryRotateToHeading(double targetAngle, double turnSpeed) {
-        odometryRotateToHeading(targetAngle, turnSpeed, TIMEOUT_ROTATE, true);
+    public void rotateToHeading(double targetAngle, double turnSpeed) {
+        gyroRotateToHeading(targetAngle, turnSpeed, TIMEOUT_ROTATE);
     }
 
-    public void odometryRotateToHeading(double targetAngle) {
-        odometryRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_ROTATE, true);
+    public void rotateToHeading(double targetAngle) {
+        gyroRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_ROTATE);
     }
 
     /**

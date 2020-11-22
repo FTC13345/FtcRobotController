@@ -45,13 +45,13 @@ public class UGoalTeleOp extends LinearOpMode {
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_2_FROM_ORIGIN-robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         // Enable this temporarily for Shooter Platform Tilt debugging
-        globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
+        //globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
         robot.startOdometry();
 
         telemetry.addLine("Global Position ")
-                .addData("X", "%3.2f", new Func<Double>() {
+                .addData("X", "%2.2f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getXinches();
                     }
@@ -61,23 +61,23 @@ public class UGoalTeleOp extends LinearOpMode {
                         return globalPosition.getYinches();
                     }
                 })
-                .addData("Angle", "%4.2f", new Func<Double>() {
+                .addData("Angle", "%3.2f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getOrientationDegrees();
                     }
                 });
         telemetry.addLine("Odometry ")
-                .addData("L", "%4.2f", new Func<Double>() {
+                .addData("L", "%5.0f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getVerticalLeftCount();
                     }
                 })
-                .addData("R", "%4.2f", new Func<Double>() {
+                .addData("R", "%5.0f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getVerticalRightCount();
                     }
                 })
-                .addData("X", "%4.2f", new Func<Double>() {
+                .addData("X", "%5.0f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getHorizontalCount();
                     }
@@ -149,6 +149,9 @@ public class UGoalTeleOp extends LinearOpMode {
         if ((gamepad2.start) && (gamepad2.right_bumper)) {
             bIgnoreLiftStops = true;
         }
+/*
+        // This block of code was used to record the position of robot on the field and
+        // then later auto drive back to same location. Used in Skystone, no longer used in Ultimate Goal.
        if ((gamepad1.x) && (!gamepad2.x)) {
             xpos = globalPosition.getXinches();
             ypos = globalPosition.getYinches();
@@ -159,6 +162,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.setDirectionReverse();
             autoDriving = true;
         }
+ */
         if (gamepad1.start) {
             // Toggle which face of the Robot is front for driving
             if (gamepad1.right_bumper) {
@@ -258,36 +262,38 @@ public class UGoalTeleOp extends LinearOpMode {
                 robot.runShooterFlywheel();
             }
         }
-
         // Shoot when B is pressed
-        if (gamepad2.b) {
+        else if (gamepad2.b) {
             robot.shootRing();
 
         }
-
-        if (gamepad1.a) {
-            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MIN);
-        }
-        if (gamepad1.b) {
-            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MAX);
-        }
         //auto aim for High Goal
-        if (gamepad2.x) {
-//            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
-//            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
-//            robot.odometryRotateToHeading(targetAngle);
+        else if (gamepad2.x) {
+            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
+            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
+            robot.rotateToHeading(targetAngle);
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         }
-
         //auto aim for Powershot
-        // Assumption that human driver will set robot heading, we just need to shoot assuming power shot is straight ahead
-        if (gamepad2.y) {
-//            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y);
-//            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
-//            robot.odometryRotateToHeading(targetAngle);
+        else if (gamepad2.y) {
+            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y);
+            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
+            robot.rotateToHeading(targetAngle);
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
         }
 
+        if (gamepad1.a) {
+            robot.odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
+        }
+        else if (gamepad1.b) {
+            robot.gyroRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
+        }
+        else if (gamepad1.x) {
+            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MIN);
+        }
+        else if (gamepad1.y) {
+            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MAX);
+        }
         if (gamepad1.start) {
             if (gamepad1.dpad_up) {
                 robot.driveToShootHighGoal();
