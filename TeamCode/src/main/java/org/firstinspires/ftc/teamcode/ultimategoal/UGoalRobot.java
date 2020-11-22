@@ -38,8 +38,8 @@ public class UGoalRobot extends MecabotMove {
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;
-    static final int        WOBBLE_ARM_HORIZONTAL       = WOBBLE_ARM_TICKS_PER_REVOLUTION /4;
-    static final int        WOBBLE_ARM_UP               = WOBBLE_ARM_TICKS_PER_REVOLUTION /2;
+    static final int        WOBBLE_ARM_HORIZONTAL       = WOBBLE_ARM_TICKS_PER_REVOLUTION /6;//60 degrees
+    static final int        WOBBLE_ARM_UP               = 128; //160 degrees. 128/288 * 360 degrees= 160
     static final int        WOBBLE_ARM_DOWN             = 0;
 
     static final int        LIFT_TOP                    = 320;
@@ -208,19 +208,23 @@ public class UGoalRobot extends MecabotMove {
     // During auto, we want to place the wobble goal touching the robot on the right side so we can immediately grab it
     // Alternative design is for hardware to allow preloading wobble inside robot
     public void pickUpWobble(double speed){//at beginning of auto or for teleop
-        //set to run to position for autonomous
-        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         //finger arm motor 0 position will be straight down, folded inside the robot when we put the robot on start line
         //open to get ready to pickup
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+        //set to run to position for autonomous, set mode needs to happen AFTER set position, otherwise crash
         //wobble arm motor needs to unfold 90 degrees to horizontal position
         wobblePickupArm.setTargetPosition(WOBBLE_ARM_HORIZONTAL);
+        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         wobblePickupArm.setPower(speed);
+
         //grab wobble
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
+
+        //set to run to position for autonomous, set mode needs to happen AFTER set position, otherwise crash
         //bring the wobble arm up 180 degrees all the way up so we don't drag it
         wobblePickupArm.setTargetPosition(WOBBLE_ARM_UP);
+        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         wobblePickupArm.setPower(speed);
     }
 
@@ -406,33 +410,79 @@ public class UGoalRobot extends MecabotMove {
         myOpMode.sleep(1000);
     }
 
-    public void driveToShootHighGoal() {
+    public void driveToShootHighGoal(FieldUGoal.AllianceColor color) {
         // drive to desired location
-        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET);
+        //if red reverse the y
+        if (color == FieldUGoal.AllianceColor.BLUE){
+            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET);
+        }
+        else{
+            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET));
+        }
         // rotate to face the goal squarely
         odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
     }
-    public void driveToShootPowerShot1() {
+    public void driveToShootPowerShot1(FieldUGoal.AllianceColor color) {
         // drive to desired location
-        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        //if red reverse the y
+        if (color == FieldUGoal.AllianceColor.BLUE){
+            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        }
+        else{
+            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET));
+        }
+
         // rotate to face the goal squarely
         odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }
-    public void driveToShootPowerShot2() {
+
+    //instead of using go to position, use mecanum wheels to move a short distance sideways
+    public void driveToNextPowerShot(FieldUGoal.AllianceColor color){
+        //move using mecanum sideways to next powershot
+        //if red reverse Y
+        if (color == FieldUGoal.AllianceColor.BLUE){
+            //if blue, moving toward center is negative, constant is already negative
+            odometryMoveRightLeft(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT);
+        }
+        else{
+            //if red, moving toward center is positive, constant is already negative so needs to be negated
+            odometryMoveRightLeft(-FieldUGoal.DISTANCE_BETWEEN_POWERSHOT);
+        }
+
+        // rotate to face the goal squarely
+        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        // tilt platform for goal height
+        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+    }
+
+
+    public void driveToShootPowerShot2(FieldUGoal.AllianceColor color) {
         // drive to desired location
-        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        //if red reverse the y
+        if (color == FieldUGoal.AllianceColor.BLUE){
+            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        }
+        else{
+            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET));
+        }
         // rotate to face the goal squarely
         odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_2_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }
-    public void driveToShootPowerShot3() {
+    public void driveToShootPowerShot3(FieldUGoal.AllianceColor color) {
         // drive to desired location
-        goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        //if red reverse the y
+        if (color == FieldUGoal.AllianceColor.BLUE){
+            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET);
+        }
+        else{
+            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET));
+        }
         // rotate to face the goal squarely
         odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
