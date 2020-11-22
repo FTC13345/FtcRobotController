@@ -227,42 +227,45 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void goShoot3Powershot(){
         //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
         //first powershot
+        robot.goToPosition(FieldUGoal.ANGLE_POS_X_AXIS, flip4Red(FieldUGoal.POWERSHOT_1_Y-robot.ROBOT_SHOOTING_CURVE_OFFSET));
+        shootPowerShot1();
         robot.driveToShootPowerShot1(aColor);
         // second powershot
         robot.driveToNextPowerShot(aColor);
         // third powershot
         robot.driveToNextPowerShot(aColor);
     }
-
-    /* obsolete, replaced in Ugoal robot
     //Power shot 1 is furthest power shot from center
     public void shootPowerShot1(){
+        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_1_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
     //Power shot 2 is in the middle
     public void shootPowerShot2(){
+        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_2_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
     //Power shot 3 is closest to center
     public void shootPowerShot3(){
+        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
-
     //aim and shoot at the highgoal
     public void shootHighGoal(){
-        robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
+        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
         robot.shootRing();
     }
-     */
-
     //go to and shoot three rings into the high goal
+
     public void goShootHighGoal(){
         robot.driveToShootHighGoal(aColor);
         for (int i = 0; i<3; i++){
             robot.shootRing();
+            sleep(1000); // allow 1 sec for the flywheel to gain full speed after each shot
         }
     }
 
@@ -284,7 +287,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         }
         //Wobble is delivered on left side, for red target zones, we need to turn robot to deliver on the right side
         if (aColor == AllianceColor.RED){
-            robot.odometryRotateToHeading(180);
+            robot.rotateToHeading(FieldUGoal.ANGLE_NEG_X_AXIS);
         }
         robot.placeWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
 

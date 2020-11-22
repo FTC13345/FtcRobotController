@@ -25,21 +25,21 @@ public class UGoalRobot extends MecabotMove {
     static final double     ROBOT_SHOOTING_CURVE_OFFSET = 5.5; // inches
     // Tuning Tuning: Compensation for robot behavior, the platform tilt calculations need few degrees uplift
     // It may be due to gravity or physical platform tilt does not match mechanical design assumption
-    static final double     ROBOT_PLATFORM_TILT_OFFSET  = 8.0;  // degrees
+    static final double     ROBOT_PLATFORM_TILT_OFFSET  = 7.0;  // degrees
     //constants
     static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
     static final double     RING_PUSHER_IDLE_POSITION   = Servo.MAX_POSITION;
     static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
-    static final double     WOBBLE_FINGER_OPEN          = 0.5; //middle to save time
+    static final double     WOBBLE_FINGER_OPEN          = Servo.MAX_POSITION;
     static final double     LIFT_CLAW_OPEN              = Servo.MAX_POSITION;
     static final double     LIFT_CLAW_CLOSED            = Servo.MIN_POSITION;
     static final double     LIFT_ARM_INSIDE             = Servo.MIN_POSITION;
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;
-    static final int        WOBBLE_ARM_HORIZONTAL       = WOBBLE_ARM_TICKS_PER_REVOLUTION /6;//60 degrees
-    static final int        WOBBLE_ARM_UP               = 128; //160 degrees. 128/288 * 360 degrees= 160
+    static final int        WOBBLE_ARM_UP               = 135;
+    static final int        WOBBLE_ARM_HORIZONTAL       = 65;
     static final int        WOBBLE_ARM_DOWN             = 0;
 
     static final int        LIFT_TOP                    = 320;
@@ -420,7 +420,7 @@ public class UGoalRobot extends MecabotMove {
             goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET));
         }
         // rotate to face the goal squarely
-        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
     }
@@ -454,7 +454,7 @@ public class UGoalRobot extends MecabotMove {
         }
 
         // rotate to face the goal squarely
-        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }
@@ -470,7 +470,7 @@ public class UGoalRobot extends MecabotMove {
             goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET));
         }
         // rotate to face the goal squarely
-        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_2_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }
@@ -484,7 +484,7 @@ public class UGoalRobot extends MecabotMove {
             goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET));
         }
         // rotate to face the goal squarely
-        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_3_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }
