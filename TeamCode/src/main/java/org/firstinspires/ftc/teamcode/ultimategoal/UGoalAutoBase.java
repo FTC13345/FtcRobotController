@@ -135,30 +135,23 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         setOdometryStartingPosition();
 
         // start Ring stack detection counts only after play
-        startRingStackDetection();
-        // wait a bit for some frames to be delivered
-        sleep(1000);
-        // there should be several image frames collected now to detect number of rings in stack
         int count = detectRingStackCount();
-        stopRingStackDetection();
-        //robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
+
+        robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
         robot.runShooterFlywheel();
         // Start doing the tasks for points
-        // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
 
-        //Uncomment if we are going for powershot
-        // goShoot3Powershot();
-        //Uncomment if we are going for Highgoal because powershot wasn't accurate
         goShootHighGoal();
         robot.stopShooterFlywheel();
-        //deliverWobbleAtTargetZone(count);
+
+        deliverWobbleAtTargetZone(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         //if we are blue, reverse direction to just drive backward to the launch line instead of turning
-        //if (aColor == AllianceColor.BLUE){
-        //    robot.setDirectionReverse();
-        //}
-        parkAtInsideLane(count);
-        // parkAtOutsideLane(count);
+        if (aColor == AllianceColor.BLUE){
+            robot.setDirectionReverse();
+        }
+        //parkAtInsideLane(count);
+        parkAtOutsideLane(count);
     }
 
     protected void setupTelemetry() {
@@ -255,14 +248,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * of the robot. Measures for 2 seconds and then returns what is detected
      * @return "Quad" "Single" or "Zero" depending on the number of rings
      */
-    protected String detectRingStackCount() {
+    protected int detectRingStackCount() {
         //** TODO: Implement ring stack count detection using some image recognition technology *//
 
         ElapsedTime time = new ElapsedTime(0);
 
         String label = null;
 
-        while (time.nanoseconds() < 2000) {
+        while (time.milliseconds() < 2000) {
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
@@ -273,10 +266,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     int i = 0;
                     for (Recognition recognition : updatedRecognitions) {
                         telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                                recognition.getLeft(), recognition.getTop());
-                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                                recognition.getRight(), recognition.getBottom());
                     }
                     telemetry.update();
                     if (!updatedRecognitions.isEmpty()) {
@@ -288,7 +277,15 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             }
 
         }
-        return label;
+        if (label.equals("Quad")) {
+            return 4;
+        }
+        else if (label.equals("Single")) {
+            return 1;
+        }
+        else if (label.equals("Zero")) {
+            return 0;
+        }
     }
 
     public void shutdownRingStackDetection() {
@@ -362,8 +359,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     // 8.5 is robot radius and 6.5 is length of wobble finger arm
     public void deliverWobbleAtTargetZone(int count){
         if (count == 0){
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flip4Red(FieldUGoal.TARGET_ZONE_A_Y - 15));
+            // We are already in position to drop the wobble over target zone A, so we don't need to move
 
+            //robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flip4Red(FieldUGoal.TARGET_ZONE_A_Y - 15));
         }
         else if (count == 1){
             robot.goToPosition(FieldUGoal.TARGET_ZONE_B_X,flip4Red(FieldUGoal.TARGET_ZONE_B_Y - 15));
