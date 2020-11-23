@@ -270,20 +270,21 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     telemetry.update();
                     if (!updatedRecognitions.isEmpty()) {
                         label = updatedRecognitions.get(0).getLabel();
-                    } else {
-                        label = "Zero";
                     }
                 }
             }
 
         }
-        if (label.equals("Quad")) {
+        if (label == null) {
+            return 0;
+        }
+        else if (label.equals("Quad")) {
             return 4;
         }
         else if (label.equals("Single")) {
             return 1;
         }
-        else if (label.equals("Zero")) {
+        else {
             return 0;
         }
     }

@@ -173,6 +173,7 @@ public class UGoalTeleOp extends LinearOpMode {
             else if (gamepad1.x) {
                 robot.setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
+                robot.angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
         }
         else { // !gamepad1.start --> which means bumper buttons pressed alone
@@ -292,7 +293,7 @@ public class UGoalTeleOp extends LinearOpMode {
         else if (gamepad1.b) {
             robot.gyroRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
         }
-        else if (gamepad1.x) {
+        else if (gamepad1.x && !gamepad1.start) {
             robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MIN);
         }
         else if (gamepad1.y) {
