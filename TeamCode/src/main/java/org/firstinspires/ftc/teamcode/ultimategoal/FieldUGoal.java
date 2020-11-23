@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 
-import org.firstinspires.ftc.teamcode.robot.Mecabot;
-
 /** Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
  *  X Axis is parallel to red alliance wall with positive values towards the tower goals and powershots
@@ -26,7 +24,7 @@ public class FieldUGoal {
     static final double     TILE_LENGTH                 = 23.5;
     static final double     TILE_WITHOUT_TABS           = 22.75;
     static final double     ROBOT_RADIUS                = 8.5;
-    static final double     DISTANCE_BETWEEN_POWERSHOT  = 7.5;
+
     static final double     ORIGIN                      = 0.0;  // applicable for both X-Axis and Y-Axis
     static final double     TILE_1_FROM_ORIGIN          = ORIGIN + TILE_LENGTH;
     static final double     TILE_2_FROM_ORIGIN          = TILE_1_FROM_ORIGIN + TILE_LENGTH;
@@ -57,6 +55,7 @@ public class FieldUGoal {
     public static final double POWERSHOT_1_Y            = 19;
     public static final double POWERSHOT_2_Y            = POWERSHOT_1_Y-7.5;
     public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-7.5;
+    static final double     DISTANCE_BETWEEN_POWERSHOT  = -7.5;
 
 
 

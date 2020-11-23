@@ -141,7 +141,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // there should be several image frames collected now to detect number of rings in stack
         int count = detectRingStackCount();
         stopRingStackDetection();
-        robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
+        //robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
         robot.runShooterFlywheel();
         // Start doing the tasks for points
         // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
@@ -149,14 +149,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //Uncomment if we are going for powershot
         // goShoot3Powershot();
         //Uncomment if we are going for Highgoal because powershot wasn't accurate
-        // goShootHighGoal();
+        goShootHighGoal();
         robot.stopShooterFlywheel();
-        deliverWobble(count);
+        //deliverWobbleAtTargetZone(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         //if we are blue, reverse direction to just drive backward to the launch line instead of turning
-        if (aColor == AllianceColor.BLUE){
-            robot.setDirectionReverse();
-        }
+        //if (aColor == AllianceColor.BLUE){
+        //    robot.setDirectionReverse();
+        //}
         parkAtInsideLane(count);
         // parkAtOutsideLane(count);
     }
@@ -318,13 +318,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //first powershot
         robot.goToPosition(FieldUGoal.ANGLE_POS_X_AXIS, flip4Red(FieldUGoal.POWERSHOT_1_Y-robot.ROBOT_SHOOTING_CURVE_OFFSET));
         shootPowerShot1();
+        robot.driveToShootPowerShot1(aColor);
         // second powershot
-        // In order to not have to turn the robot, we just use mecanum to drive the distance to the next powershot, which is only a few inches to the left or right
-        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT-FieldUGoal.ROBOT_RADIUS));
-        shootPowerShot2();
+        robot.driveToNextPowerShot(aColor);
         // third powershot
-        robot.odometryMoveRightLeft(flip4Red(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT-FieldUGoal.ROBOT_RADIUS));
-        shootPowerShot3();
+        robot.driveToNextPowerShot(aColor);
     }
     //Power shot 1 is furthest power shot from center
     public void shootPowerShot1(){
@@ -353,11 +351,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     //go to and shoot three rings into the high goal
 
     public void goShootHighGoal(){
-        //distance
-        //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
-        robot.goToPosition(FieldUGoal.ANGLE_POS_X_AXIS, flip4Red(FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET));
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
+        robot.driveToShootHighGoal(aColor);
         for (int i = 0; i<3; i++){
             robot.shootRing();
             sleep(1000); // allow 1 sec for the flywheel to gain full speed after each shot
@@ -366,7 +360,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     // distance between center of robot and where wobble is placed is 15 inches
     // 8.5 is robot radius and 6.5 is length of wobble finger arm
-    public void deliverWobble(int count){
+    public void deliverWobbleAtTargetZone(int count){
         if (count == 0){
             robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flip4Red(FieldUGoal.TARGET_ZONE_A_Y - 15));
 
