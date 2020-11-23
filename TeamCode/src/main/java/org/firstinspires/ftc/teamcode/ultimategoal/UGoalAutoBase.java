@@ -246,10 +246,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     /**
      * Detects the stack of the rings and returns a string based on how many rings are in front
      * of the robot. Measures for 2 seconds and then returns what is detected
-     * @return "Quad" "Single" or "Zero" depending on the number of rings
+     * @return  4, 1, or 0 depending on the number of rings
      */
     protected int detectRingStackCount() {
-        //** TODO: Implement ring stack count detection using some image recognition technology *//
 
         ElapsedTime time = new ElapsedTime(0);
 
