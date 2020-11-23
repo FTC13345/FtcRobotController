@@ -435,7 +435,7 @@ public class UGoalRobot extends MecabotMove {
         }
 
         // rotate to face the goal squarely
-        odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
         // tilt platform for goal height
         tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
     }

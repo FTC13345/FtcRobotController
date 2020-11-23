@@ -115,7 +115,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // there should be several image frames collected now to detect number of rings in stack
         int count = detectRingStackCount();
         stopRingStackDetection();
-        robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
+        //robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
         robot.runShooterFlywheel();
         // Start doing the tasks for points
         // Powershot or Highgoal, Deliver Wobble, then park Inside or Outside Lane
@@ -123,14 +123,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //Uncomment if we are going for powershot
         // goShoot3Powershot();
         //Uncomment if we are going for Highgoal because powershot wasn't accurate
-        // goShootHighGoal();
+        goShootHighGoal();
         robot.stopShooterFlywheel();
-        deliverWobbleAtTargetZone(count);
+        //deliverWobbleAtTargetZone(count);
         // all done, go and Park at the end of autonomous period, add logic to choose which place to park
         //if we are blue, reverse direction to just drive backward to the launch line instead of turning
-        if (aColor == AllianceColor.BLUE){
-            robot.setDirectionReverse();
-        }
+        //if (aColor == AllianceColor.BLUE){
+        //    robot.setDirectionReverse();
+        //}
         parkAtInsideLane(count);
         // parkAtOutsideLane(count);
     }
