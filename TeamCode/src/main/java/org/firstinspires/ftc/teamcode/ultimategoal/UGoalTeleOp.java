@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
@@ -38,14 +39,12 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        //release the intake
-        robot.releaseIntake();
 
         // This code assumes Robot starts at a position as follows:
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-FieldUGoal.TILE_2_FROM_ORIGIN-robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         // Enable this temporarily for Shooter Platform Tilt debugging
         //globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
         robot.startOdometry();
@@ -89,23 +88,23 @@ public class UGoalTeleOp extends LinearOpMode {
                         return robot.getMovementStatus();
                     }
                 });
-        telemetry.addLine("Shooter ")
-                .addData("Tilt", "%.2f", new Func<Double>() {
+        telemetry.addLine("Tilt ")
+                .addData("Deg", "%.1f", new Func<Double>() {
                     @Override public Double value() {
                         return robot.shooterTiltAngleDesired;
                     }
                 })
-                .addData("Oval", "%.2f", new Func<Double>() {
+                .addData("Oval", "%.1f", new Func<Double>() {
                     @Override public Double value() {
                         return robot.ovalRotationDegrees;
                     }
                 })
-                .addData("TPos", "%3d", new Func<Integer>() {
+                .addData("TPos", "%4d", new Func<Integer>() {
                     @Override public Integer value() {
                         return robot.ovalRotationTicks;
                     }
                 })
-                .addData("CPos", "%3d", new Func<Integer>() {
+                .addData("CPos", "%4d", new Func<Integer>() {
                     @Override
                     public Integer value() {
                         return robot.angleMotor.getCurrentPosition();
@@ -169,6 +168,11 @@ public class UGoalTeleOp extends LinearOpMode {
                 robot.setDirectionForward();
             } else if (gamepad1.left_bumper) {
                 robot.setDirectionReverse();
+            }
+            // reset the odometry encoders to zero
+            else if (gamepad1.x) {
+                robot.setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
             }
         }
         else { // !gamepad1.start --> which means bumper buttons pressed alone
@@ -296,16 +300,16 @@ public class UGoalTeleOp extends LinearOpMode {
         }
         if (gamepad1.start) {
             if (gamepad1.dpad_up) {
-                robot.driveToShootHighGoal();
+                robot.driveToShootHighGoal(FieldUGoal.AllianceColor.BLUE);
             }
             if (gamepad1.dpad_left) {
-                robot.driveToShootPowerShot1();
+                robot.driveToShootPowerShot1(FieldUGoal.AllianceColor.BLUE);
             }
             if (gamepad1.dpad_down) {
-                robot.driveToShootPowerShot2();
+                robot.driveToShootPowerShot2(FieldUGoal.AllianceColor.BLUE);
             }
             if (gamepad1.dpad_right) {
-                robot.driveToShootPowerShot3();
+                robot.driveToShootPowerShot3(FieldUGoal.AllianceColor.BLUE);
             }
         }
     }
@@ -333,6 +337,8 @@ public class UGoalTeleOp extends LinearOpMode {
         // Wobble finger
         if (gamepad2.right_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
+            //release the intake
+            robot.releaseIntake();
         }
         if (gamepad2.left_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
@@ -345,7 +351,7 @@ public class UGoalTeleOp extends LinearOpMode {
         double power = -gamepad2.left_stick_y;
         // Square the number but retain the sign to convert to logarithmic scale
         // scale the range to 0.1 <= abs(power) <= 0.5 and preserve the sign
-        power = Math.signum(power) * (0.1 + (0.5 * power * power));
+        power = Math.signum(power) * ((power * power));
         int pos = robot.wobblePickupArm.getCurrentPosition();
         if ((power>0 && pos<robot.WOBBLE_ARM_UP) || (power<0 && pos>robot.WOBBLE_ARM_DOWN)) {
             robot.wobblePickupArm.setPower(power);
