@@ -326,6 +326,11 @@ public class UGoalRobot extends MecabotMove {
         double yDiff = targetY - globalPosition.getYinches();
         double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
 
+        // TEMPORARY SINCE ODOMETRY IS NOT WORKING  RELIABLY
+        // WE ARE GOING TO ASSUME THAT ROBOT IS DIRECTLY FACING THE TARGET (Heading is +ve X-Axis) AND POSITIONED at Y-Axis line (to be behind launch line)
+        // THEREFORE DISANCE IS SIMPLY THE X-COORDINATE OF THE TARGET
+        distance = targetX;
+
         double angleRad = Math.atan(targetHeight/distance);
         return Math.toDegrees(angleRad);
     }
