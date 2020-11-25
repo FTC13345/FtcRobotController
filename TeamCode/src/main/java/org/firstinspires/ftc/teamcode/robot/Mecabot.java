@@ -186,7 +186,7 @@ public class Mecabot {
         // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
         globalPosition.reverseRightEncoder();
         // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
-        //globalPosition.reverseHorizontalEncoder();
+        globalPosition.reverseHorizontalEncoder();
 
         return globalPosition;
     }

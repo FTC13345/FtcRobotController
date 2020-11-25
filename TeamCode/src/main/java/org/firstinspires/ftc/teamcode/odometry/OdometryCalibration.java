@@ -104,7 +104,7 @@ public class OdometryCalibration extends LinearOpMode {
         // Horizontal encoder ticks may also need sign reversal, in this code clockwise rotation of robot should produce positive tick count
         double verticalLeftCount = -verticalLeft.getCurrentPosition();
         double verticalRightCount = -verticalRight.getCurrentPosition();
-        double horizontalCount = horizontal.getCurrentPosition();
+        double horizontalCount = -horizontal.getCurrentPosition();
 
         // The Robot pivoted around its own center for a certain angle and we recorded the encoder ticks on left and right
         // wheel base separation = sum of radius of left arc and radius of right arc around the pivot point
