@@ -178,7 +178,7 @@ public class OdometryCalibration extends LinearOpMode {
         left_front.setDirection(DcMotor.Direction.REVERSE);
         left_back.setDirection(DcMotor.Direction.REVERSE);
         // Right side set to FORWARD if using AndyMark or goBilda 5202 yellow jacket motors
-        right_front.setDirection(DcMotor.Direction.REVERSE); // special fix, this motor power cable is wired in opposite polarity
+        right_front.setDirection(DcMotor.Direction.FORWARD);
         right_back.setDirection(DcMotor.Direction.FORWARD);
 
 

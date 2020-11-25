@@ -35,7 +35,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
-import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
@@ -61,7 +60,7 @@ public class Mecabot {
     // odometry encoder wheels
     public DcMotor leftEncoder = null;
     public DcMotor rightEncoder = null;
-    public DcMotor backEncoder = null;
+    public DcMotor crossEncoder = null;
 
     // Lights control
     public RevBlinkinLedDriver lights = null;
@@ -143,7 +142,7 @@ public class Mecabot {
         leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         // Right side set to FORWARD if using AndyMark or goBilda 5202 yellow jacket motors
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE); // special fix, this motor power cable is wired in opposite polarity
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -162,7 +161,7 @@ public class Mecabot {
         // Odometry encoders
         leftEncoder = leftBackDrive;   // we are using the encoder port of leftBackDrive motor for odometry
         rightEncoder = rightBackDrive; // we are using the encoder port of rightBackDrive motor for odometry
-        backEncoder = rightFrontDrive; // we are using the encoder port of rightFrontDrive motor
+        crossEncoder = rightFrontDrive; // we are using the encoder port of rightFrontDrive motor
 
         // lights
         lights = hwMap.get(RevBlinkinLedDriver.class, "lights");
@@ -173,12 +172,12 @@ public class Mecabot {
 
     public OdometryGlobalPosition initOdometry() throws IllegalStateException {
 
-        if ((leftEncoder == null) || (rightEncoder == null) || (backEncoder == null)) {
+        if ((leftEncoder == null) || (rightEncoder == null) || (crossEncoder == null)) {
             throw new IllegalStateException("Mecabot hardware must be initialized before Odometry.");
         }
 
         //Create and start GlobalPosition thread to constantly update the global position coordinates.
-        OdometryGlobalPosition globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, backEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
+        OdometryGlobalPosition globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, crossEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
 
         // Set direction of odometry encoders.
         // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
