@@ -680,4 +680,22 @@ public class MecabotMove extends Mecabot {
 
     }
 
+    /*
+     * Utility functions for use by sub classes
+     * Useful for subsystem motors other than the drive train
+     */
+    public void waitUntilMotorBusy(DcMotor motor) {
+        ElapsedTime runTime = new ElapsedTime();
+        while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < TIMEOUT_SHORT)){
+            myOpMode.sleep(50);
+        }
+    }
+    public void motorRunToPosition(DcMotor motor, int position, double speed) {
+        motor.setTargetPosition(position);
+        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor.setPower(speed);
+        waitUntilMotorBusy(motor);
+        motor.setPower(MOTOR_STOP_SPEED);
+    }
+
 }

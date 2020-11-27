@@ -37,9 +37,12 @@ public class UGoalRobot extends MecabotMove {
     static final double     LIFT_ARM_INSIDE             = Servo.MIN_POSITION;
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
-    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;
+    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
     static final int        WOBBLE_ARM_UP               = 135;
-    static final int        WOBBLE_ARM_HORIZONTAL       = 65;
+    static final int        WOBBLE_ARM_NEAR_UP          = 115;
+    static final int        WOBBLE_ARM_RELEASE          = 90;
+    static final int        WOBBLE_ARM_PICKUP           = 60;
+    static final int        WOBBLE_ARM_NEAR_DOWN        = 15;
     static final int        WOBBLE_ARM_DOWN             = 0;
 
     static final int        LIFT_TOP                    = 320;
@@ -201,50 +204,54 @@ public class UGoalRobot extends MecabotMove {
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
     }
 
+    public void wobbleGrab() {
+        wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
+        myOpMode.sleep(200);
+        // raise wobble arm to wobble height
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_PICKUP, MecabotMove.DRIVE_SPEED_DEFAULT);
+        // grab wobble
+        wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
+        myOpMode.sleep(200);
+    }
+    public void wobbleRaise(){
+        // this method assumes that the Wobble has been grabbed already
+        // lift wobble arm up
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_UP, MecabotMove.DRIVE_SPEED_MAX);
+    }
+    public void wobbleRelease() {
+        // lower wobble arm to drop wobble
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE, MecabotMove.DRIVE_SPEED_SLOW);
+        // release wobble
+        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+        myOpMode.sleep(200);
+    }
+    public void wobbleArmDown() {
+        // lower wobble arm
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_DOWN, MecabotMove.DRIVE_SPEED_SLOW);
+        // close finger since arm is stowed away
+        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
+    }
 
     // This method unfolds the finger arm and grabs the wobble
     // Then it moves the arm to vertical position so it doesn't drag on the ground in auto, or to clear wall in endgame
     // During auto, we want to place the wobble goal touching the robot on the right side so we can immediately grab it
     // Alternative design is for hardware to allow preloading wobble inside robot
     public void pickUpWobble(double speed){//at beginning of auto or for teleop
-
-        //finger arm motor 0 position will be straight down, folded inside the robot when we put the robot on start line
-        //open to get ready to pickup
-        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-        //set to run to position for autonomous, set mode needs to happen AFTER set position, otherwise crash
-        //wobble arm motor needs to unfold 90 degrees to horizontal position
-        wobblePickupArm.setTargetPosition(WOBBLE_ARM_HORIZONTAL);
-        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        wobblePickupArm.setPower(speed);
-
-        //grab wobble
-        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
-
-        //set to run to position for autonomous, set mode needs to happen AFTER set position, otherwise crash
-        //bring the wobble arm up 180 degrees all the way up so we don't drag it
-        wobblePickupArm.setTargetPosition(WOBBLE_ARM_UP);
-        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        wobblePickupArm.setPower(speed);
+        // grab wobble
+        wobbleGrab();
+        // lift wobble up
+        wobbleRaise();
     }
-
 
     // This assumes we have a wobble goal held and is held vertically
     // It lowers arm to horizontal position and drops the goal
     // Then it folds arm back into robot
     // speed determines how fast the finger arm motor moves
     public void placeWobble(double speed) {
-        //set to run to position for autonomous
-        wobblePickupArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        //brings wobble arm down to 90 degrees
-        wobblePickupArm.setTargetPosition(WOBBLE_ARM_HORIZONTAL);
-        wobblePickupArm.setPower(speed);
-        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-
-        //reset and put Finger Arm back into the robot out of the way
-        wobblePickupArm.setTargetPosition(WOBBLE_ARM_DOWN);
-        wobblePickupArm.setPower(speed);
-        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
+        // bring wobble arm down to release
+        wobbleRelease();
+        // stow away the wobble arm
+        wobbleArmDown();
     }
 
     //used to lift claw with rings out of robot onto wobble goal

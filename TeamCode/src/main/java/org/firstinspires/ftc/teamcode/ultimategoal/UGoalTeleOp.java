@@ -120,7 +120,9 @@ public class UGoalTeleOp extends LinearOpMode {
             intake();
             shootRings();
             wobblePickup();
-            ringsLiftArmClaw();
+            // Disabled because the ringsLift has been removed in Robot hardware,
+            // it does not earn enough points according to game strategy, same time can be used wisely
+            // ringsLiftArmClaw();
             telemetry.update();
             idle();
         }
@@ -342,7 +344,7 @@ public class UGoalTeleOp extends LinearOpMode {
         // Wobble finger
         if (gamepad2.right_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
-            //release the intake
+            //release the intake down to the ground. This is button overloading.
             robot.releaseIntake();
         }
         if (gamepad2.left_bumper) {
@@ -350,17 +352,28 @@ public class UGoalTeleOp extends LinearOpMode {
         }
 
         // Wobble arm
-        // Note that when joystick is inactive, this applies brakes
-        // forward press on joystick is negative, backward press (towards human) is positive
-        // reverse sign of joystick values to use positive values to lift up the wobble arm
-        double power = -gamepad2.left_stick_y;
-        // Square the number but retain the sign to convert to logarithmic scale
-        // scale the range to 0.1 <= abs(power) <= 0.5 and preserve the sign
-        power = Math.signum(power) * ((power * power));
         int pos = robot.wobblePickupArm.getCurrentPosition();
-        if ((power>0 && pos<robot.WOBBLE_ARM_UP) || (power<0 && pos>robot.WOBBLE_ARM_DOWN)) {
-            robot.wobblePickupArm.setPower(power);
-            telemetry.addData("Wobble Arm ", "power %.2f | pos %d", power, pos);
+        telemetry.addData("Wobble Arm pos ", pos);
+
+        if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
+            // arm is at bottom position
+            if (pos < UGoalRobot.WOBBLE_ARM_NEAR_DOWN) {
+                robot.wobbleGrab();
+            }
+            // arm is at wobble pickup position
+            else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos < UGoalRobot.WOBBLE_ARM_RELEASE) {
+                // lift wobble arm up
+                robot.wobbleRaise();
+            }
+        } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
+            // arm is at top position
+            if (pos > robot.WOBBLE_ARM_NEAR_UP) {
+                robot.wobbleRelease();
+            }
+            // arm is at wobble release position
+            else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos <= UGoalRobot.WOBBLE_ARM_NEAR_UP) {
+                robot.wobbleArmDown();
+            }
         }
     }
 
