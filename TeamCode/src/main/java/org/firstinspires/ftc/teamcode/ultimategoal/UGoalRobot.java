@@ -23,11 +23,11 @@ public class UGoalRobot extends MecabotMove {
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
     static final double     ROBOT_SHOOTING_CURVE_OFFSET = 5.5; // inches
-    // Tuning Tuning: Compensation for robot behavior, the platform tilt calculations need few degrees uplift
-    // It may be due to gravity or physical platform tilt does not match mechanical design assumption
-    static final double     ROBOT_PLATFORM_TILT_OFFSET  = 7.0;  // degrees
+
     //constants
     static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
+    static final double     LAUNCHER_TWENTY_DEGREES     = Servo.MIN_POSITION;
+    static final double     LAUNCHER_FORTY_FIVE_DEGREES = Servo.MAX_POSITION;
     static final double     RING_PUSHER_IDLE_POSITION   = Servo.MAX_POSITION;
     static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
@@ -49,7 +49,6 @@ public class UGoalRobot extends MecabotMove {
     //Finals
     static final double SHOOTER_FLYWHEEL_RUN = 1.0;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
-    static final double SHOOTER_OVAL_TICKS_PER_ROTATION = 2 * 1425.2f;  // goBilda 5202 series Yellow Jacket Planetary 50.9:1 gear ratio, 117 RPM motor, times 2:1 bevel gear ratio
     static final double SHOOTER_TILT_ANGLE_MIN = 20.0f;
     static final double SHOOTER_TILT_ANGLE_MAX = 45.0f;
 
@@ -58,12 +57,12 @@ public class UGoalRobot extends MecabotMove {
     double shooterTiltAngleClipped = SHOOTER_TILT_ANGLE_MIN;
     // MATH to convert platform tilt angle to rotation of oval supports under platform
     // scales 25 degrees (range is 20-45 degrees) of shooter platform tilt to 180 degrees of oval rotation
-    double ovalRotationDegrees = 0.0f;
+    double servoRotation = 0;
     // Convertion of oval rotation (degrees) to motor encoder ticks
     int ovalRotationTicks = 0;
 
     // Motors
-    public DcMotor angleMotor = null;
+
     public DcMotor liftMotor = null;
     public DcMotor intakeMotor = null;
     public DcMotor wobblePickupArm = null;
@@ -72,6 +71,7 @@ public class UGoalRobot extends MecabotMove {
     public DcMotorSimple flyWheelMotor = null;
 
     //Servos
+    public Servo angleServo = null;
     public Servo ringPusher = null;
     public Servo releaseIntake = null;
     public CRServo intakeServo = null;
@@ -83,43 +83,42 @@ public class UGoalRobot extends MecabotMove {
     // Initialization
     public void init(HardwareMap ahwMap) {
 
-        angleMotor = ahwMap.get(DcMotor.class, "angleMotor");
         intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");
         wobblePickupArm = ahwMap.get(DcMotor.class, "wobbleFingerArm");
         liftMotor = ahwMap.get(DcMotor.class, "liftMotor");
         flyWheelMotor = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
 
         // direction depends on hardware installation
-        angleMotor.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         liftMotor.setDirection(DcMotor.Direction.FORWARD);
         wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
         flyWheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
-        angleMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        angleMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         wobblePickupArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         liftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        angleServo = ahwMap.get(Servo.class, "angleServo");
         releaseIntake = ahwMap.get(Servo.class, "releaseIntake");
         wobbleFinger = ahwMap.get(Servo.class, "wobbleFinger");
-        liftClaw = ahwMap.get(Servo.class, "wobbleClaw");
-        liftArm = ahwMap.get(Servo.class, "wobbleClawArm");
+        //liftClaw = ahwMap.get(Servo.class, "wobbleClaw");
+        //liftArm = ahwMap.get(Servo.class, "wobbleClawArm");
         ringPusher = ahwMap.get(Servo.class, "launcherServo");
         intakeServo = ahwMap.get(CRServo.class, "intakeServo");
 
         // releaseIntake should NOT be initialized to any specific position.
         // we want to be able to initialize robot regardless whether intake is lifted up or let down
+        angleServo.setPosition(LAUNCHER_TWENTY_DEGREES);
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
-        liftClaw.setPosition(LIFT_CLAW_OPEN);
-        liftArm.setPosition(LIFT_ARM_INSIDE);
+        //liftClaw.setPosition(LIFT_CLAW_OPEN);
+        //liftArm.setPosition(LIFT_ARM_INSIDE);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         intakeServo.setDirection(CRServo.Direction.REVERSE);
+
     }
 
     /*
@@ -185,21 +184,21 @@ public class UGoalRobot extends MecabotMove {
     }
 
     public void rotateClawInside() {
-        liftArm.setPosition(LIFT_ARM_INSIDE);
+        //liftArm.setPosition(LIFT_ARM_INSIDE);
     }
     public void rotateClawOutside() {
-        liftArm.setPosition(LIFT_ARM_OUTSIDE);
+        //liftArm.setPosition(LIFT_ARM_OUTSIDE);
     }
     public void moveClawToPosition(double position) {
         position = Range.clip(position, LIFT_ARM_INSIDE, LIFT_ARM_OUTSIDE);
-        liftArm.setPosition(position);
+        //liftArm.setPosition(position);
     }
 
     public void grabRingsWithClaw() {
-        liftClaw.setPosition(LIFT_CLAW_CLOSED);
+        //liftClaw.setPosition(LIFT_CLAW_CLOSED);
     }
     public void releaseRingsWithClaw() {
-        liftClaw.setPosition(LIFT_CLAW_OPEN);
+        //liftClaw.setPosition(LIFT_CLAW_OPEN);
     }
 
 
@@ -279,12 +278,12 @@ public class UGoalRobot extends MecabotMove {
         //This gives room to swing out claw and drop the rings onto wobble
         wobbleLift(LIFT_UP_RINGS_HEIGHT);
         //rotates claw outside to put it outside the robot next to wobble goal
-        liftArm.setPosition(LIFT_ARM_OUTSIDE);
-        liftClaw.setPosition(LIFT_CLAW_OPEN);
+        //liftArm.setPosition(LIFT_ARM_OUTSIDE);
+        //.setPosition(LIFT_CLAW_OPEN);
         //reset, lower lift and put claw back into robot out of the way
         wobbleLift(LIFT_BOTTOM);
-        liftClaw.setPosition(LIFT_CLAW_CLOSED);
-        liftArm.setPosition(LIFT_ARM_INSIDE);
+        //liftClaw.setPosition(LIFT_CLAW_CLOSED);
+        //liftArm.setPosition(LIFT_ARM_INSIDE);
     }
 
     // This assumes blue, for red use flip4Red when calling
@@ -346,7 +345,7 @@ public class UGoalRobot extends MecabotMove {
         double angle = calculateShooterPlatformTiltAngle(targetX, targetY, targetHeight);
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
-        tiltShooterPlatform( angle + ROBOT_PLATFORM_TILT_OFFSET );
+        tiltShooterPlatform( angle );
     }
 
     /**
@@ -361,20 +360,11 @@ public class UGoalRobot extends MecabotMove {
         shooterTiltAngleClipped = Range.clip(shooterTiltAngleDesired, SHOOTER_TILT_ANGLE_MIN, SHOOTER_TILT_ANGLE_MAX);
 
         // MATH to convert platform tilt angle to rotation of oval supports under platform
-        // scales 25 degrees (range is 20-45 degrees) of shooter platform movement to 180 degrees of oval rotation
-        ovalRotationDegrees = (shooterTiltAngleClipped - SHOOTER_TILT_ANGLE_MIN) * 180 / (SHOOTER_TILT_ANGLE_MAX - SHOOTER_TILT_ANGLE_MIN);
+        // scales 25 degrees (range is 20-45 degrees) of shooter platform movement to fraction of range of oval rotation
+        servoRotation = (shooterTiltAngleClipped - SHOOTER_TILT_ANGLE_MIN)  / (SHOOTER_TILT_ANGLE_MAX - SHOOTER_TILT_ANGLE_MIN);
 
-        // Convertion of oval rotation (degrees) to motor encoder ticks
-        ovalRotationTicks = (int) ((SHOOTER_OVAL_TICKS_PER_ROTATION * ovalRotationDegrees) / 360);
+        angleServo.setPosition(servoRotation);
 
-        angleMotor.setTargetPosition(ovalRotationTicks);
-        angleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        angleMotor.setPower(DRIVE_SPEED_DEFAULT);
-
-        ElapsedTime runTime = new ElapsedTime();
-        while (angleMotor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < TIMEOUT_SHORT)){
-            myOpMode.sleep(50);
-        }
         //myOpMode.telemetry.addData("Shooter Tilt ", "Angle=%.2f, pos=%d in %.2fs", tiltAngle, ovalRotationTicks, runTime.seconds());
 
 /*

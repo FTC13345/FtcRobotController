@@ -96,7 +96,7 @@ public class UGoalTeleOp extends LinearOpMode {
                 })
                 .addData("Oval", "%.1f", new Func<Double>() {
                     @Override public Double value() {
-                        return robot.ovalRotationDegrees;
+                        return robot.servoRotation;
                     }
                 })
                 .addData("TPos", "%4d", new Func<Integer>() {
@@ -107,7 +107,7 @@ public class UGoalTeleOp extends LinearOpMode {
                 .addData("CPos", "%4d", new Func<Integer>() {
                     @Override
                     public Integer value() {
-                        return robot.angleMotor.getCurrentPosition();
+                        return (int) robot.angleServo.getPosition();
                     }
                 });
 
@@ -172,8 +172,8 @@ public class UGoalTeleOp extends LinearOpMode {
             // reset the odometry encoders to zero
             else if (gamepad1.x) {
                 robot.setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                robot.setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
-                robot.angleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
         }
         else { // !gamepad1.start --> which means bumper buttons pressed alone
