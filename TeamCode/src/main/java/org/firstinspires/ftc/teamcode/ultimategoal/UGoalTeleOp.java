@@ -256,7 +256,7 @@ public class UGoalTeleOp extends LinearOpMode {
             turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
 
             robot.driveTank(power, turn);
-            //telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
+            telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
         }
     }
     public void shootRings(){

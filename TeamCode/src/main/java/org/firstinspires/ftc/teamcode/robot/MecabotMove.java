@@ -32,12 +32,12 @@ public class MecabotMove extends Mecabot {
 
     // Driving speeds
     public static final double DRIVE_SPEED_BRAKE   = 0.0;
-    public static final double DRIVE_SPEED_MIN     = 0.15;
+    public static final double DRIVE_SPEED_MIN     = 0.18;
     public static final double DRIVE_SPEED_SLOW    = 0.3;
     public static final double DRIVE_SPEED_DEFAULT = 0.6;
     public static final double DRIVE_SPEED_FAST    = 0.8;
     public static final double DRIVE_SPEED_MAX     = 1.0;
-    public static final double ROTATE_SPEED_MIN    = 0.10;
+    public static final double ROTATE_SPEED_MIN    = 0.18;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.5;
