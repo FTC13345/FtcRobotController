@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
@@ -38,8 +37,8 @@ public class UGoalRobot extends MecabotMove {
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
-    static final int        WOBBLE_ARM_UP               = 135;
-    static final int        WOBBLE_ARM_NEAR_UP          = 115;
+    static final int        WOBBLE_ARM_UP               = 150;
+    static final int        WOBBLE_ARM_NEAR_UP          = 120;
     static final int        WOBBLE_ARM_RELEASE          = 90;
     static final int        WOBBLE_ARM_PICKUP           = 60;
     static final int        WOBBLE_ARM_NEAR_DOWN        = 15;
@@ -64,20 +63,22 @@ public class UGoalRobot extends MecabotMove {
     // Convertion of oval rotation (degrees) to motor encoder ticks
     int ovalRotationTicks = 0;
 
-    // Motors
-
-    public DcMotor liftMotor = null;
+    // Motors and/or enccoders
+    public DcMotor leftODwheel = null;
+    public DcMotor rightODwheel = null;
     public DcMotor intakeMotor = null;
     public DcMotor wobblePickupArm = null;
     // THis is a motor driven by Spark Mini controller which takes Servo PWM input
     // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
-    public DcMotorSimple flyWheelMotor = null;
+    public DcMotorSimple flywheelMotor = null;
+    // This is unused due to removal of lift hardware, but we do not want to remove lot of code, so we'll declare the variable
+    public DcMotor liftMotor = null;
 
     //Servos
     public Servo angleServo = null;
     public Servo ringPusher = null;
-    public Servo releaseIntake = null;
-    public CRServo intakeServo = null;
+    public Servo intakeAssembly = null;
+    public CRServo intakeCRServo = null;
     //finger is for wobble pickup, claw is for putting rings on wobble
     public Servo wobbleFinger = null;
     public Servo liftClaw = null;
@@ -86,32 +87,36 @@ public class UGoalRobot extends MecabotMove {
     // Initialization
     public void init(HardwareMap ahwMap) {
 
-        intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");
-        wobblePickupArm = ahwMap.get(DcMotor.class, "wobbleFingerArm");
-        liftMotor = ahwMap.get(DcMotor.class, "liftMotor");
-        flyWheelMotor = ahwMap.get(DcMotorSimple.class, "launcherMotorSparkMini");
+        leftODwheel = ahwMap.get(DcMotor.class, "leftODwheel");
+        rightODwheel = ahwMap.get(DcMotor.class, "rightODwheel");
+        intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");         // we are using intake motor port for cross encoder
+        wobblePickupArm = ahwMap.get(DcMotor.class, "wobblePickupArm");
+        flywheelMotor = ahwMap.get(DcMotorSimple.class, "flywheelMotorSparkMini");
 
         // direction depends on hardware installation
+        leftODwheel.setDirection(DcMotor.Direction.FORWARD);
+        rightODwheel.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
-        liftMotor.setDirection(DcMotor.Direction.FORWARD);
         wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
-        flyWheelMotor.setDirection(DcMotor.Direction.REVERSE);
+        flywheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
+        leftODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        leftODwheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightODwheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         wobblePickupArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        liftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         angleServo = ahwMap.get(Servo.class, "angleServo");
-        releaseIntake = ahwMap.get(Servo.class, "releaseIntake");
+        intakeAssembly = ahwMap.get(Servo.class, "intakeAssembly");
         wobbleFinger = ahwMap.get(Servo.class, "wobbleFinger");
         //liftClaw = ahwMap.get(Servo.class, "wobbleClaw");
         //liftArm = ahwMap.get(Servo.class, "wobbleClawArm");
-        ringPusher = ahwMap.get(Servo.class, "launcherServo");
-        intakeServo = ahwMap.get(CRServo.class, "intakeServo");
+        ringPusher = ahwMap.get(Servo.class, "ringPusherServo");
+        intakeCRServo = ahwMap.get(CRServo.class, "intakeCRServo");
 
         // releaseIntake should NOT be initialized to any specific position.
         // we want to be able to initialize robot regardless whether intake is lifted up or let down
@@ -120,24 +125,34 @@ public class UGoalRobot extends MecabotMove {
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
         //liftArm.setPosition(LIFT_ARM_INSIDE);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
-        intakeServo.setDirection(CRServo.Direction.REVERSE);
+        intakeCRServo.setDirection(CRServo.Direction.REVERSE);
 
+        // initialize odometry subsystems
+        initOdometry(leftODwheel, rightODwheel, intakeMotor);   // intake motor port is used for cross encoder
+        // Set direction of odometry encoders.
+        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
+        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        //globalPosition.reverseLeftEncoder();
+        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        //globalPosition.reverseRightEncoder();
+        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
+        //globalPosition.reverseHorizontalEncoder();
     }
 
     /*
      * Ring Intake methods
      */
     public void releaseIntake(){
-        releaseIntake.setPosition(INTAKE_DOWN_ANGLE);
+        intakeAssembly.setPosition(INTAKE_DOWN_ANGLE);
     }
 
     public void runIntake(double power) {
         intakeMotor.setPower(power);
-        intakeServo.setPower(power);
+        intakeCRServo.setPower(power);
     }
 
     public void stopIntake(){
-        intakeServo.setPower(0);
+        intakeCRServo.setPower(0);
         intakeMotor.setPower(0);
     }
 
@@ -145,15 +160,15 @@ public class UGoalRobot extends MecabotMove {
      * Ring Shooter Flywheel and Ring Pusher Arm methods
      */
     public void runShooterFlywheel() {
-        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_RUN);
+        flywheelMotor.setPower(SHOOTER_FLYWHEEL_RUN);
     }
 
     public void stopShooterFlywheel() {
-        flyWheelMotor.setPower(SHOOTER_FLYWHEEL_STOP);
+        flywheelMotor.setPower(SHOOTER_FLYWHEEL_STOP);
     }
 
     public boolean isShooterFlywheelRunning() {
-        return (flyWheelMotor.getPower() != SHOOTER_FLYWHEEL_STOP);
+        return (flywheelMotor.getPower() != SHOOTER_FLYWHEEL_STOP);
     }
 
     public void shootRing() {
@@ -173,6 +188,9 @@ public class UGoalRobot extends MecabotMove {
         return liftMotor.getCurrentPosition();
     }
 
+    public void runLift(double speed) {
+        liftMotor.setPower(speed);
+    }
     public void stopLift() {
         //stop and brake lift
         liftMotor.setPower(MOTOR_STOP_SPEED);
@@ -181,9 +199,7 @@ public class UGoalRobot extends MecabotMove {
     }
     public void moveLift(int position) {
         position = Range.clip(position, LIFT_BOTTOM, LIFT_TOP);
-        liftMotor.setTargetPosition(position);
-        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor.setPower(DRIVE_SPEED_DEFAULT);
+        motorRunToPosition(liftMotor, position, DRIVE_SPEED_DEFAULT);
     }
 
     public void rotateClawInside() {
@@ -204,6 +220,9 @@ public class UGoalRobot extends MecabotMove {
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
     }
 
+    /*
+     * Wobble Pickup Arm operation methods
+     */
     public void wobbleGrab() {
         wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
         myOpMode.sleep(200);
@@ -236,7 +255,7 @@ public class UGoalRobot extends MecabotMove {
     // Then it moves the arm to vertical position so it doesn't drag on the ground in auto, or to clear wall in endgame
     // During auto, we want to place the wobble goal touching the robot on the right side so we can immediately grab it
     // Alternative design is for hardware to allow preloading wobble inside robot
-    public void pickUpWobble(double speed){//at beginning of auto or for teleop
+    public void pickUpWobble(){//at beginning of auto or for teleop
         // grab wobble
         wobbleGrab();
         // lift wobble up
@@ -247,37 +266,36 @@ public class UGoalRobot extends MecabotMove {
     // It lowers arm to horizontal position and drops the goal
     // Then it folds arm back into robot
     // speed determines how fast the finger arm motor moves
-    public void placeWobble(double speed) {
+    public void placeWobble() {
         // bring wobble arm down to release
         wobbleRelease();
         // stow away the wobble arm
         wobbleArmDown();
     }
 
-    //used to lift claw with rings out of robot onto wobble goal
-    //positive power is (up/down?)
-    //hard stop needs to be programmed to prevent breaking string
-    //for auto, set to RUN_TO_POSITION
+    public void resetWobblePickupArmEncoder() {
+        wobblePickupArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
 
+    /*
+     * Methods to lift claw with rings out of robot onto wobble goal
+     */
     /**
-     * This is the method for AUTONOMOUS
      * liftMotor is set to run to position, and uses the parameter to determine that distance
      * constant LIFT_UP_RINGS_HEIGHT is the height we lift the claw to deposit rings onto wobble goal
      * @param height is encoder counts that tells the lift how high to go
      */
     public void wobbleLift(int height){
-        //*TODO test for stops in teleop first!
-        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         liftMotor.setTargetPosition(height);
+        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         liftMotor.setPower(MecabotMove.DRIVE_SPEED_DEFAULT);
-
-
     }
+
     //rings will be put on the wobble on the RIGHT side of the robot
     //we will have to turn around to grab it on the LEFT side
     //uses lift to lift claw, swings it to outside, then lift to lower rings onto wobble goal
     //when done, it resets by lowering lift and folding the claw and arm back into robot
-
     public void putRingsOnWobble(){
         //pickup rings inside robot
         grabRingsWithClaw();
@@ -293,6 +311,10 @@ public class UGoalRobot extends MecabotMove {
         //liftArm.setPosition(LIFT_ARM_INSIDE);
     }
 
+    /*
+     * Methods for shooting rings into the Goals or Powershots
+     * Used for both Tele Op and Auto programs
+     */
     // This assumes blue, for red use flip4Red when calling
     // This method gives the angle from the robot to the goal or powershot target in DEGREES
     public double calculateRobotHeadingToShoot(double targetX, double targetY) {
@@ -411,6 +433,11 @@ public class UGoalRobot extends MecabotMove {
         myOpMode.telemetry.update();
         myOpMode.sleep(1000);
     }
+
+    /*
+     * Autonomous Program Methods
+     */
+
 
     public void driveToShootHighGoal(FieldUGoal.AllianceColor color) {
         // drive to desired location

@@ -200,6 +200,20 @@ public class OdometryGlobalPosition implements Runnable {
     }
 
     /**
+     * get the constant value of wheelbase separation, in encoder tick counts
+     */
+    public double getWheelbaseSeparationCount() {
+        return this.WHEELBASE_SEPARATION_COUNT;
+    }
+
+    /**
+     * get the constant value of horizontal encoder tick counts per Radian rotation of the Robot
+     */
+    public double getHorizonalCountPerRadian() {
+        return this.HORIZONTAL_COUNT_PER_RADIAN;
+    }
+
+    /**
      * Stops the position update thread
      */
     public void stop() {

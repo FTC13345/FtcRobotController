@@ -35,7 +35,7 @@ public class OdometryCalibration extends LinearOpMode {
 
     //Hardware Map Names for drive motors and odometry wheels. THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
     String rfName = "rightFrontDrive", rbName = "rightBackDrive", lfName = "leftFrontDrive", lbName = "leftBackDrive";
-    String verticalLeftEncoderName = "leftBackDrive", verticalRightEncoderName = "rightBackDrive", horizontalEncoderName = "rightFrontDrive";
+    String verticalLeftEncoderName = "leftODwheel", verticalRightEncoderName = "rightODwheel", horizontalEncoderName = "intakeMotor";
 
     final double PIVOT_SPEED = 0.4;
 
@@ -102,9 +102,9 @@ public class OdometryCalibration extends LinearOpMode {
         // Since the orientation of encoders on each side is opposite, one of the encoder value
         // needs to be reversed so that both side encoders produced positive ticks with forward movement.
         // Horizontal encoder ticks may also need sign reversal, in this code clockwise rotation of robot should produce positive tick count
-        double verticalLeftCount = -verticalLeft.getCurrentPosition();
-        double verticalRightCount = -verticalRight.getCurrentPosition();
-        double horizontalCount = -horizontal.getCurrentPosition();
+        double verticalLeftCount = verticalLeft.getCurrentPosition();
+        double verticalRightCount = verticalRight.getCurrentPosition();
+        double horizontalCount = horizontal.getCurrentPosition();
 
         // The Robot pivoted around its own center for a certain angle and we recorded the encoder ticks on left and right
         // wheel base separation = sum of radius of left arc and radius of right arc around the pivot point
@@ -122,7 +122,7 @@ public class OdometryCalibration extends LinearOpMode {
         ReadWriteFile.writeFile(horizontalCountPerRadianFile, String.valueOf(horizontalCountPerRadian));
 
         while(opModeIsActive()){
-            telemetry.addData("Odometry System Calibration Status", "Calibration Complete");
+            telemetry.addData("Odometry System Calibration ", "Complete");
             //Display calculated constants
             telemetry.addData("Wheel Base Separation (inches)", wheelBaseSeparationInches);
             telemetry.addData("Horizontal Encoder Ticks per Radian", horizontalCountPerRadian);
@@ -180,7 +180,11 @@ public class OdometryCalibration extends LinearOpMode {
         // Right side set to FORWARD if using AndyMark or goBilda 5202 yellow jacket motors
         right_front.setDirection(DcMotor.Direction.FORWARD);
         right_back.setDirection(DcMotor.Direction.FORWARD);
-
+        // OD encoders are using any available ports, where motor is not driven by encoder.
+        // Set direction to produce positive count increment when robot moves forward or right
+        verticalLeft.setDirection(DcMotor.Direction.FORWARD);
+        verticalRight.setDirection(DcMotor.Direction.REVERSE);
+        horizontal.setDirection(DcMotor.Direction.REVERSE);
 
         telemetry.addData("Odometry Calibration", "Hardware Map Init Complete");
         telemetry.update();

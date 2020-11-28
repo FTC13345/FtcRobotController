@@ -32,12 +32,12 @@ public class MecabotMove extends Mecabot {
 
     // Driving speeds
     public static final double DRIVE_SPEED_BRAKE   = 0.0;
-    public static final double DRIVE_SPEED_MIN     = 0.18;
+    public static final double DRIVE_SPEED_MIN     = 0.2;
     public static final double DRIVE_SPEED_SLOW    = 0.3;
     public static final double DRIVE_SPEED_DEFAULT = 0.6;
     public static final double DRIVE_SPEED_FAST    = 0.8;
     public static final double DRIVE_SPEED_MAX     = 1.0;
-    public static final double ROTATE_SPEED_MIN    = 0.18;
+    public static final double ROTATE_SPEED_MIN    = 0.12;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.5;
@@ -60,6 +60,14 @@ public class MecabotMove extends Mecabot {
     private   Thread              globalPositionThread;
     protected String              movementStatus          = "";
 
+    //The amount of encoder ticks for each inch the robot moves. THIS WILL CHANGE FOR EACH ROBOT AND NEEDS TO BE UPDATED HERE
+    public static final double ODOMETRY_ENCODER_COUNT_PER_ROTATION = 1440;  // FTC Team 13345 Mecabot encoder has 1440 ticks per rotation
+    public static final double ODOMETRY_WHEEL_DIAMETER = 38.0f / 25.4f; // Odometry wheel has 38mm diameter, calculate in inches
+
+    // odometry encoder wheels
+    public DcMotor leftEncoder = null;
+    public DcMotor rightEncoder = null;
+    public DcMotor crossEncoder = null;
 
     /* Constructor */
     public MecabotMove(HardwareMap ahwMap, LinearOpMode opMode) {
@@ -67,7 +75,6 @@ public class MecabotMove extends Mecabot {
         // Save reference to OpMode and Hardware map
         myOpMode = opMode;
         robot = this;
-        globalPosition = robot.initOdometry();
     }
 
     // Access methods
@@ -75,15 +82,56 @@ public class MecabotMove extends Mecabot {
         return globalPosition;
     }
 
-    public void startOdometry() {
+    public OdometryGlobalPosition initOdometry(DcMotor leftODencoder, DcMotor rightODEncoder, DcMotor crossODEncoder) throws IllegalStateException {
 
+        // Initialize Odometry encoders
+        leftEncoder = leftODencoder;
+        rightEncoder = rightODEncoder;
+        crossEncoder = crossODEncoder;
+
+        if ((leftEncoder == null) || (rightEncoder == null) || (crossEncoder == null)) {
+            throw new IllegalStateException("Mecabot hardware must be initialized before Odometry.");
+        }
+
+        //Create and start GlobalPosition thread to constantly update the global position coordinates.
+        globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, crossEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
+
+        // IMPORTANT NOTE: The following configuration should ideally be done by the caller of this method because the motors that are passed as arguments
+        // may have a FORWARD or REVERSE direction depending on the function served by those motors. The odometry encoders are usually simply using the
+        // motor ports without any relation to those motor functionality.
+
+        // Set direction of odometry encoders.
+        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
+        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        //globalPosition.reverseLeftEncoder();
+        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        //globalPosition.reverseRightEncoder();
+        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
+        //globalPosition.reverseHorizontalEncoder();
+
+        myOpMode.telemetry.addData("Wheelbase Separation", globalPosition.getWheelbaseSeparationCount());
+        myOpMode.telemetry.addData("Horizontal Count Per Radian", globalPosition.getHorizonalCountPerRadian());
+
+        return globalPosition;
+    }
+
+    public void startOdometry() {
         globalPositionThread = new Thread(globalPosition);
         globalPositionThread.start();
     }
 
     public void stopOdometry() {
-
         globalPosition.stop();
+    }
+
+    public void resetOdometryEncoder() {
+        leftEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        crossEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        leftEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        crossEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     public String getMovementStatus() {
@@ -696,6 +744,7 @@ public class MecabotMove extends Mecabot {
         motor.setPower(speed);
         waitUntilMotorBusy(motor);
         motor.setPower(MOTOR_STOP_SPEED);
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
 }

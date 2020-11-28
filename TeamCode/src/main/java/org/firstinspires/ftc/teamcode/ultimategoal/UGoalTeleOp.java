@@ -30,15 +30,14 @@ public class UGoalTeleOp extends LinearOpMode {
         // Initialize the hardware variables.
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
-
-        globalPosition = robot.getPosition();
-
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "Waiting for Start");    //
         telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+
+        globalPosition = robot.getPosition();
 
         // This code assumes Robot starts at a position as follows:
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
@@ -63,6 +62,29 @@ public class UGoalTeleOp extends LinearOpMode {
                 .addData("Angle", "%3.2f", new Func<Double>() {
                     @Override public Double value() {
                         return globalPosition.getOrientationDegrees();
+                    }
+                });
+        telemetry.addLine("Drivetrain ")
+                .addData("LF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.leftFrontDrive.getCurrentPosition();
+                    }
+                })
+                .addData("LB", "%5d", new Func<Integer>() {
+                        @Override public Integer value() {
+                            return robot.leftBackDrive.getCurrentPosition();
+                        }
+                })
+                .addData("RF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.rightFrontDrive.getCurrentPosition();
+                    }
+                })
+                .addData("RB", "%5d", new Func<Integer>() {
+                    @Override public Integer value() {
+                        return robot.rightBackDrive.getCurrentPosition();
                     }
                 });
         telemetry.addLine("Odometry ")
@@ -173,8 +195,9 @@ public class UGoalTeleOp extends LinearOpMode {
             }
             // reset the odometry encoders to zero
             else if (gamepad1.x) {
-                robot.setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                robot.setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                robot.resetOdometryEncoder();
+                robot.resetDriveEncoder();
+                robot.resetWobblePickupArmEncoder();
                 globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
             }
         }
@@ -279,7 +302,7 @@ public class UGoalTeleOp extends LinearOpMode {
 //            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
 //            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
 //            robot.rotateToHeading(targetAngle);
-            // TEMPORARY because odometry is not working, do not do above calculations, just face heaading to Goals
+            // TEMPORARY because odometry is not working, do not do above calculations, just face robot heading towards Goals
             robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         }
@@ -288,7 +311,7 @@ public class UGoalTeleOp extends LinearOpMode {
 //            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y);
 //            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
 //            robot.rotateToHeading(targetAngle);
-            // TEMPORARY because odometry is not working, do not do above calculations, just face heaading to Goals
+            // TEMPORARY because odometry is not working, do not do above calculations, just face robot heading towards Goals
             robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
         }
@@ -408,17 +431,17 @@ public class UGoalTeleOp extends LinearOpMode {
             //if lift stops are being ignored then simply apply the joystick power to the motor
             if (bIgnoreLiftStops) {
                 telemetry.addData("LIFT ", "at %3d, IGNORING STOPS", pos);
-                robot.liftMotor.setPower(power);
+                robot.runLift(power);
             }
             // move lift upwards direction but respect the stop to avoid breaking string
             else if (power > 0 && pos < robot.LIFT_TOP) {
                 telemetry.addData("Lift Up ", "power %.2f | pos %d", power, pos);
-                robot.liftMotor.setPower(power);
+                robot.runLift(power);
             }
             // move lift downwards direction but respect the stop to avoid winding string in opposite direction on the spool
             else if (power < 0 && pos > robot.LIFT_BOTTOM) {
                 telemetry.addData("Lift Down ", "power %.2f | pos %d", power, pos);
-                robot.liftMotor.setPower(power);
+                robot.runLift(power);
             }
             // DO NOT remove the following line, we need to call stopLift() despite power is non-zero, when STOPS are reached
             else {

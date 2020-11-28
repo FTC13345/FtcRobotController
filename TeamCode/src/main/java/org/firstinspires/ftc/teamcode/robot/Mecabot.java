@@ -36,10 +36,6 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 
-import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-
-import static java.lang.Thread.sleep;
-
 /**
  * This is NOT an opmode.
  *
@@ -57,11 +53,6 @@ public class Mecabot {
     public DcMotor rightFrontDrive = null;
     public DcMotor rightBackDrive = null;
 
-    // odometry encoder wheels
-    public DcMotor leftEncoder = null;
-    public DcMotor rightEncoder = null;
-    public DcMotor crossEncoder = null;
-
     // Lights control
     public RevBlinkinLedDriver lights = null;
     public RevBlinkinLedDriver.BlinkinPattern pattern = null;
@@ -77,10 +68,6 @@ public class Mecabot {
     public static final double HALF_WIDTH = WIDTH / 2;
 
     public static final double MOTOR_STOP_SPEED = 0.0;
-
-    //The amount of encoder ticks for each inch the robot moves. THIS WILL CHANGE FOR EACH ROBOT AND NEEDS TO BE UPDATED HERE
-    public static final double ODOMETRY_ENCODER_COUNT_PER_ROTATION = 1440;  // FTC Team 13345 Mecabot encoder has 1440 ticks per rotation
-    public static final double ODOMETRY_WHEEL_DIAMETER = 38.0f / 25.4f; // Odometry wheel has 38mm diameter, calculate in inches
 
     /* local OpMode members. */
     // The hardware map obtained from OpMode
@@ -158,37 +145,11 @@ public class Mecabot {
         // May want to use RUN_USING_ENCODERS if encoders are installed.
         setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        // Odometry encoders
-        leftEncoder = leftBackDrive;   // we are using the encoder port of leftBackDrive motor for odometry
-        rightEncoder = rightBackDrive; // we are using the encoder port of rightBackDrive motor for odometry
-        crossEncoder = rightFrontDrive; // we are using the encoder port of rightFrontDrive motor
-
         // lights
         lights = hwMap.get(RevBlinkinLedDriver.class, "lights");
         pattern = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE;
         lights.setPattern(pattern);
 
-    }
-
-    public OdometryGlobalPosition initOdometry() throws IllegalStateException {
-
-        if ((leftEncoder == null) || (rightEncoder == null) || (crossEncoder == null)) {
-            throw new IllegalStateException("Mecabot hardware must be initialized before Odometry.");
-        }
-
-        //Create and start GlobalPosition thread to constantly update the global position coordinates.
-        OdometryGlobalPosition globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, crossEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
-
-        // Set direction of odometry encoders.
-        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
-        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        globalPosition.reverseLeftEncoder();
-        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        globalPosition.reverseRightEncoder();
-        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
-        globalPosition.reverseHorizontalEncoder();
-
-        return globalPosition;
     }
 
     public void initIMU() {
@@ -250,6 +211,7 @@ public class Mecabot {
     }
     public void resetDriveEncoder() {
         setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     public void setDrivePower(double speed) {

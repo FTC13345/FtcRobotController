@@ -137,7 +137,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // start Ring stack detection counts only after play
         int count = detectRingStackCount();
 
-        robot.pickUpWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
+        robot.pickUpWobble();
         robot.runShooterFlywheel();
         // Start doing the tasks for points
 
@@ -376,7 +376,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (aColor == AllianceColor.RED){
             robot.rotateToHeading(FieldUGoal.ANGLE_NEG_X_AXIS);
         }
-        robot.placeWobble(MecabotMove.DRIVE_SPEED_DEFAULT);
+        robot.placeWobble();
 
     }
     // if we are blue, we will be facing backward, and need to reverse heading to not have to turn
