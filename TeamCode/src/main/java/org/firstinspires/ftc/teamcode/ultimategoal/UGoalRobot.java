@@ -24,9 +24,10 @@ public class UGoalRobot extends MecabotMove {
     static final double     ROBOT_SHOOTING_CURVE_OFFSET = 5.5; // inches
 
     //constants
-    static final double     INTAKE_DOWN_ANGLE           = Servo.MAX_POSITION; //max is 135 degrees, all the way down
-    static final double     LAUNCHER_TWENTY_DEGREES     = Servo.MIN_POSITION;
-    static final double     LAUNCHER_FORTY_FIVE_DEGREES = Servo.MAX_POSITION;
+    static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
+    static final double     INTAKE_ASMBLY_DOWN          = Servo.MAX_POSITION; //max is 135 degrees, all the way down
+    static final double     SHOOTER_PLATFORM_TILT_20    = Servo.MIN_POSITION;
+    static final double     SHOOTER_PLATFORM_TILT_45    = Servo.MAX_POSITION;
     static final double     RING_PUSHER_IDLE_POSITION   = Servo.MAX_POSITION;
     static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
@@ -38,8 +39,8 @@ public class UGoalRobot extends MecabotMove {
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
     static final int        WOBBLE_ARM_UP               = 150;
-    static final int        WOBBLE_ARM_NEAR_UP          = 120;
-    static final int        WOBBLE_ARM_RELEASE          = 90;
+    static final int        WOBBLE_ARM_NEAR_UP          = 135;
+    static final int        WOBBLE_ARM_RELEASE          = 110;
     static final int        WOBBLE_ARM_PICKUP           = 60;
     static final int        WOBBLE_ARM_NEAR_DOWN        = 15;
     static final int        WOBBLE_ARM_DOWN             = 0;
@@ -118,9 +119,8 @@ public class UGoalRobot extends MecabotMove {
         ringPusher = ahwMap.get(Servo.class, "ringPusherServo");
         intakeCRServo = ahwMap.get(CRServo.class, "intakeCRServo");
 
-        // releaseIntake should NOT be initialized to any specific position.
-        // we want to be able to initialize robot regardless whether intake is lifted up or let down
-        angleServo.setPosition(LAUNCHER_TWENTY_DEGREES);
+        intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
+        angleServo.setPosition(SHOOTER_PLATFORM_TILT_20);
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
         //liftArm.setPosition(LIFT_ARM_INSIDE);
@@ -142,8 +142,12 @@ public class UGoalRobot extends MecabotMove {
     /*
      * Ring Intake methods
      */
-    public void releaseIntake(){
-        intakeAssembly.setPosition(INTAKE_DOWN_ANGLE);
+    public void raiseIntakeAssembly(){
+        intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
+    }
+
+    public void dropIntakeAssembly(){
+        intakeAssembly.setPosition(INTAKE_ASMBLY_DOWN);
     }
 
     public void runIntake(double power) {
@@ -312,7 +316,8 @@ public class UGoalRobot extends MecabotMove {
     }
 
     /*
-     * Methods for shooting rings into the Goals or Powershots
+     * Methods for positioning for Shooting Rings
+     * Includes Shooter Platform Tilt angle, Robot Heading orientiation
      * Used for both Tele Op and Auto programs
      */
     // This assumes blue, for red use flip4Red when calling
@@ -424,14 +429,12 @@ public class UGoalRobot extends MecabotMove {
 */
     }
 
-    /**
-     * This method resets the shooter platform to its resting position
-     */
-    public void resetShooterPlatform() {
-        tiltShooterPlatform(SHOOTER_TILT_ANGLE_MIN);
-        myOpMode.telemetry.addData("resetShooterPlatform()", "called");
-        myOpMode.telemetry.update();
-        myOpMode.sleep(1000);
+    public void tiltShooterPlatformMin() {
+        angleServo.setPosition(SHOOTER_PLATFORM_TILT_20);
+    }
+
+    public void tiltShooterPlatformMax() {
+        angleServo.setPosition(SHOOTER_PLATFORM_TILT_45);
     }
 
     /*

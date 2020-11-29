@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
@@ -150,7 +149,7 @@ public class UGoalTeleOp extends LinearOpMode {
         }
 
         // Reset the tilt angle of the shooting platform
-        robot.resetShooterPlatform();
+        robot.tiltShooterPlatformMin();
         //Stop the thread
         robot.stopOdometry();
 
@@ -195,6 +194,7 @@ public class UGoalTeleOp extends LinearOpMode {
             }
             // reset the odometry encoders to zero
             else if (gamepad1.x) {
+                robot.raiseIntakeAssembly();
                 robot.resetOdometryEncoder();
                 robot.resetDriveEncoder();
                 robot.resetWobblePickupArmEncoder();
@@ -323,10 +323,10 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.gyroRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
         }
         else if (gamepad1.x && !gamepad1.start) {
-            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MIN);
+            robot.tiltShooterPlatformMin();
         }
         else if (gamepad1.y) {
-            robot.tiltShooterPlatform(robot.SHOOTER_TILT_ANGLE_MAX);
+            robot.tiltShooterPlatformMax();
         }
         if (gamepad1.start) {
             if (gamepad1.dpad_up) {
@@ -368,7 +368,7 @@ public class UGoalTeleOp extends LinearOpMode {
         if (gamepad2.right_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
             //release the intake down to the ground. This is button overloading.
-            robot.releaseIntake();
+            robot.dropIntakeAssembly();
         }
         if (gamepad2.left_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
