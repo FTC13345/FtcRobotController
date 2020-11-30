@@ -37,7 +37,7 @@ public class MecabotMove extends Mecabot {
     public static final double DRIVE_SPEED_DEFAULT = 0.6;
     public static final double DRIVE_SPEED_FAST    = 0.8;
     public static final double DRIVE_SPEED_MAX     = 1.0;
-    public static final double ROTATE_SPEED_MIN    = 0.12;
+    public static final double ROTATE_SPEED_MIN    = 0.15;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.5;
@@ -49,7 +49,7 @@ public class MecabotMove extends Mecabot {
     public static final double DIST_SLOWDOWN        = 16.0; // inches
     public static final double TIMEOUT_LONG         = 5.0; // seconds
     public static final double TIMEOUT_DEFAULT      = 3.0; // seconds
-    public static final double TIMEOUT_ROTATE       = 2.0; // seconds
+    public static final double TIMEOUT_ROTATE       = 3.0; // seconds
     public static final double TIMEOUT_SHORT        = 1.5; // seconds
     public static final double TIMEOUT_QUICK        = 1.0; // seconds
 

@@ -41,7 +41,7 @@ public class UGoalRobot extends MecabotMove {
     static final int        WOBBLE_ARM_UP               = 150;
     static final int        WOBBLE_ARM_NEAR_UP          = 135;
     static final int        WOBBLE_ARM_RELEASE          = 110;
-    static final int        WOBBLE_ARM_PICKUP           = 60;
+    static final int        WOBBLE_ARM_PICKUP           = 45;
     static final int        WOBBLE_ARM_NEAR_DOWN        = 15;
     static final int        WOBBLE_ARM_DOWN             = 0;
 
@@ -234,7 +234,7 @@ public class UGoalRobot extends MecabotMove {
         motorRunToPosition(wobblePickupArm, WOBBLE_ARM_PICKUP, MecabotMove.DRIVE_SPEED_DEFAULT);
         // grab wobble
         wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
-        myOpMode.sleep(200);
+        myOpMode.sleep(500);
     }
     public void wobbleRaise(){
         // this method assumes that the Wobble has been grabbed already
@@ -270,7 +270,7 @@ public class UGoalRobot extends MecabotMove {
     // It lowers arm to horizontal position and drops the goal
     // Then it folds arm back into robot
     // speed determines how fast the finger arm motor moves
-    public void placeWobble() {
+    public void deliverWobble() {
         // bring wobble arm down to release
         wobbleRelease();
         // stow away the wobble arm

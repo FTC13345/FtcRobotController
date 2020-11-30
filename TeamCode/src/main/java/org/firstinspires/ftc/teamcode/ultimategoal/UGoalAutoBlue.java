@@ -21,7 +21,7 @@ public class UGoalAutoBlue extends UGoalAutoBase {
         // Starting X on middle of starting line. Starting line is on the third tile, middle of start line is center of 3rd tile
         // Starting Y is on inner start line, which is one tile from origin. Blue is positive, Q2
         // Launcher facing toward center of field is 0 degrees
-        globalPosition.initGlobalPosition(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_1_FROM_ORIGIN, 0.0);
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN+FieldUGoal.ROBOT_RADIUS, 0.0);
     }
 
     @Override

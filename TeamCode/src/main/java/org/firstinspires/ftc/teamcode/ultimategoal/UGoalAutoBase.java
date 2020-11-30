@@ -9,10 +9,10 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
-import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
+import org.firstinspires.ftc.teamcode.robot.Mecabot;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
-import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 import java.util.List;
 import java.util.Locale;
@@ -138,21 +138,15 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         int count = detectRingStackCount(1.0);
         telemetry.addData("Rings Detected: ", "%d", count);
 
-        robot.pickUpWobble();
-        robot.runShooterFlywheel();
         // Start doing the tasks for points
+        robot.pickUpWobble();
+        driveToShootHighGoal();
+        shootRingsIntoHighGoal();
 
-        goShootHighGoal();
-        robot.stopShooterFlywheel();
+        driveToTargetZone(count);
+        robot.deliverWobble();
 
-        deliverWobbleAtTargetZone(count);
-        // all done, go and Park at the end of autonomous period, add logic to choose which place to park
-        //if we are blue, reverse direction to just drive backward to the launch line instead of turning
-        if (aColor == AllianceColor.BLUE){
-            robot.setDirectionReverse();
-        }
-        //parkAtInsideLane(count);
-        parkAtOutsideLane(count);
+        driveToPark(count);
     }
 
     protected void setupTelemetry() {
@@ -242,9 +236,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         ElapsedTime time = new ElapsedTime(0);
 
         String label = null;
+        int j = 0;
 
-        while (time.seconds() < timeout) {
+        telemetry.addData("Detecting ring stack ", "timeout = %.1f", timeout);
+        while (time.milliseconds() < timeout*1000.0) {
             if (tfod != null) {
+                telemetry.addData("checking tfod recognitions", "[%d]", ++j);
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
                 List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
@@ -294,9 +291,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         actionString = "Ring Stack Detection";
         message = "Started";
-        int count = detectRingStackCount(timeout);
-        message = String.format(Locale.US, "%d rings", count);
-        telemetry.addData("Detected ", "%d rings in stack", count);
+        int count;
+        for (int i=0;i<5;i++) {
+            count = detectRingStackCount(timeout);
+            message = String.format(Locale.US, "%d rings", count);
+            telemetry.addData("Detected ", "%d rings on [%d] attempt", count, i);
+            telemetry.update();
+        }
     }
 
     //for auto going to and shooting the 3 power shots
@@ -311,6 +312,82 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // third powershot
         robot.driveToNextPowerShot(aColor);
     }
+
+    // using move distance methods to go to high goal
+    public void driveToShootHighGoal(){
+        // move around the stack
+        robot.encoderMoveRightLeft(15);
+        //robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        // 3 tiles takes us to launch line, but robot will be half over launch line
+        // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
+        robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.4);
+        // move back 8 inches because we moved out of the way of the stack
+        robot.encoderMoveRightLeft(-8);
+        // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
+        robot.dropIntakeAssembly();
+        // get ready into position for shooting rings
+        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+
+    }
+    // using move distance methods to go to correct target zone
+    public void driveToTargetZone(int count){
+        // Assumption: We are at High Goal shooting position behind the launch line.
+        // x-axis is toward/away (+/- respectively) from the goals/powershot, relative to robot forward/back
+        // y-axis is toward/away (+/- respectively) from the outside wall, relative to robot left/right
+        // the input inches is RELATIVE TO THE ROBOT, NOT COORDINATES
+        if (count == 0){
+            robot.encoderMoveForwardBack(Mecabot.HALF_WIDTH);
+            // already aligned with zone A on the X-axis, so just move on the y toward edge wall
+            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH/2);
+        }
+        else if (count == 1){
+            //we are already aligned with zone B on the Y-axis, so just move on the x toward goals/powershot
+            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.5);
+        }
+        else if(count == 4){
+            // neither aligned on x nor y
+            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.5);
+            // move on the y same as target A, as zone A&C have the same y
+            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH/2);
+        }
+    }
+    // using move distance methods to park between powershots and goals, for easy intake of rings from human player
+    // Count because we aren't using goToPosition, so we have to know which target zone we went to
+    public void driveToPark(int count){
+        if (count == 0){
+            // if A  we are half a tile to the left relative to where we would be if we were in B
+            // So move an additional half tile to the right
+            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+        }
+        else if (count == 1){
+            //if target zone b, just move half a tile to the right to align with human player
+            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH/2);
+            //move back to launch line
+            robot.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH);
+        }
+        else if (count == 4){
+            // if A  we are half a tile to the left relative to where we would be if we were in B
+            // So move an additional half tile to the right
+            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+            //move back to launch line
+            robot.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH*2);
+        }
+
+
+        // if using goToPosition, use below and we don't need the parameter
+        // robot.goToPosition(FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN);
+
+        // turn the robot around so intake faces the human player
+        robot.rotateToHeading(180);
+    }
+
+
+
+
+
+
+
+
     //Power shot 1 is furthest power shot from center
     public void shootPowerShot1(){
         robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
@@ -329,20 +406,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
-    //aim and shoot at the highgoal
-    public void shootHighGoal(){
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
-        robot.shootRing();
-    }
-    //go to and shoot three rings into the high goal
 
-    public void goShootHighGoal(){
-        robot.driveToShootHighGoal(aColor);
-        for (int i = 0; i<3; i++){
+    //aim and shoot three rings into the high goal
+    public void shootRingsIntoHighGoal(){
+        robot.runShooterFlywheel();
+        //run intake for third ring
+        robot.runIntake(1.0);
+        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
+        for (int i = 0; i<5; i++) {
+            sleep(800); // allow 1 sec for the flywheel to gain full speed after each shot
             robot.shootRing();
-            sleep(1000); // allow 1 sec for the flywheel to gain full speed after each shot
         }
+        robot.stopIntake();
+        robot.stopShooterFlywheel();
     }
 
     // distance between center of robot and where wobble is placed is 15 inches
@@ -366,7 +442,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (aColor == AllianceColor.RED){
             robot.rotateToHeading(FieldUGoal.ANGLE_NEG_X_AXIS);
         }
-        robot.placeWobble();
+        robot.deliverWobble();
 
     }
     // if we are blue, we will be facing backward, and need to reverse heading to not have to turn
