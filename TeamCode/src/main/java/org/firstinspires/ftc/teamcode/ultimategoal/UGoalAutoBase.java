@@ -15,6 +15,7 @@ import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
@@ -103,10 +104,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.startOdometry();
         // start printing messages to driver station asap
         setupTelemetry();
-        printRingStackDetection(0.3);
+        printRingStackDetection(2.0);
         telemetry.update();
-        // stop the vision pipeline until user hits play button
-        stopRingStackDetection();
+
         // start the robot operator thread
         //** TODO: implement Operator class running in separate thread **//
         // oper = new RobotOperator(this, nav);
@@ -135,7 +135,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         setOdometryStartingPosition();
 
         // start Ring stack detection counts only after play
-        int count = detectRingStackCount();
+        int count = detectRingStackCount(1.0);
+        telemetry.addData("Rings Detected: ", "%d", count);
 
         robot.pickUpWobble();
         robot.runShooterFlywheel();
@@ -170,13 +171,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return getMessage();
                     }
                 });
-        telemetry.addLine("Move ")
-                .addData("", new Func<String>() {
-                    @Override
-                    public String value() {
-                        return robot.getMovementStatus();
-                    }
-                });
         telemetry.addLine("Position ")
                 .addData("X", "%3.2f", new Func<Double>() {
                     @Override
@@ -201,15 +195,18 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return robot.getDirectionStr();
                     }
                 });
+        telemetry.addLine("Move ")
+                .addData("", new Func<String>() {
+                    @Override
+                    public String value() {
+                        return robot.getMovementStatus();
+                    }
+                });
         message = "Done";
         telemetry.update();
     }
 
     protected void initRingStackDetection() {
-        // lof of initialization setup
-        // then start
-        // phoneCam.startStreaming(IMG_WIDTH, IMG_HEIGHT, OpenCvCameraRotation.UPRIGHT);
-
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
         initVuforia();
@@ -234,27 +231,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         }
     }
 
-    protected void startRingStackDetection() {
-        // phoneCam.startStreaming(IMG_WIDTH, IMG_HEIGHT, OpenCvCameraRotation.UPRIGHT);
-    }
-
-    protected void stopRingStackDetection() {
-        // phoneCam.stopStreaming();
-
-    }
-
     /**
      * Detects the stack of the rings and returns a string based on how many rings are in front
      * of the robot. Measures for 2 seconds and then returns what is detected
+     * @param timeout Timeout value in seconds
      * @return  4, 1, or 0 depending on the number of rings
      */
-    protected int detectRingStackCount() {
+    protected int detectRingStackCount(double timeout) {
 
         ElapsedTime time = new ElapsedTime(0);
 
         String label = null;
 
-        while (time.milliseconds() < 2000) {
+        while (time.seconds() < timeout) {
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
@@ -304,11 +293,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void printRingStackDetection(double timeout) {
 
         actionString = "Ring Stack Detection";
-        message = "Detecting";
-        ElapsedTime runTime = new ElapsedTime();
-        while (runTime.seconds() < timeout) {
-        }
+        message = "Started";
+        int count = detectRingStackCount(timeout);
+        message = String.format(Locale.US, "%d rings", count);
+        telemetry.addData("Detected ", "%d rings in stack", count);
     }
+
     //for auto going to and shooting the 3 power shots
     public void goShoot3Powershot(){
         //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
