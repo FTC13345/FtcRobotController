@@ -36,7 +36,7 @@ public class UGoalAutoBlue extends UGoalAutoBase {
         waitForStart();
 
         // This OpMode does all the tasks in the autonomous period of 30 seconds
-        runFullAutoProgram();
+        // runFullAutoProgram();
 
         // Don't exit, wait for user (driver presses STOP)
         waitForStop();

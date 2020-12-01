@@ -93,6 +93,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Initialize the robot hardware and drive system variables.
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
+        telemetry.update();
 
         // initialize the image recognition for ring detection
         initRingStackDetection();
@@ -104,8 +105,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.startOdometry();
         // start printing messages to driver station asap
         setupTelemetry();
-        printRingStackDetection(2.0);
-        telemetry.update();
+        printRingStackDetection(10.0);
 
         // start the robot operator thread
         //** TODO: implement Operator class running in separate thread **//
@@ -233,13 +233,18 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      */
     protected int detectRingStackCount(double timeout) {
 
-        ElapsedTime time = new ElapsedTime(0);
+        ElapsedTime time = new ElapsedTime();
+
 
         String label = null;
         int j = 0;
 
         telemetry.addData("Detecting ring stack ", "timeout = %.1f", timeout);
-        while (time.milliseconds() < timeout*1000.0) {
+        telemetry.addData("start time:", "%.0f", time.milliseconds());
+        telemetry.update();
+
+        while (time.seconds() < timeout) {
+            telemetry.addData("While loop entered ", "%.0f", time.milliseconds());
             if (tfod != null) {
                 telemetry.addData("checking tfod recognitions", "[%d]", ++j);
                 // getUpdatedRecognitions() will return null if no new information is available since
@@ -252,14 +257,21 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     for (Recognition recognition : updatedRecognitions) {
                         telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
                     }
-                    telemetry.update();
                     if (!updatedRecognitions.isEmpty()) {
                         label = updatedRecognitions.get(0).getLabel();
                     }
+                    telemetry.update();
                 }
             }
+            else {
+                telemetry.addData("TFOD IS NULL","initialization failed!!!");
+                telemetry.update();
+            }
+
 
         }
+        telemetry.addData("end time:", "%.0f", time.milliseconds());
+
         if (label == null) {
             return 0;
         }
@@ -291,13 +303,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         actionString = "Ring Stack Detection";
         message = "Started";
-        int count;
-        for (int i=0;i<5;i++) {
-            count = detectRingStackCount(timeout);
-            message = String.format(Locale.US, "%d rings", count);
-            telemetry.addData("Detected ", "%d rings on [%d] attempt", count, i);
-            telemetry.update();
-        }
+        int count = detectRingStackCount(timeout);
+        message = String.format(Locale.US, "%d rings", count);
+        telemetry.addData("Detected ", "%d rings", count);
+        telemetry.update();
+
     }
 
     //for auto going to and shooting the 3 power shots
