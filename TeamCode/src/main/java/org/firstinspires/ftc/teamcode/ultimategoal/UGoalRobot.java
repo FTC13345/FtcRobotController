@@ -26,8 +26,8 @@ public class UGoalRobot extends MecabotMove {
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
     static final double     INTAKE_ASMBLY_DOWN          = Servo.MAX_POSITION; //max is 135 degrees, all the way down
-    static final double     SHOOTER_PLATFORM_TILT_20    = Servo.MIN_POSITION;
-    static final double     SHOOTER_PLATFORM_TILT_45    = Servo.MAX_POSITION;
+    static final double     SHOOTER_PLATFORM_POS_MIN    = Servo.MIN_POSITION;
+    static final double     SHOOTER_PLATFORM_POS_MAX    = Servo.MAX_POSITION;
     static final double     RING_PUSHER_IDLE_POSITION   = Servo.MAX_POSITION;
     static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
@@ -52,17 +52,13 @@ public class UGoalRobot extends MecabotMove {
     //Finals
     static final double SHOOTER_FLYWHEEL_RUN = 1.0;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
-    static final double SHOOTER_TILT_ANGLE_MIN = 20.0f;
-    static final double SHOOTER_TILT_ANGLE_MAX = 45.0f;
+    static final double SHOOTER_PLATFORM_ANGLE_MIN = 20.0f;
+    static final double SHOOTER_PLATFORM_ANGLE_MAX = 45.0f;
 
     // status variables
-    double shooterTiltAngleDesired = SHOOTER_TILT_ANGLE_MIN;
-    double shooterTiltAngleClipped = SHOOTER_TILT_ANGLE_MIN;
-    // MATH to convert platform tilt angle to rotation of oval supports under platform
-    // scales 25 degrees (range is 20-45 degrees) of shooter platform tilt to 180 degrees of oval rotation
-    double servoRotation = 0;
+    double shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
     // Convertion of oval rotation (degrees) to motor encoder ticks
-    int ovalRotationTicks = 0;
+//    int ovalRotationTicks = 0;
 
     // Motors and/or enccoders
     public DcMotor leftODwheel = null;
@@ -120,7 +116,7 @@ public class UGoalRobot extends MecabotMove {
         intakeCRServo = ahwMap.get(CRServo.class, "intakeCRServo");
 
         intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
-        angleServo.setPosition(SHOOTER_PLATFORM_TILT_20);
+        angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
         //liftArm.setPosition(LIFT_ARM_INSIDE);
@@ -389,15 +385,15 @@ public class UGoalRobot extends MecabotMove {
      */
     public void tiltShooterPlatform(double tiltAngle) {
 
-        shooterTiltAngleDesired = tiltAngle;    // record for telemetry printout, do not delete this line
+        shooterPlatformTiltAngle = tiltAngle;    // record for telemetry printout, do not delete this line
 
-        shooterTiltAngleClipped = Range.clip(shooterTiltAngleDesired, SHOOTER_TILT_ANGLE_MIN, SHOOTER_TILT_ANGLE_MAX);
+        tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
         // MATH to convert platform tilt angle to rotation of oval supports under platform
         // scales 25 degrees (range is 20-45 degrees) of shooter platform movement to fraction of range of oval rotation
-        servoRotation = (shooterTiltAngleClipped - SHOOTER_TILT_ANGLE_MIN)  / (SHOOTER_TILT_ANGLE_MAX - SHOOTER_TILT_ANGLE_MIN);
+        double position = (tiltAngle - SHOOTER_PLATFORM_ANGLE_MIN)  / (SHOOTER_PLATFORM_ANGLE_MAX - SHOOTER_PLATFORM_ANGLE_MIN);
 
-        angleServo.setPosition(servoRotation);
+        angleServo.setPosition(position);
 
         //myOpMode.telemetry.addData("Shooter Tilt ", "Angle=%.2f, pos=%d in %.2fs", tiltAngle, ovalRotationTicks, runTime.seconds());
 
@@ -418,7 +414,7 @@ public class UGoalRobot extends MecabotMove {
         while (((signum * (ovalRotationTicks - pos)) > 0) && (runTime.seconds() < 2.0)){
             pos = angleMotor.getCurrentPosition();
             myOpMode.telemetry.addLine("Shooter ")
-                    .addData("Tilt", "%2.2f[%2.2f]", shooterTiltAngleClipped,shooterTiltAngleDesired)
+                    .addData("Tilt", "%2.2f[%2.2f]", shooterTiltAngleClipped,shooterPlatformTiltAngle)
                     .addData("Oval", "%2.2f",ovalRotationDegrees)
                     .addData("TPos", "%3d", ovalRotationTicks)
                     .addData("CPos", "%3d", pos);
@@ -430,11 +426,13 @@ public class UGoalRobot extends MecabotMove {
     }
 
     public void tiltShooterPlatformMin() {
-        angleServo.setPosition(SHOOTER_PLATFORM_TILT_20);
+        shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
+        angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
     }
 
     public void tiltShooterPlatformMax() {
-        angleServo.setPosition(SHOOTER_PLATFORM_TILT_45);
+        shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MAX;
+        angleServo.setPosition(SHOOTER_PLATFORM_POS_MAX);
     }
 
     /*

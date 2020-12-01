@@ -7,7 +7,6 @@ import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotDriver;
-import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
@@ -31,6 +30,9 @@ public class UGoalTeleOp extends LinearOpMode {
 
         driver = new MecabotDriver(this, robot);
         globalPosition = robot.getPosition();
+        robot.startOdometry();
+
+        setupTelemetry();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -45,104 +47,6 @@ public class UGoalTeleOp extends LinearOpMode {
         globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         // Enable this temporarily for Shooter Platform Tilt debugging
         //globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
-        robot.startOdometry();
-
-        telemetry.addLine("Global Position ")
-                .addData("X", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getXinches();
-                    }
-                })
-                .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getYinches();
-                    }
-                })
-                .addData("Angle", "%3.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getOrientationDegrees();
-                    }
-                });
-        telemetry.addLine("Drivetrain ")
-                .addData("LF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return robot.leftFrontDrive.getCurrentPosition();
-                    }
-                })
-                .addData("LB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return robot.leftBackDrive.getCurrentPosition();
-                    }
-                })
-                .addData("RF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return robot.rightFrontDrive.getCurrentPosition();
-                    }
-                })
-                .addData("RB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return robot.rightBackDrive.getCurrentPosition();
-                    }
-                });
-        telemetry.addLine("Odometry ")
-                .addData("L", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getVerticalLeftCount();
-                    }
-                })
-                .addData("R", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getVerticalRightCount();
-                    }
-                })
-                .addData("X", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getHorizontalCount();
-                    }
-                });
-        telemetry.addLine("Move ")
-                .addData("", new Func<String>() {
-                    @Override
-                    public String value() {
-                        return robot.getMovementStatus();
-                    }
-                });
-        telemetry.addLine("Tilt ")
-                .addData("Deg", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return robot.shooterTiltAngleDesired;
-                    }
-                })
-                .addData("Oval", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return robot.servoRotation;
-                    }
-                })
-                .addData("TPos", "%4d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return robot.ovalRotationTicks;
-                    }
-                })
-                .addData("CPos", "%4d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return (int) robot.angleServo.getPosition();
-                    }
-                });
-
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -274,7 +178,6 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // Wobble arm
         int pos = robot.wobblePickupArm.getCurrentPosition();
-        telemetry.addData("Wobble Arm pos ", pos);
 
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
             // arm is at bottom position
@@ -350,6 +253,98 @@ public class UGoalTeleOp extends LinearOpMode {
         else {
             robot.stopLift();
         }
+    }
+
+    public void setupTelemetry() {
+        telemetry.addLine("Global Position ")
+                .addData("X", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getXinches();
+                    }
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getYinches();
+                    }
+                })
+                .addData("Angle", "%3.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getOrientationDegrees();
+                    }
+                });
+        telemetry.addLine("Drivetrain ")
+                .addData("LF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.leftFrontDrive.getCurrentPosition();
+                    }
+                })
+                .addData("LB", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.leftBackDrive.getCurrentPosition();
+                    }
+                })
+                .addData("RF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.rightFrontDrive.getCurrentPosition();
+                    }
+                })
+                .addData("RB", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.rightBackDrive.getCurrentPosition();
+                    }
+                });
+        telemetry.addLine("Odometry ")
+                .addData("L", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getVerticalLeftCount();
+                    }
+                })
+                .addData("R", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getVerticalRightCount();
+                    }
+                })
+                .addData("X", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getHorizontalCount();
+                    }
+                });
+        telemetry.addLine("Move ")
+                .addData("", new Func<String>() {
+                    @Override
+                    public String value() {
+                        return robot.getMovementStatus();
+                    }
+                });
+        telemetry.addLine("Tilt ")
+                .addData("Angle", "%.1f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return robot.shooterPlatformTiltAngle;
+                    }
+                })
+                .addData("Pos", "%.2f",  new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return robot.angleServo.getPosition();
+                    }
+                })
+                .addData("Wobble Arm", "%3d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.wobblePickupArm.getCurrentPosition();
+                    }
+                });
     }
 
 }
