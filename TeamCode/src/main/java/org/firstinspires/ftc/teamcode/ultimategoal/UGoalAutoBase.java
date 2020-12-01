@@ -91,6 +91,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Initialize the robot hardware and drive system variables.
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
+        // Send telemetry message to signify robot waiting;
+        telemetry.addData(">", "Waiting for Start");    //
         telemetry.update();
 
         // initialize the image recognition for ring detection
@@ -107,10 +109,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
         runRingStackDetection();
 
-        // start the robot operator thread
-        //** TODO: implement Operator class running in separate thread **//
-        // oper = new RobotOperator(this, nav);
-        // oper.start();
     }
 
     // for testing mainly, at the end wait for driver to press STOP, meanwhile
@@ -118,8 +116,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void waitForStop() {
 
         shutdownRingStackDetection();
-        //** TODO: implement Operator class running in separate thread **//
-        // oper.stop();
         while (opModeIsActive()) {
             telemetry.update();
         }
@@ -322,13 +318,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // 3 tiles takes us to launch line, but robot will be half over launch line
         // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
         robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.4);
-        // move back 8 inches because we moved out of the way of the stack
+        // move back 8 inches to align with the High Goal
         robot.encoderMoveRightLeft(-8);
+        // start flywheel motor early to let it gain full speed
+        robot.runShooterFlywheel();
         // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
         robot.dropIntakeAssembly();
         // get ready into position for shooting rings
         robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-
     }
     // using move distance methods to go to correct target zone
     public void driveToTargetZone(int count){
@@ -339,42 +336,41 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (count == 0){
             robot.encoderMoveForwardBack(Mecabot.HALF_WIDTH);
             // already aligned with zone A on the X-axis, so just move on the y toward edge wall
-            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH/2);
+            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }
         else if (count == 1){
-            //we are already aligned with zone B on the Y-axis, so just move on the x toward goals/powershot
+            //we are mostly aligned with zone B on the Y-axis, so just move on the x toward goals/powershot
             robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.5);
+            //but better to move away on y-axis to drop wobble
+            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH*0.5);
         }
         else if(count == 4){
             // neither aligned on x nor y
             robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.5);
             // move on the y same as target A, as zone A&C have the same y
-            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH/2);
+            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }
     }
     // using move distance methods to park between powershots and goals, for easy intake of rings from human player
     // Count because we aren't using goToPosition, so we have to know which target zone we went to
     public void driveToPark(int count){
         if (count == 0){
-            // if A  we are half a tile to the left relative to where we would be if we were in B
-            // So move an additional half tile to the right
+            // for A we are one tile to the left relative to where we would be if we were in B
+            // So move by one tile to the right
             robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+            // already on launch line, no need to move along X-Axis
         }
         else if (count == 1){
-            //if target zone b, just move half a tile to the right to align with human player
-            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH/2);
-            //move back to launch line
+            //only move back to launch line
             robot.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH);
         }
         else if (count == 4){
-            // if A  we are half a tile to the left relative to where we would be if we were in B
-            // So move an additional half tile to the right
+            // for C we are one tile to the left relative to where we would be if we were in B
+            // So move by one tile to the right
             robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
             //move back to launch line
             robot.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH*2);
         }
-
-
         // if using goToPosition, use below and we don't need the parameter
         // robot.goToPosition(FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN);
 
@@ -410,12 +406,16 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     //aim and shoot three rings into the high goal
     public void shootRingsIntoHighGoal(){
-        robot.runShooterFlywheel();
-        //run intake for third ring
-        robot.runIntake(1.0);
+        // assumption that flywheel is already running so it can gain full speed
+
         robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
+        // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
+        // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
+        robot.runIntake(1.0);
         for (int i = 0; i<5; i++) {
-            sleep(800); // allow 1 sec for the flywheel to gain full speed after each shot
+            if (i>0) {
+                sleep(600); // allow some time for the flywheel to gain full speed after each shot
+            }
             robot.shootRing();
         }
         robot.stopIntake();
