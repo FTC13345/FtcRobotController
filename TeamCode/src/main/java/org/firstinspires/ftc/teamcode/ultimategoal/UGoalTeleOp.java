@@ -6,23 +6,19 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
+import org.firstinspires.ftc.teamcode.robot.MecabotDriver;
 import org.firstinspires.ftc.teamcode.robot.MecabotMove;
 
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
 public class UGoalTeleOp extends LinearOpMode {
 
-    static final double TURN_FACTOR =   0.6;    // slow down turning speed
-    private boolean     bIgnoreLiftStops = false;
+    private boolean bIgnoreLiftStops = false;
 
     /* Declare OpMode members. */
+    MecabotDriver driver;
     UGoalRobot robot;
     OdometryGlobalPosition globalPosition;
-
-    // record position that we need to return to repeatedly
-    double xpos, ypos, tpos;
-    boolean autoDriving = false;
-    double speedMultiplier = MecabotMove.DRIVE_SPEED_MAX;
 
     @Override
     public void runOpMode() {
@@ -33,33 +29,40 @@ public class UGoalTeleOp extends LinearOpMode {
         telemetry.addData(">", "Waiting for Start");    //
         telemetry.update();
 
+        driver = new MecabotDriver(this, robot);
+        globalPosition = robot.getPosition();
+
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        globalPosition = robot.getPosition();
+        // start the thread which handles driver controls on gamepad1
+        driver.start();
 
         // This code assumes Robot starts at a position as follows:
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
+        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         // Enable this temporarily for Shooter Platform Tilt debugging
         //globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
         robot.startOdometry();
 
         telemetry.addLine("Global Position ")
                 .addData("X", "%2.2f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return globalPosition.getXinches();
                     }
                 })
                 .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return globalPosition.getYinches();
                     }
                 })
                 .addData("Angle", "%3.2f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return globalPosition.getOrientationDegrees();
                     }
                 });
@@ -71,9 +74,10 @@ public class UGoalTeleOp extends LinearOpMode {
                     }
                 })
                 .addData("LB", "%5d", new Func<Integer>() {
-                        @Override public Integer value() {
-                            return robot.leftBackDrive.getCurrentPosition();
-                        }
+                    @Override
+                    public Integer value() {
+                        return robot.leftBackDrive.getCurrentPosition();
+                    }
                 })
                 .addData("RF", "%5d", new Func<Integer>() {
                     @Override
@@ -82,23 +86,27 @@ public class UGoalTeleOp extends LinearOpMode {
                     }
                 })
                 .addData("RB", "%5d", new Func<Integer>() {
-                    @Override public Integer value() {
+                    @Override
+                    public Integer value() {
                         return robot.rightBackDrive.getCurrentPosition();
                     }
                 });
         telemetry.addLine("Odometry ")
                 .addData("L", "%5.0f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return globalPosition.getVerticalLeftCount();
                     }
                 })
                 .addData("R", "%5.0f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return globalPosition.getVerticalRightCount();
                     }
                 })
                 .addData("X", "%5.0f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return globalPosition.getHorizontalCount();
                     }
                 });
@@ -111,17 +119,20 @@ public class UGoalTeleOp extends LinearOpMode {
                 });
         telemetry.addLine("Tilt ")
                 .addData("Deg", "%.1f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return robot.shooterTiltAngleDesired;
                     }
                 })
                 .addData("Oval", "%.1f", new Func<Double>() {
-                    @Override public Double value() {
+                    @Override
+                    public Double value() {
                         return robot.servoRotation;
                     }
                 })
                 .addData("TPos", "%4d", new Func<Integer>() {
-                    @Override public Integer value() {
+                    @Override
+                    public Integer value() {
                         return robot.ovalRotationTicks;
                     }
                 })
@@ -136,8 +147,6 @@ public class UGoalTeleOp extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             setup();
-            autodrive();
-            operdrive();
             intake();
             shootRings();
             wobblePickup();
@@ -152,12 +161,12 @@ public class UGoalTeleOp extends LinearOpMode {
         robot.tiltShooterPlatformMin();
         //Stop the thread
         robot.stopOdometry();
-
+        driver.stop();
         // all done, please exit
 
     }
 
-    private void setup() {
+    public void setup() {
         /*
          * Use special key combinations to toggle override controls
          */
@@ -171,124 +180,22 @@ public class UGoalTeleOp extends LinearOpMode {
         if ((gamepad2.start) && (gamepad2.right_bumper)) {
             bIgnoreLiftStops = true;
         }
-/*
-        // This block of code was used to record the position of robot on the field and
-        // then later auto drive back to same location. Used in Skystone, no longer used in Ultimate Goal.
-       if ((gamepad1.x) && (!gamepad2.x)) {
-            xpos = globalPosition.getXinches();
-            ypos = globalPosition.getYinches();
-            tpos = globalPosition.getOrientationDegrees();
-            telemetry.addData("Locked Position", "X %2.2f | Y %2.2f | Angle %3.2f", xpos, ypos, tpos);
-        }
-        if ((gamepad1.y) && (!gamepad2.y)){
-            robot.setDirectionReverse();
-            autoDriving = true;
-        }
- */
-        if (gamepad1.start) {
-            // Toggle which face of the Robot is front for driving
-            if (gamepad1.right_bumper) {
-                robot.setDirectionForward();
-            } else if (gamepad1.left_bumper) {
-                robot.setDirectionReverse();
-            }
-            // reset the odometry encoders to zero
-            else if (gamepad1.x) {
-                robot.raiseIntakeAssembly();
-                robot.resetOdometryEncoder();
-                robot.resetDriveEncoder();
-                robot.resetWobblePickupArmEncoder();
-                globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN+robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
-            }
-        }
-        else { // !gamepad1.start --> which means bumper buttons pressed alone
-            //update speedMultiplier for FAST or SLOW driving
-            if (gamepad1.right_bumper) {
-                speedMultiplier = MecabotMove.DRIVE_SPEED_MAX;
-                robot.setFastBlue();
-                // as a dual action of this button stop autodriving
-                autoDriving = false;
-            }
-            else if (gamepad1.left_bumper) {
-                speedMultiplier = MecabotMove.DRIVE_SPEED_DEFAULT;
-                robot.setSlowBlue();
-                // as a dual action of this button stop autodriving
-                autoDriving = false;
-            }
+
+        if ((gamepad2.start) && (gamepad2.x)) {
+            robot.raiseIntakeAssembly();
+            robot.resetOdometryEncoder();
+            robot.resetDriveEncoder();
+            robot.resetWobblePickupArmEncoder();
+            globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         }
     }
 
-    public void autodrive() {
-        if (autoDriving) {
-            telemetry.addData("Driving Towards", "X %2.2f | Y %2.2f | Angle %3.2f", xpos, ypos, tpos);
-            double distance = robot.goTowardsPosition(xpos, ypos, MecabotMove.DRIVE_SPEED_DEFAULT, true);
-            if (distance < MecabotMove.DIST_MARGIN) { // we have reached
-                autoDriving = false;
-            }
-        }
-    }
-
-    public void operdrive() {
-        // if joystick is inactive brakes will be applied during autodrive() therefore don't go in
-        if (autoDriving) {
-            return;
-        }
-
-        double power, turn;
-
-        // square the joystick values to change from linear to logarithmic scale
-        // this allows more movement of joystick for less movement of robot, thus more precision at lower speeds
-        // at the expense of some loss of precision at higher speeds, where it is not required.
-
-        // when we want to move sideways (MECANUM)
-        if (gamepad1.left_trigger > 0) {
-            power = -gamepad1.left_trigger; // negative power to move LEFT
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.30 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
-            robot.driveMecanum(power);
-            telemetry.addData("Mecanum Left ", "%.2f", power);
-        }
-        else if (gamepad1.right_trigger > 0) {
-            power = gamepad1.right_trigger; // positive power to move RIGHT
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.30 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
-            robot.driveMecanum(power);
-            telemetry.addData("Mecanum Right  ", "%.2f", power);
-        }
-        // normal tank movement
-        else {  // when joystick is inactive, this applies brakes, be careful to avoid during autodrive
-            // forward press on joystick is negative, backward press (towards human) is positive
-            // right press on joystick is positive value, left press is negative value
-            // reverse sign of joystick values to match the expected sign in driveTank() method.
-            power = -gamepad1.left_stick_y;
-            turn = -gamepad1.right_stick_x;
-
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.25 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.2 + (0.8 * power * power));
-            // OR
-            // use this to scale the range without squaring the power value
-            //power = Math.signum(power) * (0.25 + (0.75 * Math.abs(power)));
-            // OR
-            // use this to square the power while preserving the sign, without scaling the range
-            //power *= Math.abs(power);
-
-            // similarly for turn power, except also slow down by TURN_FACTOR
-            turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
-
-            robot.driveTank(power, turn);
-            telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
-        }
-    }
-    public void shootRings(){
-       // Toggle the ring shooter flywheel motor when A is pressed
+    public void shootRings() {
+        // Toggle the ring shooter flywheel motor when A is pressed
         if (gamepad2.a) {
             if (robot.isShooterFlywheelRunning()) {
                 robot.stopShooterFlywheel();
-            }
-            else {
+            } else {
                 robot.runShooterFlywheel();
             }
         }
@@ -316,16 +223,9 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
         }
 
-        if (gamepad1.a) {
-            robot.odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
-        }
-        else if (gamepad1.b) {
-            robot.gyroRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
-        }
-        else if (gamepad1.x && !gamepad1.start) {
+        if (gamepad1.x) {
             robot.tiltShooterPlatformMin();
-        }
-        else if (gamepad1.y) {
+        } else if (gamepad1.y) {
             robot.tiltShooterPlatformMax();
         }
         if (gamepad1.start) {
@@ -349,11 +249,9 @@ public class UGoalTeleOp extends LinearOpMode {
         double power = 0;
         if (gamepad2.right_trigger > 0) { // intake is sucking the ring in to the robot
             power = gamepad2.right_trigger;
-        }
-        else if (gamepad2.left_trigger > 0) { // intake is ejecting the ring out of the robot
+        } else if (gamepad2.left_trigger > 0) { // intake is ejecting the ring out of the robot
             power = -gamepad2.left_trigger;
-        }
-        else { // stop intake motor
+        } else { // stop intake motor
             power = 0.0;
         }
         // Square the number but retain the sign to convert to logarithmic scale
@@ -401,7 +299,7 @@ public class UGoalTeleOp extends LinearOpMode {
     }
 
     // lift for the claw putting loaded rings onto the wobble goal, right side
-    public void ringsLiftArmClaw(){
+    public void ringsLiftArmClaw() {
 
         // Lift Arm and Claw
         if (gamepad2.dpad_left) {
@@ -414,7 +312,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.releaseRingsWithClaw();
         }
 
-        if (gamepad2.right_stick_y != 0){
+        if (gamepad2.right_stick_y != 0) {
             //joystick gives a negative value when pushed up, we want the lift to go up when positive
             double power = -gamepad2.right_stick_y;
             // Square the number but retain the sign to convert to logarithmic scale
@@ -449,7 +347,7 @@ public class UGoalTeleOp extends LinearOpMode {
             }
         }
         // DO NOT remove the following line, we need to call stopLift() when user releases the joystick
-        else{
+        else {
             robot.stopLift();
         }
     }
