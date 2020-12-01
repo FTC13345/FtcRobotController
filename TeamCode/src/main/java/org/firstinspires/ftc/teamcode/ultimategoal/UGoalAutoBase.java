@@ -313,20 +313,37 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     // using move distance methods to go to high goal
     public void driveToShootHighGoal(){
         // move around the stack
-        robot.encoderMoveRightLeft(15);
-        //robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        robot.encoderMoveRightLeft(12);
+        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS + 1);
         // 3 tiles takes us to launch line, but robot will be half over launch line
         // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
         robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.4);
-        // move back 8 inches to align with the High Goal
-        robot.encoderMoveRightLeft(-8);
         // start flywheel motor early to let it gain full speed
         robot.runShooterFlywheel();
+        // move back 8 inches to align with the High Goal
+        robot.encoderMoveRightLeft(-8);
         // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
         robot.dropIntakeAssembly();
         // get ready into position for shooting rings
         robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
     }
+
+    //aim and shoot three rings into the high goal
+    public void shootRingsIntoHighGoal(){
+        // assumption that flywheel is already running so it can gain full speed
+
+        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
+        // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
+        // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
+        robot.runIntake(1.0);
+        for (int i = 0; i<5; i++) {
+            sleep(1000); // allow some time for the flywheel to gain full speed after each shot
+            robot.shootRing();
+        }
+        robot.stopIntake();
+        robot.stopShooterFlywheel();
+    }
+
     // using move distance methods to go to correct target zone
     public void driveToTargetZone(int count){
         // Assumption: We are at High Goal shooting position behind the launch line.
@@ -403,25 +420,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
         robot.shootRing();
     }
-
-    //aim and shoot three rings into the high goal
-    public void shootRingsIntoHighGoal(){
-        // assumption that flywheel is already running so it can gain full speed
-
-        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
-        // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
-        // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
-        robot.runIntake(1.0);
-        for (int i = 0; i<5; i++) {
-            if (i>0) {
-                sleep(600); // allow some time for the flywheel to gain full speed after each shot
-            }
-            robot.shootRing();
-        }
-        robot.stopIntake();
-        robot.stopShooterFlywheel();
-    }
-
     // distance between center of robot and where wobble is placed is 15 inches
     // 8.5 is robot radius and 6.5 is length of wobble finger arm
     public void deliverWobbleAtTargetZone(int count){

@@ -158,15 +158,15 @@ public class MecabotMove extends Mecabot {
 
         movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
-        // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin of 0.2 degrees
-        // Margin is used because the overshoot for even small gyro rotation is 0.05 to 0.15 degrees
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.2) && (runtime.seconds() < timeout)) {
+        // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin
+        // Margin is used because the overshoot for even small gyro rotation is 0.15 degrees and higher for larger rotations
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.6) && (runtime.seconds() < timeout)) {
 
             // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
             double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_MIN, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
-            myOpMode.sleep(50); // allow some time for the motors to actuate
+            myOpMode.sleep(30); // allow some time for the motors to actuate
             robotAngle = robot.imu.getAngularOrientation().firstAngle;
             delta = MathFunctions.angleWrap(targetAngle - robotAngle);
 
@@ -199,13 +199,13 @@ public class MecabotMove extends Mecabot {
         ElapsedTime runtime = new ElapsedTime();
         // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin of 0.2 degrees
         // Margin is used because the overshoot for even small gyro rotation is 0.05 to 0.15 degrees
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.2) && (runtime.seconds() < timeout)) {
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.6) && (runtime.seconds() < timeout)) {
 
             // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
             double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_MIN, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
-            myOpMode.sleep(50); // allow some time for the motors to actuate
+            myOpMode.sleep(30); // allow some time for the motors to actuate
             robotAngle = globalPosition.getOrientationDegrees();
             delta = MathFunctions.angleWrap(targetAngle - robotAngle);
 
