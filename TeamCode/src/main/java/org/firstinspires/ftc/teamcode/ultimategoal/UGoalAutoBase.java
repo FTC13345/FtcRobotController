@@ -15,7 +15,6 @@ import org.firstinspires.ftc.teamcode.robot.Mecabot;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
@@ -32,6 +31,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     /* Declare OpMode members. */
     UGoalRobot robot;
     OdometryGlobalPosition globalPosition;
+    int countRingStack;
 
     //**  image recognition variables **//
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -53,11 +53,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      */
     private TFObjectDetector tfod;
 
-    // private OpenCvCamera phoneCam;
     protected AllianceColor aColor;
     protected String actionString = "Inactive";
     protected String message = "NO";
-    private int previousCount = 0;
 
     /*
      * Abstract methods, must be implemented by the sub-classes
@@ -105,7 +103,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.startOdometry();
         // start printing messages to driver station asap
         setupTelemetry();
-        printRingStackDetection(10.0);
+        // start ring stack detection before driver hits PLAY or STOP on driver station
+        // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
+        runRingStackDetection();
 
         // start the robot operator thread
         //** TODO: implement Operator class running in separate thread **//
@@ -117,6 +117,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     // continue updating odometry position of the manual movement of the robot
     public void waitForStop() {
 
+        shutdownRingStackDetection();
         //** TODO: implement Operator class running in separate thread **//
         // oper.stop();
         while (opModeIsActive()) {
@@ -134,19 +135,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // this is already set in init() but in case someone moved the robot location manually.
         setOdometryStartingPosition();
 
-        // start Ring stack detection counts only after play
-        int count = detectRingStackCount(1.0);
-        telemetry.addData("Rings Detected: ", "%d", count);
-
         // Start doing the tasks for points
         robot.pickUpWobble();
         driveToShootHighGoal();
         shootRingsIntoHighGoal();
-
-        driveToTargetZone(count);
+        driveToTargetZone(countRingStack);
         robot.deliverWobble();
-
-        driveToPark(count);
+        driveToPark(countRingStack);
     }
 
     protected void setupTelemetry() {
@@ -226,6 +221,26 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     }
 
     /**
+     * runRingStackDetection()
+     * This method prints all the internal variables using ABC techhnology for image recognition and
+     * calculating the number of rings in the stack on the floor. This is useful for development.
+     * In final program this method is used only in INIT mode, not in PLAY mode
+     */
+    public void runRingStackDetection() {
+
+        double timeout = -1.0f;
+
+        actionString = "Ring Stack Detection";
+        message = "Nothing";
+        telemetry.addData("Ring Stack Detection", "timeout = %.1f", timeout);
+        telemetry.update();
+        countRingStack = detectRingStackCount(300);
+        telemetry.addData("Rings Detected ", "%d", countRingStack);
+        telemetry.update();
+
+    }
+
+    /**
      * Detects the stack of the rings and returns a string based on how many rings are in front
      * of the robot. Measures for 2 seconds and then returns what is detected
      * @param timeout Timeout value in seconds
@@ -234,34 +249,27 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     protected int detectRingStackCount(double timeout) {
 
         ElapsedTime time = new ElapsedTime();
-
-
         String label = null;
-        int j = 0;
-        int k = 0;
+        int update = 0;
 
-        telemetry.addData("Detecting ring stack ", "timeout = %.1f", timeout);
-        telemetry.addData("start time:", "%.0f", time.milliseconds());
-        telemetry.update();
-
-        while (time.seconds() < timeout) {
-            j++;
+        // Continue detection until driver presses PLAY or STOP button or timeout
+        for (int loop = 0; !isStarted() && !isStopRequested() && time.seconds() < timeout; loop++) {
+            loop++;
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
                 List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                 if (updatedRecognitions != null) {
-                    k++;
-                    telemetry.addData("Time:", "%.0f", time.milliseconds());
-                    telemetry.addData("Count", j + " " + k);
+                    update++;
+                    telemetry.addData("Time:", "%.0f ms                                                                                                                                                                                                                                                                                                     ", time.milliseconds());
+                    telemetry.addData("Detection count", "%4d in %d tries", update, loop);
                     telemetry.addData("# Object Detected", updatedRecognitions.size());
                     // step through the list of recognitions and display boundary info.
                     int i = 0;
                     for (Recognition recognition : updatedRecognitions) {
-                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                    }
-                    if (!updatedRecognitions.isEmpty()) {
-                        label = updatedRecognitions.get(0).getLabel();
+                        telemetry.addData(String.format("label (%d)", i++), recognition.getLabel());
+                        label = recognition.getLabel();
+                        message = label;
                     }
                     telemetry.update();
                 }
@@ -270,10 +278,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 telemetry.addData("TFOD IS NULL","initialization failed!!!");
                 telemetry.update();
             }
-
-
+            // We get about 16 frames were second = 60ms between new frames, sleep for some time
+            sleep(20);
         }
-        telemetry.addData("end time:", "%.0f", time.milliseconds());
 
         if (label == null) {
             return 0;
@@ -293,25 +300,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         tfod.shutdown();
     }
 
-
-    /**
-     * printRingStackDetection()
-     * This method prints all the internal variables using ABC techhnology for image recognition and
-     * calculating the number of rings in the stack on the floor. This is useful for development.
-     * In final program this method is used only in INIT mode, not in PLAY mode
-     * CAUTION: This method does not have while (opModeIsActive()) to break out of loop when
-     * user presses STOP on driver station. Using this method in play mode is dangerous
-     */
-    public void printRingStackDetection(double timeout) {
-
-        actionString = "Ring Stack Detection";
-        message = "Started";
-        int count = detectRingStackCount(timeout);
-        message = String.format(Locale.US, "%d rings", count);
-        telemetry.addData("Detected ", "%d rings", count);
-        telemetry.update();
-
-    }
 
     //for auto going to and shooting the 3 power shots
     public void goShoot3Powershot(){
