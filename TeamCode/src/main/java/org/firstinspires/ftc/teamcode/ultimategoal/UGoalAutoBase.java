@@ -238,19 +238,22 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         String label = null;
         int j = 0;
+        int k = 0;
 
         telemetry.addData("Detecting ring stack ", "timeout = %.1f", timeout);
         telemetry.addData("start time:", "%.0f", time.milliseconds());
         telemetry.update();
 
         while (time.seconds() < timeout) {
-            telemetry.addData("While loop entered ", "%.0f", time.milliseconds());
+            j++;
             if (tfod != null) {
-                telemetry.addData("checking tfod recognitions", "[%d]", ++j);
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
                 List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                 if (updatedRecognitions != null) {
+                    k++;
+                    telemetry.addData("Time:", "%.0f", time.milliseconds());
+                    telemetry.addData("Count", j + " " + k);
                     telemetry.addData("# Object Detected", updatedRecognitions.size());
                     // step through the list of recognitions and display boundary info.
                     int i = 0;
