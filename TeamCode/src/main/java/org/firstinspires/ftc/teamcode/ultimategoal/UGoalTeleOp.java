@@ -185,14 +185,14 @@ public class UGoalTeleOp extends LinearOpMode {
                 robot.wobbleGrab();
             }
             // arm is at wobble pickup position
-            else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos < UGoalRobot.WOBBLE_ARM_RELEASE) {
+            else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos < UGoalRobot.WOBBLE_ARM_RELEASE_DROP_ZONE) {
                 // lift wobble arm up
                 robot.wobbleRaise();
             }
         } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
             // arm is at top position
             if (pos > robot.WOBBLE_ARM_NEAR_UP) {
-                robot.wobbleRelease();
+                robot.setWobbleArmReleaseDropZone();
             }
             // arm is at wobble release position
             else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos <= UGoalRobot.WOBBLE_ARM_NEAR_UP) {

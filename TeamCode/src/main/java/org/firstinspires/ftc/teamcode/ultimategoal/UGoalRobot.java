@@ -38,11 +38,12 @@ public class UGoalRobot extends MecabotMove {
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
-    static final int        WOBBLE_ARM_UP               = 150;
+    static final int        WOBBLE_ARM_UP               = 165;
     static final int        WOBBLE_ARM_NEAR_UP          = 135;
-    static final int        WOBBLE_ARM_RELEASE          = 110;
+    static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90;
+    static final int        WOBBLE_ARM_RELEASE_TARGET_ZONE  = 70;
     static final int        WOBBLE_ARM_PICKUP           = 45;
-    static final int        WOBBLE_ARM_NEAR_DOWN        = 15;
+    static final int        WOBBLE_ARM_NEAR_DOWN        = 10;
     static final int        WOBBLE_ARM_DOWN             = 0;
 
     static final int        LIFT_TOP                    = 320;
@@ -237,9 +238,16 @@ public class UGoalRobot extends MecabotMove {
         // lift wobble arm up
         motorRunToPosition(wobblePickupArm, WOBBLE_ARM_UP, MecabotMove.DRIVE_SPEED_MAX);
     }
-    public void wobbleRelease() {
+    public void setWobbleArmReleaseDropZone() {
         // lower wobble arm to drop wobble
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE, MecabotMove.DRIVE_SPEED_SLOW);
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE_DROP_ZONE, MecabotMove.DRIVE_SPEED_SLOW);
+        // release wobble
+        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+        myOpMode.sleep(200);
+    }
+    public void setWobbleArmReleaseTargetZone() {
+        // lower wobble arm to drop wobble
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE_TARGET_ZONE, MecabotMove.DRIVE_SPEED_SLOW);
         // release wobble
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
         myOpMode.sleep(200);
@@ -268,7 +276,7 @@ public class UGoalRobot extends MecabotMove {
     // speed determines how fast the finger arm motor moves
     public void deliverWobble() {
         // bring wobble arm down to release
-        wobbleRelease();
+        setWobbleArmReleaseTargetZone();
         // stow away the wobble arm
         wobbleArmDown();
     }
