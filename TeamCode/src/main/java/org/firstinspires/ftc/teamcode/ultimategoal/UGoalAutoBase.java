@@ -245,8 +245,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     protected int detectRingStackCount(double timeout) {
 
         ElapsedTime time = new ElapsedTime();
-        String label = null;
         int update = 0;
+        int result = 0;
 
         // Continue detection until driver presses PLAY or STOP button or timeout
         for (int loop = 0; !isStarted() && !isStopRequested() && time.seconds() < timeout; loop++) {
@@ -264,8 +264,16 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     int i = 0;
                     for (Recognition recognition : updatedRecognitions) {
                         telemetry.addData(String.format("label (%d)", i++), recognition.getLabel());
-                        label = recognition.getLabel();
-                        message = label;
+                        message = recognition.getLabel();
+                        // if 1 ring in stack then W/H aspect ratio = 1.75
+                        // if 4 rings in stack then W/H aspect ratio = 0.95
+                        if ((recognition.getWidth() / recognition.getHeight()) > 1.3) {
+                            result = 1;
+                            message = "Single";
+                        } else {
+                            result = 4;
+                            message = "Quad";
+                        }
                     }
                     telemetry.update();
                 }
@@ -278,18 +286,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             sleep(20);
         }
 
-        if (label == null) {
-            return 0;
-        }
-        else if (label.equals("Quad")) {
-            return 4;
-        }
-        else if (label.equals("Single")) {
-            return 1;
-        }
-        else {
-            return 0;
-        }
+        return result;
     }
 
     public void shutdownRingStackDetection() {
@@ -315,12 +312,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // move around the stack
         robot.encoderMoveRightLeft(12);
         robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS + 1);
-        // 3 tiles takes us to launch line, but robot will be half over launch line
-        // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
-        robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.4);
-        // start flywheel motor early to let it gain full speed
         robot.runShooterFlywheel();
         // move back 8 inches to align with the High Goal
+        // 3 tiles takes us to launch line, but robot will be half over launch line
+        // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
+        robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.3);
+        // start flywheel motor early to let it gain full speed
         robot.encoderMoveRightLeft(-8);
         // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
         robot.dropIntakeAssembly();
@@ -351,7 +348,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // y-axis is toward/away (+/- respectively) from the outside wall, relative to robot left/right
         // the input inches is RELATIVE TO THE ROBOT, NOT COORDINATES
         if (count == 0){
-            robot.encoderMoveForwardBack(Mecabot.HALF_WIDTH);
+            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*0.5);
             // already aligned with zone A on the X-axis, so just move on the y toward edge wall
             robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }

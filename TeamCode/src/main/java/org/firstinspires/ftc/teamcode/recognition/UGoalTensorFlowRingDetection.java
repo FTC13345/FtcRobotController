@@ -128,6 +128,17 @@ public class UGoalTensorFlowRingDetection extends LinearOpMode {
                                     recognition.getLeft(), recognition.getTop());
                             telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
                                     recognition.getRight(), recognition.getBottom());
+                            telemetry.addData("Dimensions ", "W=%.0f | H=%.0f | R=%.2f",
+                                    recognition.getWidth(), recognition.getHeight(), recognition.getWidth()/recognition.getHeight() );
+                            // if 1 ring in stack then W/H aspect ratio = 1.75
+                            // if 4 rings in stack then W/H aspect ratio = 0.95
+                            if ((recognition.getWidth() / recognition.getHeight()) > 1.3) {
+                                telemetry.addData("Ring Stack:>", "Single");
+                            }
+                            else {
+                                telemetry.addData("Ring Stack:>", "Quad");
+                            }
+
                         }
                         telemetry.update();
                     }
