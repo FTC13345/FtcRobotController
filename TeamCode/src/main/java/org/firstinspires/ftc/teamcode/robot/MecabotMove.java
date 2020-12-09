@@ -695,7 +695,8 @@ public class MecabotMove extends Mecabot {
     private void waitToReachTargetPosition(WheelPosition dominantWheel, int leftFront, int leftBack, int rightFront, int rightBack) {
 
         // Loop until motors are no longer busy.
-        while (robot.leftFrontDrive.isBusy() || robot.rightFrontDrive.isBusy() || robot.leftBackDrive.isBusy() || robot.rightBackDrive.isBusy()) {
+        while (myOpMode.opModeIsActive() &&
+                (robot.leftFrontDrive.isBusy() || robot.rightFrontDrive.isBusy() || robot.leftBackDrive.isBusy() || robot.rightBackDrive.isBusy())) {
 
             myOpMode.telemetry.addLine("Target position | ").addData("LF", leftFront).addData("RF", rightFront);
             myOpMode.telemetry.addLine("Target position | ").addData("LB", leftBack).addData("RB", rightBack);
@@ -724,7 +725,7 @@ public class MecabotMove extends Mecabot {
         // Turn off RUN_TO_POSITION
         robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        myOpMode.sleep(250);
+        myOpMode.sleep(50);
 
     }
 
