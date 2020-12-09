@@ -238,14 +238,18 @@ public class UGoalRobot extends MecabotMove {
         // lift wobble arm up
         motorRunToPosition(wobblePickupArm, WOBBLE_ARM_UP, MecabotMove.DRIVE_SPEED_MAX);
     }
-    public void setWobbleArmReleaseDropZone() {
+    public void wobbleArmReleaseDropZone() {
+        // raise wobble arm holding wobble resting on the robot
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_NEAR_UP, MecabotMove.DRIVE_SPEED_DEFAULT);
         // lower wobble arm to drop wobble
         motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE_DROP_ZONE, MecabotMove.DRIVE_SPEED_SLOW);
         // release wobble
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
         myOpMode.sleep(200);
     }
-    public void setWobbleArmReleaseTargetZone() {
+    public void wobbleArmReleaseTargetZone() {
+        // raise wobble arm holding wobble resting on the robot
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_NEAR_UP, MecabotMove.DRIVE_SPEED_DEFAULT);
         // lower wobble arm to drop wobble
         motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE_TARGET_ZONE, MecabotMove.DRIVE_SPEED_SLOW);
         // release wobble
@@ -276,7 +280,7 @@ public class UGoalRobot extends MecabotMove {
     // speed determines how fast the finger arm motor moves
     public void deliverWobble() {
         // bring wobble arm down to release
-        setWobbleArmReleaseTargetZone();
+        wobbleArmReleaseTargetZone();
         // stow away the wobble arm
         wobbleArmDown();
     }
