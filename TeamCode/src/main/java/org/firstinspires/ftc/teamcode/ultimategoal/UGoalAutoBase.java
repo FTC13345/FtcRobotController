@@ -92,19 +92,20 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
-        telemetry.addData(">", "Waiting for Start");    //
+        telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
         telemetry.update();
 
-        // initialize the image recognition for ring detection
-        initRingStackDetection();
         // odometry is initialize inside drive system MecabotMove class
         globalPosition = robot.getPosition();
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
         setOdometryStartingPosition();
         // start the thread to calculate robot position continuously
         robot.startOdometry();
+
         // start printing messages to driver station asap
         setupTelemetry();
+        // initialize the image recognition for ring detection
+        initRingStackDetection();
         // start ring stack detection before driver hits PLAY or STOP on driver station
         // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
         runRingStackDetection();
@@ -316,7 +317,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // move back 8 inches to align with the High Goal
         // 3 tiles takes us to launch line, but robot will be half over launch line
         // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
-        robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.3);
+        robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.1);
         // start flywheel motor early to let it gain full speed
         robot.encoderMoveRightLeft(-8);
         // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
@@ -334,7 +335,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
         robot.runIntake(1.0);
         for (int i = 0; i<5; i++) {
-            sleep(1000); // allow some time for the flywheel to gain full speed after each shot
+            sleep(1200); // allow some time for the flywheel to gain full speed after each shot
             robot.shootRing();
         }
         robot.stopIntake();
@@ -348,19 +349,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // y-axis is toward/away (+/- respectively) from the outside wall, relative to robot left/right
         // the input inches is RELATIVE TO THE ROBOT, NOT COORDINATES
         if (count == 0){
-            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*0.5);
+            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*0.7);
             // already aligned with zone A on the X-axis, so just move on the y toward edge wall
             robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }
         else if (count == 1){
             //we are mostly aligned with zone B on the Y-axis, so just move on the x toward goals/powershot
-            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.5);
+            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.7);
             //but better to move away on y-axis to drop wobble
             robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH*0.5);
         }
         else if(count == 4){
             // neither aligned on x nor y
-            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.5);
+            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.7);
             // move on the y same as target A, as zone A&C have the same y
             robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }
