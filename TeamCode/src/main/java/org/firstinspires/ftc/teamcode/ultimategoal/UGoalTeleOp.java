@@ -104,12 +104,12 @@ public class UGoalTeleOp extends LinearOpMode {
             }
         }
         // Shoot when B is pressed
-        else if (gamepad2.b) {
+        if (gamepad2.b) {
             robot.shootRing();
 
         }
         //auto aim for High Goal
-        else if (gamepad2.x) {
+        if (gamepad2.x) {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
 //            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
 //            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
@@ -118,7 +118,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         }
         //auto aim for Powershot
-        else if (gamepad2.y) {
+        if (gamepad2.y) {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
 //            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y);
 //            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
@@ -127,9 +127,10 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
         }
 
-        if (gamepad1.x) {
+        if ((gamepad1.x) || (gamepad2.dpad_right)) {
             robot.tiltShooterPlatformMin();
-        } else if (gamepad1.y) {
+        }
+        if ((gamepad1.y) || (gamepad2.dpad_left)) {
             robot.tiltShooterPlatformMax();
         }
         if (gamepad1.start) {
@@ -192,7 +193,7 @@ public class UGoalTeleOp extends LinearOpMode {
         } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
             // arm is at top position
             if (pos > robot.WOBBLE_ARM_NEAR_UP) {
-                robot.setWobbleArmReleaseDropZone();
+                robot.wobbleArmReleaseDropZone();
             }
             // arm is at wobble release position
             else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos <= UGoalRobot.WOBBLE_ARM_NEAR_UP) {
@@ -203,17 +204,6 @@ public class UGoalTeleOp extends LinearOpMode {
 
     // lift for the claw putting loaded rings onto the wobble goal, right side
     public void ringsLiftArmClaw() {
-
-        // Lift Arm and Claw
-        if (gamepad2.dpad_left) {
-            robot.rotateClawOutside();
-        } else if (gamepad2.dpad_right) {
-            robot.rotateClawInside();
-        } else if (gamepad2.dpad_down) {
-            robot.grabRingsWithClaw();
-        } else if (gamepad2.dpad_up) {
-            robot.releaseRingsWithClaw();
-        }
 
         if (gamepad2.right_stick_y != 0) {
             //joystick gives a negative value when pushed up, we want the lift to go up when positive
