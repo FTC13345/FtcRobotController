@@ -87,12 +87,12 @@ public class OdometryGlobalPosition implements Runnable {
 
         // calculate the positional displacment only in horizontal direction
         double rawHorizontalChange = horizontalCount - prevHorizontalCount;
-        // The horizontal encoder (or cross encoder) is mounted on back side of robot. A left turn (positive angle rotation) includes
+        // The horizontal encoder (or cross encoder) is mounted on front side of robot. A left turn (positive angle rotation) includes
         // (1) horizontal encoder travel left (negative increment) and
-        // (2) swing movement to right around the center pivot of robot (positive increment).
-        // The 2 terms for horizontal change must be subtracted.
-        // If horizontal encoder was mounted on the front of the robot then the 2 terms needed to be added to each other.
-        double horizontalChange = rawHorizontalChange - (changeInRobotAngle * HORIZONTAL_COUNT_PER_RADIAN);
+        // (2) swing movement to left around the center pivot of robot (positive increment).
+        // The 2 terms for horizontal change must be added for net positional displacement
+        // If horizontal encoder was mounted on the back of the robot then the 2nd term needed to be subtracted from 1st term.
+        double horizontalChange = rawHorizontalChange + (changeInRobotAngle * HORIZONTAL_COUNT_PER_RADIAN);
 
         // Get the components of the motion
         // p is the vector of forward movement of the Robot, direction parallel to drivetrain wheels
