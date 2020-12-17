@@ -41,7 +41,7 @@ public class OdometryCalibration extends LinearOpMode {
 
     // THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE (change the ticks per rotation and the wheel diameter
     // The amount of encoder ticks for each inch the robot moves.
-    final double ENCODER_COUNT_PER_INCH = (1440.0f * 25.4f) / (Math.PI * 38.0f);  // FTC Team 13345 Mecabot odometry encoder (USRobotics) has 1440 ticks per rotation, odometry wheel has 38mm diameter
+    final double ENCODER_COUNT_PER_INCH = (8192.0f * 25.4f) / (Math.PI * 38.0f);  // FTC Team 13345 Mecabot odometry encoder (Rev magnetic encoder) has 8192 ticks per rotation, odometry wheel has 38mm diameter
 
     //Text files to write the values to. The files are stored in the robot controller under Internal Storage\FIRST\settings
     File wheelBaseSeparationFile = AppUtil.getInstance().getSettingsFile("wheelBaseSeparation.txt");

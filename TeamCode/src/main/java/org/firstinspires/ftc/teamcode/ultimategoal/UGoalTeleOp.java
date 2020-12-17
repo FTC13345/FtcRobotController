@@ -109,11 +109,11 @@ public class UGoalTeleOp extends LinearOpMode {
 
         }
         //auto aim for High Goal
-        if (gamepad2.x) {
+        if (gamepad2.x && !gamepad2.start) {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
-//            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
-//            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
-//            robot.rotateToHeading(targetAngle);
+            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
+            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
+            robot.rotateToHeading(targetAngle);
 
             robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
         }

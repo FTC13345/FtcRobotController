@@ -61,7 +61,7 @@ public class MecabotMove extends Mecabot {
     protected String              movementStatus          = "";
 
     //The amount of encoder ticks for each inch the robot moves. THIS WILL CHANGE FOR EACH ROBOT AND NEEDS TO BE UPDATED HERE
-    public static final double ODOMETRY_ENCODER_COUNT_PER_ROTATION = 1440;  // FTC Team 13345 Mecabot encoder has 1440 ticks per rotation
+    public static final double ODOMETRY_ENCODER_COUNT_PER_ROTATION = 8192;  // FTC Team 13345 Mecabot encoder hals 8192 ticks per rotation
     public static final double ODOMETRY_WHEEL_DIAMETER = 38.0f / 25.4f; // Odometry wheel has 38mm diameter, calculate in inches
 
     // odometry encoder wheels
@@ -163,7 +163,7 @@ public class MecabotMove extends Mecabot {
         while (myOpMode.opModeIsActive() && ((direction * delta) > 0.6) && (runtime.seconds() < timeout)) {
 
             // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
-            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_MIN, turnSpeed);
+            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_SLOW, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
             myOpMode.sleep(30); // allow some time for the motors to actuate
@@ -202,7 +202,7 @@ public class MecabotMove extends Mecabot {
         while (myOpMode.opModeIsActive() && ((direction * delta) > 0.6) && (runtime.seconds() < timeout)) {
 
             // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
-            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_MIN, turnSpeed);
+            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_SLOW, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
             myOpMode.sleep(30); // allow some time for the motors to actuate
