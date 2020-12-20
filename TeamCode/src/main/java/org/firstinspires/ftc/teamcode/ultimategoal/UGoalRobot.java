@@ -21,7 +21,7 @@ public class UGoalRobot extends MecabotMove {
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
-    static final double     ROBOT_SHOOTING_CURVE_OFFSET = 5.5; // inches
+    static final double     ROBOT_SHOOTING_CURVE_OFFSET = -8.5; // inches
 
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
@@ -37,14 +37,15 @@ public class UGoalRobot extends MecabotMove {
     static final double     LIFT_ARM_INSIDE             = Servo.MIN_POSITION;
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
-    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 288;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
-    static final int        WOBBLE_ARM_UP               = 165;
-    static final int        WOBBLE_ARM_NEAR_UP          = 135;
-    static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90;
-    static final int        WOBBLE_ARM_RELEASE_TARGET_ZONE  = 70;
-    static final int        WOBBLE_ARM_PICKUP           = 45;
-    static final int        WOBBLE_ARM_NEAR_DOWN        = 10;
-    static final int        WOBBLE_ARM_DOWN             = 0;
+    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
+    static final int        WOBBLE_ARM_TICKS_PER_ANGLE      = WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
+    static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_NEAR_UP              = 135 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_RELEASE_TARGET_ZONE  = 70 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_NEAR_DOWN            = 10 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_DOWN                 = 0 * WOBBLE_ARM_TICKS_PER_ANGLE;
 
     static final int        LIFT_TOP                    = 320;
     static final int        LIFT_BOTTOM                 = 10;
@@ -95,7 +96,7 @@ public class UGoalRobot extends MecabotMove {
         leftODwheel.setDirection(DcMotor.Direction.FORWARD);
         rightODwheel.setDirection(DcMotor.Direction.REVERSE);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
-        wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
+        wobblePickupArm.setDirection(DcMotor.Direction.FORWARD);
         flywheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
         leftODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -118,7 +119,7 @@ public class UGoalRobot extends MecabotMove {
 
         intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
         angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
-        wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
+        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
         //liftArm.setPosition(LIFT_ARM_INSIDE);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
@@ -174,7 +175,7 @@ public class UGoalRobot extends MecabotMove {
 
     public void shootRing() {
         ringPusher.setPosition(RING_PUSHER_SHOOT_POSITION);
-        myOpMode.sleep(500);
+        myOpMode.sleep(150);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
     }
 
