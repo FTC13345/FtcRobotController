@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Func;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import org.firstinspires.ftc.teamcode.robot.MecabotDriver;
@@ -18,9 +21,16 @@ public class UGoalTeleOp extends LinearOpMode {
     MecabotDriver driver;
     UGoalRobot robot;
     OdometryGlobalPosition globalPosition;
+    Telemetry drvrTelemetry;
+    Telemetry dashTelemetry;
 
     @Override
     public void runOpMode() {
+        // Redirect telemetry printouts to both Driver Station and FTC Dashboard
+        dashTelemetry = FtcDashboard.getInstance().getTelemetry();
+        drvrTelemetry = telemetry;
+        telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
+
         // Initialize the hardware variables.
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
@@ -246,7 +256,7 @@ public class UGoalTeleOp extends LinearOpMode {
     }
 
     public void setupTelemetry() {
-        telemetry.addLine("Global Position ")
+        drvrTelemetry.addLine("Global Position ")
                 .addData("X", "%2.2f", new Func<Double>() {
                     @Override
                     public Double value() {
@@ -265,7 +275,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return globalPosition.getOrientationDegrees();
                     }
                 });
-        telemetry.addLine("Drivetrain ")
+        drvrTelemetry.addLine("Drivetrain ")
                 .addData("LF", "%5d", new Func<Integer>() {
                     @Override
                     public Integer value() {
@@ -290,7 +300,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return robot.rightBackDrive.getCurrentPosition();
                     }
                 });
-        telemetry.addLine("Odometry ")
+        drvrTelemetry.addLine("Odometry ")
                 .addData("L", "%5.0f", new Func<Double>() {
                     @Override
                     public Double value() {
@@ -309,14 +319,14 @@ public class UGoalTeleOp extends LinearOpMode {
                         return globalPosition.getHorizontalCount();
                     }
                 });
-        telemetry.addLine("Move ")
+        drvrTelemetry.addLine("Move ")
                 .addData("", new Func<String>() {
                     @Override
                     public String value() {
                         return robot.getMovementStatus();
                     }
                 });
-        telemetry.addLine("Tilt ")
+        drvrTelemetry.addLine("Tilt ")
                 .addData("Angle", "%.1f", new Func<Double>() {
                     @Override
                     public Double value() {
@@ -335,6 +345,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return robot.wobblePickupArm.getCurrentPosition();
                     }
                 });
+        drvrTelemetry.update();
     }
 
 }

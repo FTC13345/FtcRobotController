@@ -1,10 +1,13 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.Func;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
@@ -31,6 +34,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     /* Declare OpMode members. */
     UGoalRobot robot;
     OdometryGlobalPosition globalPosition;
+    Telemetry drvrTelemetry;
+    Telemetry dashTelemetry;
     int countRingStack;
 
     //**  image recognition variables **//
@@ -87,6 +92,10 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * Initialize all hardware and software data structures
      */
     public void initializeOpMode() {
+        // Redirect telemetry printouts to both Driver Station and FTC Dashboard
+        dashTelemetry = FtcDashboard.getInstance().getTelemetry();
+        drvrTelemetry = telemetry;
+        telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Initialize the robot hardware and drive system variables.
         robot = new UGoalRobot(hardwareMap, this);
@@ -144,7 +153,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     protected void setupTelemetry() {
 
         actionString = "Telemetry";
-        telemetry.addLine("Auto ")
+        drvrTelemetry.addLine("Auto ")
                 .addData(getColorString(), new Func<String>() {
                     @Override
                     public String value() {
@@ -157,7 +166,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return getMessage();
                     }
                 });
-        telemetry.addLine("Position ")
+        drvrTelemetry.addLine("Position ")
                 .addData("X", "%3.2f", new Func<Double>() {
                     @Override
                     public Double value() {
@@ -181,7 +190,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return robot.getDirectionStr();
                     }
                 });
-        telemetry.addLine("Move ")
+        drvrTelemetry.addLine("Move ")
                 .addData("", new Func<String>() {
                     @Override
                     public String value() {
@@ -189,7 +198,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     }
                 });
         message = "Done";
-        telemetry.update();
+        drvrTelemetry.update();
     }
 
     protected void initRingStackDetection() {
