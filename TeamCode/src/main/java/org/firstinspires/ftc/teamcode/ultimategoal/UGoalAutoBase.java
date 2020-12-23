@@ -139,6 +139,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         driveToTargetZone(countRingStack);
         robot.deliverWobble();
         driveToPark(countRingStack);
+        robot.setWobbleArmDown();
     }
 
     protected void setupTelemetry() {
@@ -390,7 +391,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // robot.goToPosition(FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN);
 
         // turn the robot around so intake faces the human player
-        robot.rotateToHeading(180);
+        //robot.rotateToHeading(180);
     }
 
 

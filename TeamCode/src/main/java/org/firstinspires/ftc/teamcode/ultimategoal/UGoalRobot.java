@@ -40,12 +40,10 @@ public class UGoalRobot extends MecabotMove {
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
     static final int        WOBBLE_ARM_TICKS_PER_ANGLE      = WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
     static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_NEAR_UP              = 135 * WOBBLE_ARM_TICKS_PER_ANGLE;
     static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_RELEASE_TARGET_ZONE  = 70 * WOBBLE_ARM_TICKS_PER_ANGLE;
     static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_NEAR_DOWN            = 10 * WOBBLE_ARM_TICKS_PER_ANGLE;
     static final int        WOBBLE_ARM_DOWN                 = 0 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int[]      WOBBLE_ARM_POS                  = {WOBBLE_ARM_DOWN,WOBBLE_ARM_PICKUP,WOBBLE_ARM_RELEASE_DROP_ZONE,WOBBLE_ARM_UP};
 
     static final int        LIFT_TOP                    = 320;
     static final int        LIFT_BOTTOM                 = 10;
@@ -225,54 +223,34 @@ public class UGoalRobot extends MecabotMove {
     /*
      * Wobble Pickup Arm operation methods
      */
-    public void wobbleGrab() {
-        wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
-        myOpMode.sleep(200);
-        // raise wobble arm to wobble height
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_PICKUP, MecabotMove.DRIVE_SPEED_DEFAULT);
-        // grab wobble
-        wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
-        myOpMode.sleep(500);
-    }
-    public void wobbleRaise(){
-        // this method assumes that the Wobble has been grabbed already
-        // lift wobble arm up
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_UP, MecabotMove.DRIVE_SPEED_MAX);
-    }
-    public void wobbleArmReleaseDropZone() {
-        // raise wobble arm holding wobble resting on the robot
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_NEAR_UP, MecabotMove.DRIVE_SPEED_DEFAULT);
-        // lower wobble arm to drop wobble
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE_DROP_ZONE, MecabotMove.DRIVE_SPEED_SLOW);
-        // release wobble
+
+    public void setWobbleFingerOpen(){
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-        myOpMode.sleep(200);
     }
-    public void wobbleArmReleaseTargetZone() {
-        // raise wobble arm holding wobble resting on the robot
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_NEAR_UP, MecabotMove.DRIVE_SPEED_DEFAULT);
-        // lower wobble arm to drop wobble
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_RELEASE_TARGET_ZONE, MecabotMove.DRIVE_SPEED_SLOW);
-        // release wobble
-        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-        myOpMode.sleep(200);
-    }
-    public void wobbleArmDown() {
-        // lower wobble arm
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_DOWN, MecabotMove.DRIVE_SPEED_SLOW);
-        // close finger since arm is stowed away
+
+    public void setWobbleFingerClosed(){
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
     }
 
-    // This method unfolds the finger arm and grabs the wobble
-    // Then it moves the arm to vertical position so it doesn't drag on the ground in auto, or to clear wall in endgame
-    // During auto, we want to place the wobble goal touching the robot on the right side so we can immediately grab it
-    // Alternative design is for hardware to allow preloading wobble inside robot
-    public void pickUpWobble(){//at beginning of auto or for teleop
-        // grab wobble
-        wobbleGrab();
-        // lift wobble up
-        wobbleRaise();
+    public void setWobbleArmUp(){
+        goToWobblePos(3);
+    }
+
+    public void setWobbleArmRelease(){
+        goToWobblePos(2);
+    }
+
+    public void setWobbleArmPickup(){
+        goToWobblePos(1);
+    }
+
+    public void setWobbleArmDown(){
+        goToWobblePos(0);
+    }
+
+    public void goToWobblePos(int pos){
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_POS[pos], MecabotMove.DRIVE_SPEED_FAST);
+        myOpMode.sleep(200);
     }
 
     // This assumes we have a wobble goal held and is held vertically
@@ -281,9 +259,17 @@ public class UGoalRobot extends MecabotMove {
     // speed determines how fast the finger arm motor moves
     public void deliverWobble() {
         // bring wobble arm down to release
-        wobbleArmReleaseTargetZone();
+        setWobbleFingerOpen();
         // stow away the wobble arm
-        wobbleArmDown();
+    }
+
+    public void pickUpWobble(){
+        setWobbleArmPickup();
+        setWobbleFingerOpen();
+        myOpMode.sleep(100);
+        setWobbleFingerClosed();
+        myOpMode.sleep(100);
+        setWobbleArmRelease();
     }
 
     public void resetWobblePickupArmEncoder() {
@@ -371,7 +357,7 @@ public class UGoalRobot extends MecabotMove {
         // TEMPORARY SINCE ODOMETRY IS NOT WORKING  RELIABLY
         // WE ARE GOING TO ASSUME THAT ROBOT IS DIRECTLY FACING THE TARGET (Heading is +ve X-Axis) AND POSITIONED at Y-Axis line (to be behind launch line)
         // THEREFORE DISANCE IS SIMPLY THE X-COORDINATE OF THE TARGET
-        distance = targetX;
+        //distance = targetX;
 
         double angleRad = Math.atan(targetHeight/distance);
         return Math.toDegrees(angleRad);
