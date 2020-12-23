@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.robot.MecabotMove;
+import org.firstinspires.ftc.teamcode.drive.MecabotMove;
 
 public class UGoalRobot extends MecabotMove {
 

@@ -14,7 +14,6 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-import org.firstinspires.ftc.teamcode.robot.Mecabot;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
 
 import java.util.List;

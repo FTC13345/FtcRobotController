@@ -9,7 +9,7 @@ import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
-import org.firstinspires.ftc.teamcode.robot.MecabotDriver;
+import org.firstinspires.ftc.teamcode.drive.MecabotDriver;
 
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
