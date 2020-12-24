@@ -24,6 +24,13 @@ public class UGoalTeleOp extends LinearOpMode {
     Telemetry drvrTelemetry;
     Telemetry dashTelemetry;
 
+    //Button debounce
+    private boolean gamepad2ADebounce = false;
+    private boolean gamepad2DpadDebounce = false;
+
+    //Wobble Pos tracker
+    int wobblePos = 0;
+
     @Override
     public void runOpMode() {
         // Redirect telemetry printouts to both Driver Station and FTC Dashboard
@@ -106,12 +113,16 @@ public class UGoalTeleOp extends LinearOpMode {
 
     public void shootRings() {
         // Toggle the ring shooter flywheel motor when A is pressed
-        if (gamepad2.a) {
-            if (robot.isShooterFlywheelRunning()) {
-                robot.stopShooterFlywheel();
-            } else {
-                robot.runShooterFlywheel();
+        if (gamepad2.a) {                               if (!gamepad2ADebounce) {
+                if (robot.isShooterFlywheelRunning()) {
+                    robot.stopShooterFlywheel();
+                } else {
+                    robot.runShooterFlywheel();
+                }
             }
+            gamepad2ADebounce = true;
+        } else {
+            gamepad2ADebounce = false;
         }
         // Shoot when B is pressed
         if (gamepad2.b) {
@@ -187,28 +198,18 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
         }
 
-        // Wobble arm
-        int pos = robot.wobblePickupArm.getCurrentPosition();
-
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
-            // arm is at bottom position
-            if (pos < UGoalRobot.WOBBLE_ARM_NEAR_DOWN) {
-                robot.wobbleGrab();
-            }
-            // arm is at wobble pickup position
-            else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos < UGoalRobot.WOBBLE_ARM_RELEASE_DROP_ZONE) {
-                // lift wobble arm up
-                robot.wobbleRaise();
-            }
+             if (!gamepad2DpadDebounce && wobblePos < UGoalRobot.WOBBLE_ARM_POS.length - 1){
+                 robot.goToWobblePos(++wobblePos);
+             }
+             gamepad2DpadDebounce = true;
         } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
-            // arm is at top position
-            if (pos > robot.WOBBLE_ARM_NEAR_UP) {
-                robot.wobbleArmReleaseDropZone();
+            if (!gamepad2DpadDebounce && wobblePos > 0){
+                robot.goToWobblePos(--wobblePos);
             }
-            // arm is at wobble release position
-            else if (pos > UGoalRobot.WOBBLE_ARM_NEAR_DOWN && pos <= UGoalRobot.WOBBLE_ARM_NEAR_UP) {
-                robot.wobbleArmDown();
-            }
+            gamepad2DpadDebounce = true;
+        } else {
+            gamepad2DpadDebounce = false;
         }
     }
 
