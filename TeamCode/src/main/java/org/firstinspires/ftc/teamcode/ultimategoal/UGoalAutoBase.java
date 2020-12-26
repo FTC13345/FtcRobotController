@@ -94,7 +94,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Redirect telemetry printouts to both Driver Station and FTC Dashboard
         dashTelemetry = FtcDashboard.getInstance().getTelemetry();
         drvrTelemetry = telemetry;
-        telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
+        //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Initialize the robot hardware and drive system variables.
         robot = new UGoalRobot(hardwareMap, this);
