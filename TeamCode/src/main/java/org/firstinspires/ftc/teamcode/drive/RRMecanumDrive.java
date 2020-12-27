@@ -86,7 +86,7 @@ public class RRMecanumDrive extends MecanumDrive {
 
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
-    private BNO055IMU imu;
+//    private BNO055IMU imu;
 
     private VoltageSensor batteryVoltageSensor;
 
@@ -119,16 +119,18 @@ public class RRMecanumDrive extends MecanumDrive {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        // DONE: adjust the names of the following hardware devices to match your configuration
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
-        imu.initialize(parameters);
+        // We are using Three-Wheel odometry localizer, therefore IMU is not used for heading.
+        // Thus the following code is disabled.
+        // imu = hardwareMap.get(BNO055IMU.class, "imu");
+        // BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        // parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+        // imu.initialize(parameters);
 
         // DONE: if your hub is mounted vertically, remap the IMU axes so that the z-axis points
         // upward (normal to the floor) using a command like the following:
         // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
 
+        // DONE: adjust the names of the following hardware devices to match your configuration
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFrontDrive");
         leftRear = hardwareMap.get(DcMotorEx.class, "leftBackDrive");
         rightRear = hardwareMap.get(DcMotorEx.class, "rightBackDrive");
@@ -392,6 +394,8 @@ public class RRMecanumDrive extends MecanumDrive {
 
     @Override
     public double getRawExternalHeading() {
-        return imu.getAngularOrientation().firstAngle;
+        // We are using Three-Wheel odometry localizer, therefore IMU is not used for heading.
+        // return imu.getAngularOrientation().firstAngle;
+        return 0;
     }
 }
