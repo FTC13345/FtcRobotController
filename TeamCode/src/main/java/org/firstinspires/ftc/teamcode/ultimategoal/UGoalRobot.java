@@ -53,7 +53,7 @@ public class UGoalRobot extends MecabotMove {
     static final double SHOOTER_FLYWHEEL_RUN = 1.0;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
     static final double SHOOTER_PLATFORM_ANGLE_MIN = 20.0f;
-    static final double SHOOTER_PLATFORM_ANGLE_MAX = 45.0f;
+    static final double SHOOTER_PLATFORM_ANGLE_MAX = 35.0f;
 
     // status variables
     double shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
