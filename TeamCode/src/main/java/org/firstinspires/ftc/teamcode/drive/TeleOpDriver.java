@@ -1,17 +1,20 @@
 package org.firstinspires.ftc.teamcode.drive;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal;
 
-public class MecabotDriver implements Runnable {
+public class TeleOpDriver implements Runnable {
 
     static final double TURN_FACTOR = 0.6;    // slow down turning speed
 
     // member variables for state
     protected LinearOpMode  myOpMode;       // Access to the OpMode object
+    protected RRMecanumDrive drive;
     protected MecabotMove   robot;          // Access to the Robot hardware
     protected Gamepad       gamepad1;
     protected Telemetry     telemetry;
@@ -25,11 +28,12 @@ public class MecabotDriver implements Runnable {
     boolean autoDriving = false;
 
     /* Constructor */
-    public MecabotDriver(LinearOpMode opMode, MecabotMove aRobot) {
+    public TeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, MecabotMove aRobot) {
         // Save reference to OpMode and Hardware map
         myOpMode = opMode;
         gamepad1 = opMode.gamepad1;
         telemetry = opMode.telemetry;
+        drive = rrmdrive;
         robot = aRobot;
     }
 
@@ -53,7 +57,7 @@ public class MecabotDriver implements Runnable {
         while(isRunning && myOpMode.opModeIsActive()) {
             setup();
             buttonHandler();
-            driveMecabot();
+            driveTeleOp();
             autodrive();
             telemetry.update();
             myOpMode.idle();
@@ -95,55 +99,71 @@ public class MecabotDriver implements Runnable {
         }
     }
 
-    public void driveMecabot() {
+    public void driveTeleOp() {
         // if joystick is inactive brakes will be applied during autodrive() therefore don't go in
         if (autoDriving) {
             return;
         }
 
-        double power, turn;
-
         // square the joystick values to change from linear to logarithmic scale
         // this allows more movement of joystick for less movement of robot, thus more precision at lower speeds
         // at the expense of some loss of precision at higher speeds, where it is not required.
+        double power = -gamepad1.left_stick_y;
+        // Square the number but retain the sign to convert to logarithmic scale
+        // scale the range to 0.2 <= abs(power) <= 1.0 and preserve the sign
+        power = Math.signum(power) * (0.2 + (0.8 * power * power)) * speedMultiplier;
+        // OR
+        // use this to scale the range without squaring the power value
+        //power = Math.signum(power) * (0.25 + (0.75 * Math.abs(power)));
+        // OR
+        // use this to square the power while preserving the sign, without scaling the range
+        //power *= Math.abs(power);
 
-        // when we want to move sideways (MECANUM)
-        if (gamepad1.left_trigger > 0) {
-            power = -gamepad1.left_trigger; // negative power to move LEFT
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.30 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
-            robot.driveMecanum(power);
-            telemetry.addData("Mecanum Left ", "%.2f", power);
+        double strafe = -gamepad1.left_stick_x;
+        strafe = Math.signum(strafe) * (0.2 + (0.8 * strafe * strafe)) * speedMultiplier;
+
+        // similarly for turn power, except also slow down by TURN_FACTOR
+        double turn = -gamepad1.right_stick_x;
+        turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
+
+        if (drive != null) {
+            driveRRM(power, strafe, turn);
+        } else {
+            driveMecabot(power, strafe, turn);
         }
-        else if (gamepad1.right_trigger > 0) {
-            power = gamepad1.right_trigger; // positive power to move RIGHT
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.30 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.25 + (0.75 * power * power)) * speedMultiplier;
-            robot.driveMecanum(power);
-            telemetry.addData("Mecanum Right  ", "%.2f", power);
+    }
+
+    public void driveRRM(double power, double strafe, double turn) {
+
+        drive.setWeightedDrivePower(
+                new Pose2d(power, strafe, turn)
+        );
+
+        // Update the drive class
+        drive.update();
+
+        // Read pose
+        Pose2d poseEstimate = drive.getPoseEstimate();
+        // Print pose to telemetry
+        telemetry.addLine("Runner Position ")
+                .addData("X", "%2.2f", poseEstimate.getX())
+                .addData("Y", "%2.2f", poseEstimate.getY())
+                .addData("Angle", "%3.2f", Math.toDegrees(poseEstimate.getHeading()));
+        telemetry.update();
+    }
+
+
+    public void driveMecabot(double power, double strafe, double turn) {
+        // when we want to move sideways (MECANUM)
+        if (Math.abs(strafe) > 0.2) {
+            robot.driveMecanum(strafe);
+            telemetry.addData("Mecanum ", "%.2f", power);
         }
         // normal tank movement
         else {  // when joystick is inactive, this applies brakes, be careful to avoid during autodrive
             // forward press on joystick is negative, backward press (towards human) is positive
             // right press on joystick is positive value, left press is negative value
             // reverse sign of joystick values to match the expected sign in driveTank() method.
-            power = -gamepad1.left_stick_y;
-            turn = -gamepad1.right_stick_x;
-
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.25 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.2 + (0.8 * power * power));
-            // OR
-            // use this to scale the range without squaring the power value
-            //power = Math.signum(power) * (0.25 + (0.75 * Math.abs(power)));
-            // OR
-            // use this to square the power while preserving the sign, without scaling the range
-            //power *= Math.abs(power);
-
-            // similarly for turn power, except also slow down by TURN_FACTOR
-            turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
 
             robot.driveTank(power, turn);
             //telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);

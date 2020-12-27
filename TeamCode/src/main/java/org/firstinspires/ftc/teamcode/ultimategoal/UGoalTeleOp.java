@@ -1,15 +1,16 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
-import org.firstinspires.ftc.teamcode.drive.MecabotDriver;
+import org.firstinspires.ftc.teamcode.drive.TeleOpDriver;
 
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
@@ -18,7 +19,8 @@ public class UGoalTeleOp extends LinearOpMode {
     private boolean bIgnoreLiftStops = false;
 
     /* Declare OpMode members. */
-    MecabotDriver driver;
+    RRMecanumDrive rrmdrive;
+    TeleOpDriver driver;
     UGoalRobot robot;
     OdometryGlobalPosition globalPosition;
     Telemetry drvrTelemetry;
@@ -38,18 +40,19 @@ public class UGoalTeleOp extends LinearOpMode {
         drvrTelemetry = telemetry;
         //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
-        // Initialize the hardware variables.
+        // Create main OpMode member objects initialize the hardware variables.
+        rrmdrive = new RRMecanumDrive(hardwareMap);
         robot = new UGoalRobot(hardwareMap, this);
+        driver = new TeleOpDriver(this, rrmdrive, robot);
+
+        globalPosition = robot.getPosition();
+        robot.startOdometry();
+        setupTelemetry();
+
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "Waiting for Start");    //
         telemetry.update();
-
-        driver = new MecabotDriver(this, robot);
-        globalPosition = robot.getPosition();
-        robot.startOdometry();
-
-        setupTelemetry();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -64,6 +67,7 @@ public class UGoalTeleOp extends LinearOpMode {
         globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
         // Enable this temporarily for Shooter Platform Tilt debugging
         //globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
+        rrmdrive.setPoseEstimate(new Pose2d(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS));
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -257,25 +261,6 @@ public class UGoalTeleOp extends LinearOpMode {
     }
 
     public void setupTelemetry() {
-        drvrTelemetry.addLine("Global Position ")
-                .addData("X", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getXinches();
-                    }
-                })
-                .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getYinches();
-                    }
-                })
-                .addData("Angle", "%3.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getOrientationDegrees();
-                    }
-                });
         drvrTelemetry.addLine("Drivetrain ")
                 .addData("LF", "%5d", new Func<Integer>() {
                     @Override
@@ -344,6 +329,25 @@ public class UGoalTeleOp extends LinearOpMode {
                     @Override
                     public Integer value() {
                         return robot.wobblePickupArm.getCurrentPosition();
+                    }
+                });
+        drvrTelemetry.addLine("Global Position ")
+                .addData("X", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getXinches();
+                    }
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getYinches();
+                    }
+                })
+                .addData("Angle", "%3.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getOrientationDegrees();
                     }
                 });
         drvrTelemetry.update();
