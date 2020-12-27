@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.drive;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -171,21 +172,24 @@ public class TeleOpDriver implements Runnable {
     }
 
     public void autodrive() {
-/*
-        // This block of code was used to record the position of robot on the field and
-        // then later auto drive back to same location. Used in Skystone, no longer used in Ultimate Goal.
-       if ((gamepad1.x) && (gamepad1.start)) {
-            xpos = globalPosition.getXinches();
-            ypos = globalPosition.getYinches();
-            tpos = globalPosition.getOrientationDegrees();
-            telemetry.addData("Locked Position", "X %2.2f | Y %2.2f | Angle %3.2f", xpos, ypos, tpos);
+
+        if (autoDriving) {
+            if (drive.isBusy()) {
+                drive.update();
+            }
+            else {
+                autoDriving = false;
+            }
+            return;
         }
-        if ((gamepad1.y) && (gamepad1.start)){
-            robot.setDirectionReverse();
+        if (gamepad1.x) {
+            Trajectory goToShoot = drive.trajectoryBuilder(drive.getPoseEstimate())
+                    .lineToLinearHeading(new Pose2d(FieldUGoal.ORIGIN - 4.0, FieldUGoal.GOALY - 8.5, FieldUGoal.ANGLE_POS_X_AXIS))
+                    .build();
+            drive.followTrajectoryAsync(goToShoot);
             autoDriving = true;
         }
- */
-
+/*
         if (autoDriving) {
             telemetry.addData("Driving Towards", "X %2.2f | Y %2.2f | Angle %3.2f", xpos, ypos, tpos);
             double distance = robot.goTowardsPosition(xpos, ypos, MecabotMove.DRIVE_SPEED_DEFAULT, true);
@@ -193,5 +197,6 @@ public class TeleOpDriver implements Runnable {
                 autoDriving = false;
             }
         }
+ */
     }
 }
