@@ -31,6 +31,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
+import org.firstinspires.ftc.teamcode.util.Encoder;
 import org.firstinspires.ftc.teamcode.util.LynxModuleUtil;
 
 import java.util.ArrayList;
@@ -156,8 +157,15 @@ public class RRMecanumDrive extends MecanumDrive {
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         leftRear.setDirection(DcMotor.Direction.REVERSE);
 
-        // TODO: if desired, use setLocalizer() to change the localization method
-        // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
+        // DONE: if desired, use setLocalizer() to change the localization method
+        // 13345 is using three wheel odometry
+        // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
+        // The Encoder direction (software setting) should be manipulated by localizer AS NEEDED, without changing motor direction
+        setLocalizer(new StandardTrackingWheelLocalizer(
+                new Encoder(hardwareMap.get(DcMotorEx.class, "leftODwheel")),
+                new Encoder(hardwareMap.get(DcMotorEx.class, "rightODwheel")),
+                new Encoder(hardwareMap.get(DcMotorEx.class, "intakeMotor"))
+                ));
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {

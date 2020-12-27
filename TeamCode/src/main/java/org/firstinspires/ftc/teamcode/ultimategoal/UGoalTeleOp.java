@@ -261,6 +261,63 @@ public class UGoalTeleOp extends LinearOpMode {
     }
 
     public void setupTelemetry() {
+        drvrTelemetry.addLine("Runner Position ")
+                .addData("X", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return rrmdrive.getPoseEstimate().getX();
+                    }
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return rrmdrive.getPoseEstimate().getY();
+                    }
+                })
+                .addData("Head", "%3.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading());
+                    }
+                });
+        drvrTelemetry.addLine("Global Position ")
+                .addData("X", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getXinches();
+                    }
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getYinches();
+                    }
+                })
+                .addData("Head", "%3.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getOrientationDegrees();
+                    }
+                });
+        drvrTelemetry.addLine("Odometry ")
+                .addData("L", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getVerticalLeftCount();
+                    }
+                })
+                .addData("R", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getVerticalRightCount();
+                    }
+                })
+                .addData("X", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getHorizontalCount();
+                    }
+                });
         drvrTelemetry.addLine("Drivetrain ")
                 .addData("LF", "%5d", new Func<Integer>() {
                     @Override
@@ -284,25 +341,6 @@ public class UGoalTeleOp extends LinearOpMode {
                     @Override
                     public Integer value() {
                         return robot.rightBackDrive.getCurrentPosition();
-                    }
-                });
-        drvrTelemetry.addLine("Odometry ")
-                .addData("L", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getVerticalLeftCount();
-                    }
-                })
-                .addData("R", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getVerticalRightCount();
-                    }
-                })
-                .addData("X", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getHorizontalCount();
                     }
                 });
         drvrTelemetry.addLine("Move ")
@@ -329,25 +367,6 @@ public class UGoalTeleOp extends LinearOpMode {
                     @Override
                     public Integer value() {
                         return robot.wobblePickupArm.getCurrentPosition();
-                    }
-                });
-        drvrTelemetry.addLine("Global Position ")
-                .addData("X", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getXinches();
-                    }
-                })
-                .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getYinches();
-                    }
-                })
-                .addData("Angle", "%3.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getOrientationDegrees();
                     }
                 });
         drvrTelemetry.update();
