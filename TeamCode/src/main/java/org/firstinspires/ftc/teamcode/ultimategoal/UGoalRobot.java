@@ -92,7 +92,7 @@ public class UGoalRobot extends MecabotMove {
 
         // direction depends on hardware installation
         leftODwheel.setDirection(DcMotor.Direction.FORWARD);
-        rightODwheel.setDirection(DcMotor.Direction.REVERSE);
+        rightODwheel.setDirection(DcMotor.Direction.FORWARD);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         wobblePickupArm.setDirection(DcMotor.Direction.FORWARD);
         flywheelMotor.setDirection(DcMotor.Direction.REVERSE);

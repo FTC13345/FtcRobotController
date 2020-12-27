@@ -183,7 +183,7 @@ public class OdometryCalibration extends LinearOpMode {
         // OD encoders are using any available ports, where motor is not driven by encoder.
         // Set direction to produce positive count increment when robot moves forward or right
         verticalLeft.setDirection(DcMotor.Direction.FORWARD);
-        verticalRight.setDirection(DcMotor.Direction.REVERSE);
+        verticalRight.setDirection(DcMotor.Direction.FORWARD);
         horizontal.setDirection(DcMotor.Direction.REVERSE);
 
         telemetry.addData("Odometry Calibration", "Hardware Map Init Complete");
