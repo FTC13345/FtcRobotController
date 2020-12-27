@@ -7,10 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-
+import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.TeleOpDriver;
+
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
@@ -46,9 +47,10 @@ public class UGoalTeleOp extends LinearOpMode {
         driver = new TeleOpDriver(this, rrmdrive, robot);
 
         globalPosition = robot.getPosition();
+        resetGlobalPositionToAutoStart();
         robot.startOdometry();
-        setupTelemetry();
 
+        setupTelemetry();
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "Waiting for Start");    //
@@ -60,15 +62,8 @@ public class UGoalTeleOp extends LinearOpMode {
         // start the thread which handles driver controls on gamepad1
         driver.start();
 
-        // This code assumes Robot starts at a position as follows:
-        // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
-        // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
-        // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
-        // Enable this temporarily for Shooter Platform Tilt debugging
-        //globalPosition.initGlobalPosition(FieldUGoal.ORIGIN, FieldUGoal.TILE_2_CENTER-robot.ROBOT_SHOOTING_CURVE_OFFSET, FieldUGoal.ANGLE_POS_X_AXIS);
-        rrmdrive.setPoseEstimate(new Pose2d(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS));
-
+        // set starting position again, sometimes players move the robot between init() and start()
+        resetGlobalPositionToAutoStart();
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             setup();
@@ -111,7 +106,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.resetOdometryEncoder();
             robot.resetDriveEncoder();
             robot.resetWobblePickupArmEncoder();
-            globalPosition.initGlobalPosition(-FieldUGoal.TILE_3_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.TILE_1_FROM_ORIGIN + robot.HALF_WIDTH, FieldUGoal.ANGLE_POS_X_AXIS);
+            resetGlobalPositionToAutoStart();
         }
     }
 
@@ -136,40 +131,40 @@ public class UGoalTeleOp extends LinearOpMode {
         //auto aim for High Goal
         if (gamepad2.x && !gamepad2.start) {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
-            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.GOALY);
+            double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, GOALY);
             telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
             robot.rotateToHeading(targetAngle);
 
-            robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
+            robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT);
         }
         //auto aim for Powershot
         if (gamepad2.y) {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
-//            double targetAngle = robot.calculateRobotHeadingToShoot(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y);
+//            double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, POWERSHOT_1_Y);
 //            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
 //            robot.rotateToHeading(targetAngle);
 
-            robot.tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+            robot.tiltShooterPlatform(GOALX, POWERSHOT_1_Y, POWER_SHOT_HEIGHT);
         }
 
-        if ((gamepad1.x) || (gamepad2.dpad_right)) {
+        if (gamepad2.dpad_right) {
             robot.tiltShooterPlatformMin();
         }
-        if ((gamepad1.y) || (gamepad2.dpad_left)) {
+        if (gamepad2.dpad_left) {
             robot.tiltShooterPlatformMax();
         }
         if (gamepad1.start) {
             if (gamepad1.dpad_up) {
-                robot.driveToShootHighGoal(FieldUGoal.AllianceColor.BLUE);
+                robot.driveToShootHighGoal(AllianceColor.BLUE);
             }
             if (gamepad1.dpad_left) {
-                robot.driveToShootPowerShot1(FieldUGoal.AllianceColor.BLUE);
+                robot.driveToShootPowerShot1(AllianceColor.BLUE);
             }
             if (gamepad1.dpad_down) {
-                robot.driveToShootPowerShot2(FieldUGoal.AllianceColor.BLUE);
+                robot.driveToShootPowerShot2(AllianceColor.BLUE);
             }
             if (gamepad1.dpad_right) {
-                robot.driveToShootPowerShot3(FieldUGoal.AllianceColor.BLUE);
+                robot.driveToShootPowerShot3(AllianceColor.BLUE);
             }
         }
     }
@@ -372,4 +367,16 @@ public class UGoalTeleOp extends LinearOpMode {
         drvrTelemetry.update();
     }
 
+    void resetGlobalPositionToAutoStart() {
+        // This code assumes Robot starts at a position as follows:
+        // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
+        // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
+        // Robot back is touching the perimeter wall.
+        globalPosition.initGlobalPosition(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+        rrmdrive.setPoseEstimate(new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS));
+
+        // Enable this temporarily for Shooter Platform Tilt debugging
+        //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS);
+        //rrmdrive.setPoseEstimate(new Pose2d(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS));
+    }
 }
