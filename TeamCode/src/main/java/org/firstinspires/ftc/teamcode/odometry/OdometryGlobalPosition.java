@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.odometry;
 
+import com.qualcomm.hardware.lynx.commands.core.LynxGetMotorEncoderPositionResponse;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.util.Encoder;
 
 import java.io.File;
 
@@ -24,7 +26,9 @@ import java.io.File;
 public class OdometryGlobalPosition implements Runnable {
 
     //Odometry wheels
-    private DcMotor verticalLeftEncoder, verticalRightEncoder, horizontalEncoder;
+    private Encoder verticalLeftEncoder, verticalRightEncoder, horizontalEncoder;
+    private Thread myThread;
+    private boolean isRunning = true;
 
     //Position variables used for storage and calculations
     private double robotGlobalX = 0, robotGlobalY = 0, robotAngleRad = Math.PI/2; // robot starts with 90 degree angle in direction of positive Y-axis
@@ -36,7 +40,10 @@ public class OdometryGlobalPosition implements Runnable {
     private int horizontalEncoderDirection = 1;
 
     //Algorithm constants
-    private final double ENCODER_COUNT_PER_INCH;
+    //The amount of encoder ticks for each inch the robot moves. THIS WILL CHANGE FOR EACH ROBOT AND NEEDS TO BE UPDATED HERE
+    public static final double ODOMETRY_ENCODER_COUNT_PER_REV = 8192;  // FTC Team 13345 Mecabot encoder hals 8192 ticks per rotation
+    public static final double ODOMETRY_WHEEL_DIAMETER = 38.0f / 25.4f; // Odometry wheel has 38mm diameter, calculate in inches
+    private static final double ENCODER_COUNT_PER_INCH = (ODOMETRY_ENCODER_COUNT_PER_REV) / (Math.PI * ODOMETRY_WHEEL_DIAMETER);
     private final double WHEELBASE_SEPARATION_COUNT;
     private final double HORIZONTAL_COUNT_PER_RADIAN;
 
@@ -47,24 +54,52 @@ public class OdometryGlobalPosition implements Runnable {
     private File wheelBaseSeparationFile = AppUtil.getInstance().getSettingsFile("wheelBaseSeparation.txt");
     private File horizontalCountPerRadianFile = AppUtil.getInstance().getSettingsFile("horizontalCountPerRadian.txt");
 
-    //Thread run condition
-    private boolean isRunning = true;
-
     /**
      * Constructor for GlobalCoordinatePosition Thread
      * @param verticalLeftEncoder left odometry encoder, facing the vertical direction
      * @param verticalRightEncoder right odometry encoder, facing the vertical direction
      * @param horizontalEncoder horizontal odometry encoder, perpendicular to the other two odometry encoder wheels
      */
-    public OdometryGlobalPosition(DcMotor verticalLeftEncoder, DcMotor verticalRightEncoder, DcMotor horizontalEncoder,
-                                  double encoderCountPerRotation, double wheelDiameter){
+    public OdometryGlobalPosition(Encoder verticalLeftEncoder, Encoder verticalRightEncoder, Encoder horizontalEncoder) {
+
         this.verticalLeftEncoder = verticalLeftEncoder;
         this.verticalRightEncoder = verticalRightEncoder;
         this.horizontalEncoder = horizontalEncoder;
 
-        this.ENCODER_COUNT_PER_INCH = (encoderCountPerRotation) / (Math.PI * wheelDiameter);
         this.WHEELBASE_SEPARATION_COUNT = Double.parseDouble(ReadWriteFile.readFile(wheelBaseSeparationFile).trim()) * ENCODER_COUNT_PER_INCH;
         this.HORIZONTAL_COUNT_PER_RADIAN = Double.parseDouble(ReadWriteFile.readFile(horizontalCountPerRadianFile).trim());
+
+        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
+        // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
+        // Here we override the Encoder direction (software setting) ONLY if needed, without changing motor direction
+
+        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        reverseLeftEncoder();
+        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
+        reverseRightEncoder();
+        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
+        reverseHorizontalEncoder();
+
+    }
+
+    public void start() {
+        isRunning = true;
+        myThread = new Thread(this);
+        myThread.start();
+    }
+
+    public void stop() {
+        isRunning = false;
+        myThread = null;
+    }
+
+    public void resetOdometryEncoder() {
+        verticalLeftEncoder.resetEncoder();
+        verticalRightEncoder.resetEncoder();
+        horizontalEncoder.resetEncoder();
+        prevVerticalLeftCount = 0;
+        prevVerticalRightCount = 0;
+        prevHorizontalCount = 0;
     }
 
     /**
@@ -211,13 +246,6 @@ public class OdometryGlobalPosition implements Runnable {
      */
     public double getHorizonalCountPerRadian() {
         return this.HORIZONTAL_COUNT_PER_RADIAN;
-    }
-
-    /**
-     * Stops the position update thread
-     */
-    public void stop() {
-        isRunning = false;
     }
 
     public void reverseLeftEncoder(){

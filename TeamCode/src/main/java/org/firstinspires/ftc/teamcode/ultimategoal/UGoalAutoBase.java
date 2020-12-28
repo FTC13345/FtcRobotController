@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -12,9 +11,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
-import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
 
 import java.util.List;
 
@@ -32,6 +30,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     // OpMode members here
     /* Declare OpMode members. */
     UGoalRobot robot;
+    MecabotDrive mcdrive;
     OdometryGlobalPosition globalPosition;
     Telemetry drvrTelemetry;
     Telemetry dashTelemetry;
@@ -57,7 +56,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      */
     private TFObjectDetector tfod;
 
-    protected AllianceColor aColor;
     protected String actionString = "Inactive";
     protected String message = "NO";
 
@@ -76,17 +74,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         return message;
     }
 
-    protected double flip4Red(double value) {
-        return (aColor == AllianceColor.BLUE) ? value : -value;
-    }
-
-    protected double flipAngle4Red(double value) {
-        if (aColor == AllianceColor.RED) {
-            value = MathFunctions.angleWrap(180 - value);
-        }
-        return value;
-    }
-
     /**
      * Initialize all hardware and software data structures
      */
@@ -103,12 +90,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
         telemetry.update();
 
-        // odometry is initialize inside drive system MecabotMove class
-        globalPosition = robot.getPosition();
+        // odometry is initialize inside drive system MecabotDrive class
+        mcdrive = robot.getDrive();
+        globalPosition = mcdrive.getOdometry();
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
         setOdometryStartingPosition();
-        // start the thread to calculate robot position continuously
-        robot.startOdometry();
 
         // start printing messages to driver station asap
         setupTelemetry();
@@ -142,11 +128,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         // Start doing the tasks for points
         robot.pickUpWobble();
-        driveToShootHighGoal();
-        shootRingsIntoHighGoal();
-        driveToTargetZone(countRingStack);
+        encoderDriveToShootHighGoal();
+        robot.shootRingsIntoHighGoal();
+        encoderDriveToTargetZone(countRingStack);
         robot.deliverWobble();
-        driveToPark(countRingStack);
+        encoderDriveToPark(countRingStack);
         robot.setWobbleArmDown();
     }
 
@@ -187,18 +173,48 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .addData("F", new Func<String>() {
                     public String value() {
-                        return robot.getDirectionStr();
+                        return mcdrive.getDirectionStr();
                     }
                 });
         drvrTelemetry.addLine("Move ")
                 .addData("", new Func<String>() {
                     @Override
                     public String value() {
-                        return robot.getMovementStatus();
+                        return mcdrive.getMovementStatus();
                     }
                 });
         message = "Done";
         drvrTelemetry.update();
+    }
+
+    /**
+     * Initialize the Vuforia localization engine.
+     */
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        // Loading trackables is not necessary for the TensorFlow Object Detection engine.
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.8f;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
     protected void initRingStackDetection() {
@@ -304,213 +320,73 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     }
 
 
-    //for auto going to and shooting the 3 power shots
-    public void goShoot3Powershot(){
-        //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
-        //first powershot
-        robot.goToPosition(FieldUGoal.ANGLE_POS_X_AXIS, flip4Red(FieldUGoal.POWERSHOT_1_Y-robot.ROBOT_SHOOTING_CURVE_OFFSET));
-        shootPowerShot1();
-        robot.driveToShootPowerShot1(aColor);
-        // second powershot
-        robot.driveToNextPowerShot(aColor);
-        // third powershot
-        robot.driveToNextPowerShot(aColor);
-    }
-
     // using move distance methods to go to high goal
-    public void driveToShootHighGoal(){
+    public void encoderDriveToShootHighGoal(){
         // move around the stack
-        robot.encoderMoveRightLeft(12);
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS + 1);
+        mcdrive.encoderMoveRightLeft(12);
+        mcdrive.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS + 1);
         robot.runShooterFlywheel();
         // move back 8 inches to align with the High Goal
         // 3 tiles takes us to launch line, but robot will be half over launch line
         // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
-        robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.1);
+        mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.1);
         // start flywheel motor early to let it gain full speed
-        robot.encoderMoveRightLeft(-8);
+        mcdrive.encoderMoveRightLeft(-8);
         // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
         robot.dropIntakeAssembly();
         // get ready into position for shooting rings
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-    }
-
-    //aim and shoot three rings into the high goal
-    public void shootRingsIntoHighGoal(){
-        // assumption that flywheel is already running so it can gain full speed
-
-        robot.tiltShooterPlatform(FieldUGoal.GOALX, flip4Red(FieldUGoal.GOALY), FieldUGoal.HIGH_GOAL_HEIGHT);
-        // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
-        // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
-        robot.runIntake(1.0);
-        for (int i = 0; i<5; i++) {
-            sleep(1200); // allow some time for the flywheel to gain full speed after each shot
-            robot.shootRing();
-        }
-        robot.stopIntake();
-        robot.stopShooterFlywheel();
+        mcdrive.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
     }
 
     // using move distance methods to go to correct target zone
-    public void driveToTargetZone(int count){
+    public void encoderDriveToTargetZone(int count){
         // Assumption: We are at High Goal shooting position behind the launch line.
         // x-axis is toward/away (+/- respectively) from the goals/powershot, relative to robot forward/back
         // y-axis is toward/away (+/- respectively) from the outside wall, relative to robot left/right
         // the input inches is RELATIVE TO THE ROBOT, NOT COORDINATES
         if (count == 0){
-            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*0.7);
+            mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*0.7);
             // already aligned with zone A on the X-axis, so just move on the y toward edge wall
-            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
+            mcdrive.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }
         else if (count == 1){
             //we are mostly aligned with zone B on the Y-axis, so just move on the x toward goals/powershot
-            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.7);
+            mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.7);
             //but better to move away on y-axis to drop wobble
-            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH*0.5);
+            mcdrive.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH*0.5);
         }
         else if(count == 4){
             // neither aligned on x nor y
-            robot.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.7);
+            mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.7);
             // move on the y same as target A, as zone A&C have the same y
-            robot.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
+            mcdrive.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
         }
     }
     // using move distance methods to park between powershots and goals, for easy intake of rings from human player
     // Count because we aren't using goToPosition, so we have to know which target zone we went to
-    public void driveToPark(int count){
+    public void encoderDriveToPark(int count){
         if (count == 0){
             // for A we are one tile to the left relative to where we would be if we were in B
             // So move by one tile to the right
-            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+            mcdrive.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
             // already on launch line, no need to move along X-Axis
         }
         else if (count == 1){
             //only move back to launch line
-            robot.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH);
+            mcdrive.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH);
         }
         else if (count == 4){
             // for C we are one tile to the left relative to where we would be if we were in B
             // So move by one tile to the right
-            robot.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+            mcdrive.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
             //move back to launch line
-            robot.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH*2);
+            mcdrive.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH*2);
         }
         // if using goToPosition, use below and we don't need the parameter
-        // robot.goToPosition(FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN);
+        // mcdrive.goToPosition(FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN);
 
         // turn the robot around so intake faces the human player
-        //robot.rotateToHeading(180);
-    }
-
-
-
-
-
-
-
-
-    //Power shot 1 is furthest power shot from center
-    public void shootPowerShot1(){
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-        robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_1_Y), FieldUGoal.POWER_SHOT_HEIGHT);
-        robot.shootRing();
-    }
-    //Power shot 2 is in the middle
-    public void shootPowerShot2(){
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-        robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_2_Y), FieldUGoal.POWER_SHOT_HEIGHT);
-        robot.shootRing();
-    }
-    //Power shot 3 is closest to center
-    public void shootPowerShot3(){
-        robot.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
-        robot.tiltShooterPlatform(FieldUGoal.POWERSHOTX, flip4Red(FieldUGoal.POWERSHOT_3_Y), FieldUGoal.POWER_SHOT_HEIGHT);
-        robot.shootRing();
-    }
-    // distance between center of robot and where wobble is placed is 15 inches
-    // 8.5 is robot radius and 6.5 is length of wobble finger arm
-    public void deliverWobbleAtTargetZone(int count){
-        if (count == 0){
-            // We are already in position to drop the wobble over target zone A, so we don't need to move
-
-            //robot.goToPosition(FieldUGoal.TARGET_ZONE_A_X,flip4Red(FieldUGoal.TARGET_ZONE_A_Y - 15));
-        }
-        else if (count == 1){
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_B_X,flip4Red(FieldUGoal.TARGET_ZONE_B_Y - 15));
-        }
-        else if(count == 4){
-            robot.goToPosition(FieldUGoal.TARGET_ZONE_C_X,flip4Red(FieldUGoal.TARGET_ZONE_C_Y - 15));
-        }
-        else {
-            telemetry.addData("detectRingStackCount did not return 0, 1, or 4", "");
-        }
-        //Wobble is delivered on left side, for red target zones, we need to turn robot to deliver on the right side
-        if (aColor == AllianceColor.RED){
-            robot.rotateToHeading(FieldUGoal.ANGLE_NEG_X_AXIS);
-        }
-        robot.deliverWobble();
-
-    }
-    // if we are blue, we will be facing backward, and need to reverse heading to not have to turn
-    // inside lane is the point on the launch line right between power goal and power shot
-    public void parkAtInsideLane(int count) {
-        actionString = "Park";
-        message = String.format("start (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
-        //if count is 0, stay in place because we are already over launch line
-        if (count == 0){
-            //do nothing
-        }
-        //if in other target zones, just drive directly
-        else { // now go park on the launch line close to center of the field
-            robot.goToPosition(FieldUGoal.TILE_1_CENTER, flip4Red(FieldUGoal.TILE_1_FROM_ORIGIN));
-            message = String.format("end (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
-        }
-    }
-    // if we are blue, we will be facing backward, and need to reverse heading to not have to turn
-    // outside lane is the point on the launch line at the center of the tile on the edge of the field.
-    public void parkAtOutsideLane(int count) {
-        actionString = "Park";
-        message = String.format("start (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
-        //if count is 0, stay in place because we are already over launch line
-        if (count == 0){
-            //do nothing
-        }
-        //if in other target zones, just drive directly
-        else { // now go park on the launch line close to center of the field
-            robot.goToPosition(FieldUGoal.TILE_1_CENTER, flip4Red(FieldUGoal.TILE_3_CENTER));
-            message = String.format("end (%.1f,%.1f)", globalPosition.getXinches(), globalPosition.getYinches());
-        }
-    }
-
-
-    /**
-     * Initialize the Vuforia localization engine.
-     */
-    private void initVuforia() {
-        /*
-         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
-         */
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
-        parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
-
-        //  Instantiate the Vuforia engine
-        vuforia = ClassFactory.getInstance().createVuforia(parameters);
-
-        // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-    }
-
-    /**
-     * Initialize the TensorFlow Object Detection engine.
-     */
-    private void initTfod() {
-        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+        //mcdrive.rotateToHeading(180);
     }
 
 }

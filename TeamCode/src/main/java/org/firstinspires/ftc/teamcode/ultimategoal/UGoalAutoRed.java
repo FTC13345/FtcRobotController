@@ -27,7 +27,7 @@ public class UGoalAutoRed extends UGoalAutoBase {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        aColor = AllianceColor.RED;
+        FieldUGoal.aColor = AllianceColor.RED;
 
         // initialize the robot hardware, navigation, IMU, Odometry and Telemetry display
         initializeOpMode();

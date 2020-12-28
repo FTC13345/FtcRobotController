@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.TeleOpDriver;
@@ -21,9 +22,10 @@ public class UGoalTeleOp extends LinearOpMode {
 
     /* Declare OpMode members. */
     RRMecanumDrive rrmdrive;
-    TeleOpDriver driver;
+    MecabotDrive mcdrive;
     UGoalRobot robot;
     OdometryGlobalPosition globalPosition;
+    TeleOpDriver driver;
     Telemetry drvrTelemetry;
     Telemetry dashTelemetry;
 
@@ -36,6 +38,9 @@ public class UGoalTeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
+        FieldUGoal.aColor = AllianceColor.BLUE;
+
         // Redirect telemetry printouts to both Driver Station and FTC Dashboard
         dashTelemetry = FtcDashboard.getInstance().getTelemetry();
         drvrTelemetry = telemetry;
@@ -44,11 +49,11 @@ public class UGoalTeleOp extends LinearOpMode {
         // Create main OpMode member objects initialize the hardware variables.
         rrmdrive = new RRMecanumDrive(hardwareMap);
         robot = new UGoalRobot(hardwareMap, this);
-        driver = new TeleOpDriver(this, rrmdrive, robot);
+        mcdrive = robot.getDrive();
+        driver = new TeleOpDriver(this, rrmdrive, mcdrive);
 
-        globalPosition = robot.getPosition();
+        globalPosition = mcdrive.getOdometry();
         resetGlobalPositionToAutoStart();
-        robot.startOdometry();
 
         setupTelemetry();
         telemetry.addData(">", "Hardware initialized");
@@ -80,7 +85,7 @@ public class UGoalTeleOp extends LinearOpMode {
         // Reset the tilt angle of the shooting platform
         robot.tiltShooterPlatformMin();
         //Stop the thread
-        robot.stopOdometry();
+        globalPosition.stop();
         driver.stop();
         // all done, please exit
 
@@ -103,9 +108,9 @@ public class UGoalTeleOp extends LinearOpMode {
 
         if ((gamepad2.start) && (gamepad2.x)) {
             robot.raiseIntakeAssembly();
-            robot.resetOdometryEncoder();
-            robot.resetDriveEncoder();
             robot.resetWobblePickupArmEncoder();
+            mcdrive.resetDriveEncoder();
+            globalPosition.resetOdometryEncoder();
             resetGlobalPositionToAutoStart();
         }
     }
@@ -133,7 +138,7 @@ public class UGoalTeleOp extends LinearOpMode {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
             double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, GOALY);
             telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
-            robot.rotateToHeading(targetAngle);
+            mcdrive.rotateToHeading(targetAngle);
 
             robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT);
         }
@@ -155,16 +160,16 @@ public class UGoalTeleOp extends LinearOpMode {
         }
         if (gamepad1.start) {
             if (gamepad1.dpad_up) {
-                robot.driveToShootHighGoal(AllianceColor.BLUE);
+                robot.driveToShootHighGoal();
             }
             if (gamepad1.dpad_left) {
-                robot.driveToShootPowerShot1(AllianceColor.BLUE);
+                robot.driveToShootPowerShot1();
             }
             if (gamepad1.dpad_down) {
-                robot.driveToShootPowerShot2(AllianceColor.BLUE);
+                robot.driveToShootPowerShot2();
             }
             if (gamepad1.dpad_right) {
-                robot.driveToShootPowerShot3(AllianceColor.BLUE);
+                robot.driveToShootPowerShot3();
             }
         }
     }
@@ -317,32 +322,32 @@ public class UGoalTeleOp extends LinearOpMode {
                 .addData("LF", "%5d", new Func<Integer>() {
                     @Override
                     public Integer value() {
-                        return robot.leftFrontDrive.getCurrentPosition();
+                        return mcdrive.leftFrontDrive.getCurrentPosition();
                     }
                 })
                 .addData("LB", "%5d", new Func<Integer>() {
                     @Override
                     public Integer value() {
-                        return robot.leftBackDrive.getCurrentPosition();
+                        return mcdrive.leftBackDrive.getCurrentPosition();
                     }
                 })
                 .addData("RF", "%5d", new Func<Integer>() {
                     @Override
                     public Integer value() {
-                        return robot.rightFrontDrive.getCurrentPosition();
+                        return mcdrive.rightFrontDrive.getCurrentPosition();
                     }
                 })
                 .addData("RB", "%5d", new Func<Integer>() {
                     @Override
                     public Integer value() {
-                        return robot.rightBackDrive.getCurrentPosition();
+                        return mcdrive.rightBackDrive.getCurrentPosition();
                     }
                 });
         drvrTelemetry.addLine("Move ")
                 .addData("", new Func<String>() {
                     @Override
                     public String value() {
-                        return robot.getMovementStatus();
+                        return mcdrive.getMovementStatus();
                     }
                 });
         drvrTelemetry.addLine("Tilt ")

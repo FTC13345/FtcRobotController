@@ -6,17 +6,15 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.drive.MecabotMove;
+import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 
-public class UGoalRobot extends MecabotMove {
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
+public class UGoalRobot {
 
-    public UGoalRobot(HardwareMap ahwMap, LinearOpMode opMode) {
-        super(ahwMap, opMode);
-        this.init(ahwMap);
-    }
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
@@ -60,6 +58,10 @@ public class UGoalRobot extends MecabotMove {
     // Convertion of oval rotation (degrees) to motor encoder ticks
 //    int ovalRotationTicks = 0;
 
+    // mecanum drive train
+    private MecabotDrive mcdrive;
+    private LinearOpMode myOpMode;       // Access to the OpMode object
+
     // Motors and/or enccoders
     public DcMotor leftODwheel = null;
     public DcMotor rightODwheel = null;
@@ -80,6 +82,17 @@ public class UGoalRobot extends MecabotMove {
     public Servo wobbleFinger = null;
     public Servo liftClaw = null;
     public Servo liftArm = null;
+
+    // constructor
+    public UGoalRobot(HardwareMap ahwMap, LinearOpMode opMode) {
+        mcdrive = new MecabotDrive(ahwMap, opMode);
+        myOpMode = opMode;
+        this.init(ahwMap);
+    }
+    // mecanum drivetrain used by the Robot
+    MecabotDrive getDrive() {
+        return mcdrive;
+    }
 
     // Initialization
     public void init(HardwareMap ahwMap) {
@@ -122,17 +135,24 @@ public class UGoalRobot extends MecabotMove {
         //liftArm.setPosition(LIFT_ARM_INSIDE);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         intakeCRServo.setDirection(CRServo.Direction.REVERSE);
+    }
 
-        // initialize odometry subsystems
-        initOdometry(leftODwheel, rightODwheel, intakeMotor);   // intake motor port is used for cross encoder
-        // Set direction of odometry encoders.
-        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
-        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        //globalPosition.reverseLeftEncoder();
-        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        //globalPosition.reverseRightEncoder();
-        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
-        //globalPosition.reverseHorizontalEncoder();
+    /*
+     * Utility functions useful for subsystem motors other than the drive train
+     */
+    public void waitUntilMotorBusy(DcMotor motor) {
+        ElapsedTime runTime = new ElapsedTime();
+        while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < MecabotDrive.TIMEOUT_SHORT)){
+            myOpMode.sleep(50);
+        }
+    }
+    public void motorRunToPosition(DcMotor motor, int position, double speed) {
+        motor.setTargetPosition(position);
+        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor.setPower(speed);
+        waitUntilMotorBusy(motor);
+        motor.setPower(MecabotDrive.MOTOR_STOP_SPEED);
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*
@@ -193,13 +213,13 @@ public class UGoalRobot extends MecabotMove {
     }
     public void stopLift() {
         //stop and brake lift
-        liftMotor.setPower(MOTOR_STOP_SPEED);
+        liftMotor.setPower(MecabotDrive.MOTOR_STOP_SPEED);
         // Get out of the RunMode RUN_TO_POSITION, so manual player control is possible
         liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
     public void moveLift(int position) {
         position = Range.clip(position, LIFT_BOTTOM, LIFT_TOP);
-        motorRunToPosition(liftMotor, position, DRIVE_SPEED_DEFAULT);
+        motorRunToPosition(liftMotor, position, MecabotDrive.DRIVE_SPEED_DEFAULT);
     }
 
     public void rotateClawInside() {
@@ -249,7 +269,7 @@ public class UGoalRobot extends MecabotMove {
     }
 
     public void goToWobblePos(int pos){
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_POS[pos], MecabotMove.DRIVE_SPEED_FAST);
+        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_POS[pos], MecabotDrive.DRIVE_SPEED_FAST);
         myOpMode.sleep(200);
     }
 
@@ -288,7 +308,7 @@ public class UGoalRobot extends MecabotMove {
     public void wobbleLift(int height){
         liftMotor.setTargetPosition(height);
         liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor.setPower(MecabotMove.DRIVE_SPEED_DEFAULT);
+        liftMotor.setPower(MecabotDrive.DRIVE_SPEED_DEFAULT);
     }
 
     //rings will be put on the wobble on the RIGHT side of the robot
@@ -319,12 +339,12 @@ public class UGoalRobot extends MecabotMove {
     // This method gives the angle from the robot to the goal or powershot target in DEGREES
     public double calculateRobotHeadingToShoot(double targetX, double targetY) {
 
-        double robotX = globalPosition.getXinches();
+        double robotX = mcdrive.getOdometry().getXinches();
         // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
         // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
         // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
         // actually position on the field to the right of the intended Target Y coordinate
-        double robotY = globalPosition.getYinches() + ROBOT_SHOOTING_CURVE_OFFSET;
+        double robotY = mcdrive.getOdometry().getYinches() + ROBOT_SHOOTING_CURVE_OFFSET;
         // This code only works reliably when robot Orientation/Heading is zero, i.e. its facing +ve X-Axis direction
         // because the compensation of ROBOT_SHOOTING_CURVE_OFFSET only in Y-axis may not be accurate at other headings
 
@@ -350,8 +370,8 @@ public class UGoalRobot extends MecabotMove {
      */
     public double calculateShooterPlatformTiltAngle(double targetX, double targetY, double targetHeight) {
 
-        double xDiff = targetX - globalPosition.getXinches();
-        double yDiff = targetY - globalPosition.getYinches();
+        double xDiff = targetX - mcdrive.getOdometry().getXinches();
+        double yDiff = targetY - mcdrive.getOdometry().getYinches();
         double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
 
         // TEMPORARY SINCE ODOMETRY IS NOT WORKING  RELIABLY
@@ -434,88 +454,109 @@ public class UGoalRobot extends MecabotMove {
         angleServo.setPosition(SHOOTER_PLATFORM_POS_MAX);
     }
 
-    /*
+    /*****************************
      * Autonomous Program Methods
+     ****************************/
+    /*
+     * Auto Drive To and Shoot Rings into High Goal
      */
-
-
-    public void driveToShootHighGoal(FieldUGoal.AllianceColor color) {
+    public void driveToShootHighGoal() {
         // drive to desired location
         //if red reverse the y
-        if (color == FieldUGoal.AllianceColor.BLUE){
-            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET);
-        }
-        else{
-            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.GOALY - ROBOT_SHOOTING_CURVE_OFFSET));
-        }
+        mcdrive.goToPosition(ORIGIN, flip4Red(GOALY - ROBOT_SHOOTING_CURVE_OFFSET));
         // rotate to face the goal squarely
-        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
-        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.GOALY, FieldUGoal.HIGH_GOAL_HEIGHT);
+        tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT);
     }
-    public void driveToShootPowerShot1(FieldUGoal.AllianceColor color) {
-        // drive to desired location
-        //if red reverse the y
-        if (color == FieldUGoal.AllianceColor.BLUE){
-            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET);
-        }
-        else{
-            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET));
-        }
 
+    //aim and shoot three rings into the high goal
+    public void shootRingsIntoHighGoal(){
+        // assumption that flywheel is already running so it can gain full speed
+
+        tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
+        // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
+        // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
+        runIntake(1.0);
+        for (int i = 0; i<5; i++) {
+            myOpMode.sleep(1200); // allow some time for the flywheel to gain full speed after each shot
+            shootRing();
+        }
+        stopIntake();
+        stopShooterFlywheel();
+    }
+
+    /*
+     * Auto Drive To and Shoot Rings into the 3 Power Shots
+     */
+    public void goShoot3Powershot(){
+        //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
+        //first powershot
+        driveToShootPowerShot1();
+        shootPowerShot1();
+        // second powershot
+        driveToNextPowerShot();
+        shootPowerShot2();
+        // third powershot
+        driveToNextPowerShot();
+        shootPowerShot3();
+    }
+    
+    public void driveToShootPowerShot1() {
+        // drive to desired location
+        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET));
         // rotate to face the goal squarely
-        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
-        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
     }
 
     //instead of using go to position, use mecanum wheels to move a short distance sideways
-    public void driveToNextPowerShot(FieldUGoal.AllianceColor color){
+    public void driveToNextPowerShot(){
         //move using mecanum sideways to next powershot
-        //if red reverse Y
-        if (color == FieldUGoal.AllianceColor.BLUE){
-            //if blue, moving toward center is negative, constant is already negative
-            odometryMoveRightLeft(FieldUGoal.DISTANCE_BETWEEN_POWERSHOT);
-        }
-        else{
-            //if red, moving toward center is positive, constant is already negative so needs to be negated
-            odometryMoveRightLeft(-FieldUGoal.DISTANCE_BETWEEN_POWERSHOT);
-        }
-
+        //if blue, moving toward center is negative, constant is already negative
+        mcdrive.odometryMoveRightLeft(flip4Red(DISTANCE_BETWEEN_POWERSHOT));
         // rotate to face the goal squarely
-        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
-        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_1_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
     }
-
-
-    public void driveToShootPowerShot2(FieldUGoal.AllianceColor color) {
+    
+    public void driveToShootPowerShot2() {
         // drive to desired location
-        //if red reverse the y
-        if (color == FieldUGoal.AllianceColor.BLUE){
-            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET);
-        }
-        else{
-            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET));
-        }
+        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET));
         // rotate to face the goal squarely
-        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
-        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_2_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_2_Y), POWER_SHOT_HEIGHT);
     }
-    public void driveToShootPowerShot3(FieldUGoal.AllianceColor color) {
+    public void driveToShootPowerShot3() {
         // drive to desired location
-        //if red reverse the y
-        if (color == FieldUGoal.AllianceColor.BLUE){
-            goToPosition(FieldUGoal.ORIGIN, FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET);
-        }
-        else{
-            goToPosition(FieldUGoal.ORIGIN, -(FieldUGoal.POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET));
-        }
+        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET));
         // rotate to face the goal squarely
-        rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
-        tiltShooterPlatform(FieldUGoal.GOALX, FieldUGoal.POWERSHOT_3_Y, FieldUGoal.POWER_SHOT_HEIGHT);
+        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_3_Y), POWER_SHOT_HEIGHT);
     }
+
+    //Power shot 1 is furthest power shot from center
+    public void shootPowerShot1(){
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
+        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
+        shootRing();
+    }
+    //Power shot 2 is in the middle
+    public void shootPowerShot2(){
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
+        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_2_Y), POWER_SHOT_HEIGHT);
+        shootRing();
+    }
+    //Power shot 3 is closest to center
+    public void shootPowerShot3(){
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
+        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_3_Y), POWER_SHOT_HEIGHT);
+        shootRing();
+    }
+
 }
 

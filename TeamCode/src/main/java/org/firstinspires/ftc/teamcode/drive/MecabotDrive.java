@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.drive;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -12,21 +13,20 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+import org.firstinspires.ftc.teamcode.util.Encoder;
 
 import java.util.Locale;
 
 
-public class MecabotMove extends Mecabot {
+public class MecabotDrive extends Mecabot {
 
     enum WheelPosition { LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK }
     public enum DriveType {TANK, MECANUM, DIAGONAL}
 
     // Encoder based movement calculation constants
-    static final double ENCODER_TICKS_PER_ROTATION  = 537.6f; // goBilda 5202 series Yellow Jacket Planetary 19.2:1 gear ratio, 312 RPM
-    static final float  mmPerInch                   = 25.4f;
-    static final double WHEEL_DIA                   = 100 / mmPerInch;  // goBilda mecanum wheels 1st gen part# 3213-3606-0001
-    static final double WHEEL_CIRCUMFERENCE         = Math.PI * WHEEL_DIA;
-    static final double ENCODER_TICKS_PER_INCH      = ENCODER_TICKS_PER_ROTATION / WHEEL_CIRCUMFERENCE;
+    static final double DRIVE_ENCODER_TICKS_PER_REV = 537.6f; // goBilda 5202 series Yellow Jacket Planetary 19.2:1 gear ratio, 312 RPM
+    static final double WHEEL_DIA                   = 100 / 25.4f;  // goBilda mecanum wheels 1st gen part# 3213-3606-0001
+    static final double ENCODER_TICKS_PER_INCH      = DRIVE_ENCODER_TICKS_PER_REV / (Math.PI * WHEEL_DIA);
     static final int    ENCODER_TICKS_ERR_MARGIN    = 50;
     static final double OUTER_TO_INNER_TURN_SPEED_RATIO = 6.0;
 
@@ -41,7 +41,8 @@ public class MecabotMove extends Mecabot {
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.5;
-    static final double DEFAULT_SPEED       = 0.6;  //default wheel speed, same as motor power
+    public static final double MOTOR_STOP_SPEED     = 0.0;
+
 
     // Distance and Time thresholds
     public static final double DIST_MARGIN          = 1.0; // inches
@@ -56,82 +57,34 @@ public class MecabotMove extends Mecabot {
     // member variables for state
     protected Mecabot             robot;          // Access to the Robot hardware
     protected LinearOpMode        myOpMode;       // Access to the OpMode object
-    protected OdometryGlobalPosition globalPosition; // Robot global position tracker
-    private   Thread              globalPositionThread;
+    protected OdometryGlobalPosition odoPosition; // Robot global position tracker
     protected String              movementStatus          = "";
 
-    //The amount of encoder ticks for each inch the robot moves. THIS WILL CHANGE FOR EACH ROBOT AND NEEDS TO BE UPDATED HERE
-    public static final double ODOMETRY_ENCODER_COUNT_PER_ROTATION = 8192;  // FTC Team 13345 Mecabot encoder hals 8192 ticks per rotation
-    public static final double ODOMETRY_WHEEL_DIAMETER = 38.0f / 25.4f; // Odometry wheel has 38mm diameter, calculate in inches
-
-    // odometry encoder wheels
-    public DcMotor leftEncoder = null;
-    public DcMotor rightEncoder = null;
-    public DcMotor crossEncoder = null;
-
     /* Constructor */
-    public MecabotMove(HardwareMap ahwMap, LinearOpMode opMode) {
+    public MecabotDrive(HardwareMap ahwMap, LinearOpMode opMode) {
         super(ahwMap);
-        // Save reference to OpMode and Hardware map
         myOpMode = opMode;
         robot = this;
+        initOdometry(ahwMap);
+    }
+
+    private void initOdometry(HardwareMap hwMap) {
+
+        //Create and start GlobalPosition thread to constantly update the global position coordinates.
+        odoPosition = new OdometryGlobalPosition(
+                new Encoder(hwMap.get(DcMotorEx.class, "leftODwheel")),
+                new Encoder(hwMap.get(DcMotorEx.class, "rightODwheel")),
+                new Encoder(hwMap.get(DcMotorEx.class, "intakeMotor"))
+        );
+        odoPosition.start();
+
+        myOpMode.telemetry.addData("Wheelbase Separation", odoPosition.getWheelbaseSeparationCount());
+        myOpMode.telemetry.addData("Horizontal Count Per Radian", odoPosition.getHorizonalCountPerRadian());
     }
 
     // Access methods
-    public OdometryGlobalPosition getPosition() {
-        return globalPosition;
-    }
-
-    public OdometryGlobalPosition initOdometry(DcMotor leftODencoder, DcMotor rightODEncoder, DcMotor crossODEncoder) throws IllegalStateException {
-
-        // Initialize Odometry encoders
-        leftEncoder = leftODencoder;
-        rightEncoder = rightODEncoder;
-        crossEncoder = crossODEncoder;
-
-        if ((leftEncoder == null) || (rightEncoder == null) || (crossEncoder == null)) {
-            throw new IllegalStateException("Mecabot hardware must be initialized before Odometry.");
-        }
-
-        //Create and start GlobalPosition thread to constantly update the global position coordinates.
-        globalPosition = new OdometryGlobalPosition(leftEncoder, rightEncoder, crossEncoder, ODOMETRY_ENCODER_COUNT_PER_ROTATION, ODOMETRY_WHEEL_DIAMETER);
-
-        // IMPORTANT NOTE: The following configuration should ideally be done by the caller of this method because the motors that are passed as arguments
-        // may have a FORWARD or REVERSE direction depending on the function served by those motors. The odometry encoders are usually simply using the
-        // motor ports without any relation to those motor functionality.
-
-        // Set direction of odometry encoders.
-        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ROBOT HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
-        // Left encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        //globalPosition.reverseLeftEncoder();
-        // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
-        //globalPosition.reverseRightEncoder();
-        // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
-        //globalPosition.reverseHorizontalEncoder();
-
-        myOpMode.telemetry.addData("Wheelbase Separation", globalPosition.getWheelbaseSeparationCount());
-        myOpMode.telemetry.addData("Horizontal Count Per Radian", globalPosition.getHorizonalCountPerRadian());
-
-        return globalPosition;
-    }
-
-    public void startOdometry() {
-        globalPositionThread = new Thread(globalPosition);
-        globalPositionThread.start();
-    }
-
-    public void stopOdometry() {
-        globalPosition.stop();
-    }
-
-    public void resetOdometryEncoder() {
-        leftEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        crossEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        leftEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        crossEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    public OdometryGlobalPosition getOdometry() {
+        return odoPosition;
     }
 
     public String getMovementStatus() {
@@ -190,7 +143,7 @@ public class MecabotMove extends Mecabot {
     public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
         // determine current angle of the robot
-        double robotAngle = globalPosition.getOrientationDegrees();
+        double robotAngle = odoPosition.getOrientationDegrees();
         double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
         turnSpeed = Math.abs(turnSpeed);
@@ -206,7 +159,7 @@ public class MecabotMove extends Mecabot {
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
             myOpMode.sleep(30); // allow some time for the motors to actuate
-            robotAngle = globalPosition.getOrientationDegrees();
+            robotAngle = odoPosition.getOrientationDegrees();
             delta = MathFunctions.angleWrap(targetAngle - robotAngle);
 
             myOpMode.telemetry.addLine("Odom Rot ")
@@ -297,18 +250,18 @@ public class MecabotMove extends Mecabot {
      */
     public double goTowardsPosition(double x, double y, double speed, boolean slowDownAtEnd) {
 
-        double distanceToPosition = Math.hypot(globalPosition.getXinches() - x,  globalPosition.getYinches() - y);
-        double absoluteAngleToPosition = Math.atan2(y - globalPosition.getYinches(), x - globalPosition.getXinches());
+        double distanceToPosition = Math.hypot(odoPosition.getXinches() - x,  odoPosition.getYinches() - y);
+        double absoluteAngleToPosition = Math.atan2(y - odoPosition.getYinches(), x - odoPosition.getXinches());
         double relativeAngleToPosition;
 
         if (robot.isDirectionForward()) {
-            relativeAngleToPosition = MathFunctions.angleWrapRad(absoluteAngleToPosition - globalPosition.getOrientationRadians());
+            relativeAngleToPosition = MathFunctions.angleWrapRad(absoluteAngleToPosition - odoPosition.getOrientationRadians());
         }
         else { // (robot.isFrontLiftarm())
         // override in case of Robot front face has been REVERSED. The motors will run swapped (left front runs as right back)
         // The only control we need to change is to calculate the turn power for driving in reverse direction
         // This is done by adding 180 degrees (or PI radians) to the relative Angle (or to the robot orientation angle)
-            relativeAngleToPosition = MathFunctions.angleWrapRad(absoluteAngleToPosition - globalPosition.getOrientationRadians() + Math.PI);
+            relativeAngleToPosition = MathFunctions.angleWrapRad(absoluteAngleToPosition - odoPosition.getOrientationRadians() + Math.PI);
         }
 
         double drivePower = speed;
@@ -355,7 +308,7 @@ public class MecabotMove extends Mecabot {
      */
     public void goToXPosition(double targetX, double speed, double timeout) {
 
-        double curX = globalPosition.getXinches();
+        double curX = odoPosition.getXinches();
 
         // do not move less than 1 inch, that is our margin threshold for reaching the target coordinate.
         if (Math.abs(targetX - curX) < DIST_MARGIN) {
@@ -373,7 +326,7 @@ public class MecabotMove extends Mecabot {
 
         // the gyro rotation moves the robot X,Y position, we will ignore that small amount
         // get the Y coorindate now (after gyroRotate()) so we drive stright only along X-axis
-        double curY = globalPosition.getYinches();
+        double curY = odoPosition.getYinches();
 
         // Now lets go to the target destination coordinate
         goToPosition(targetX, curY, speed, timeout);
@@ -391,7 +344,7 @@ public class MecabotMove extends Mecabot {
      */
     public void goToYPosition(double targetY, double speed, double timeout) {
 
-        double curY = globalPosition.getYinches();
+        double curY = odoPosition.getYinches();
 
         // do not move less than 1 inch, that is our margin threshold for reaching the target coordinate.
         if (Math.abs(targetY - curY) < DIST_MARGIN) {
@@ -409,7 +362,7 @@ public class MecabotMove extends Mecabot {
 
         // the gyro rotation moves the robot X,Y position, we will ignore that small amount
         // get the X coorindate now (after gyroRotate()) so we drive stright only along X-axis
-        double curX = globalPosition.getXinches();
+        double curX = odoPosition.getXinches();
 
         // Now lets go to the target destination coordinate
         goToPosition(curX, targetY, speed, timeout);
@@ -444,8 +397,8 @@ public class MecabotMove extends Mecabot {
         if (inches < 0) {
             speed = -speed;
         }
-        double origX = globalPosition.getXinches();
-        double origY = globalPosition.getYinches();
+        double origX = odoPosition.getXinches();
+        double origY = odoPosition.getYinches();
         double curX;
         double curY;
         double distance = 0;
@@ -466,8 +419,8 @@ public class MecabotMove extends Mecabot {
                     robot.driveTank(speed, 0.0);
                     break;
             }
-            curX = globalPosition.getXinches();
-            curY = globalPosition.getYinches();
+            curX = odoPosition.getXinches();
+            curY = odoPosition.getYinches();
             distance = Math.hypot((curX - origX), (curY - origY));
 
             myOpMode.telemetry.addLine("MoveDist ").addData("now at", "%.1f of %.1f in", distance, inches);
@@ -536,7 +489,7 @@ public class MecabotMove extends Mecabot {
      * Move robot forward or backward, +ve distance moves forward, -ve distance moves backward
      */
     public void encoderMoveForwardBack(double inches) {
-        encoderMoveDistance( inches, false, DEFAULT_SPEED);
+        encoderMoveDistance( inches, false, DRIVE_SPEED_DEFAULT);
     }
 
     public void encoderMoveForwardBack(double inches, double speed) {
@@ -547,7 +500,7 @@ public class MecabotMove extends Mecabot {
     * Move robot left or right, +ve distance moves right, -ve distance moves left
     */
     public void encoderMoveRightLeft(double inches) {
-        encoderMoveDistance(inches, true, DEFAULT_SPEED);
+        encoderMoveDistance(inches, true, DRIVE_SPEED_DEFAULT);
     }
 
     public void encoderMoveRightLeft(double inches, double speed) {
@@ -559,7 +512,7 @@ public class MecabotMove extends Mecabot {
      */
     @Deprecated
     public void encoderMoveLeftRight(double inches) {
-        encoderMoveDistance(inches * -1.0, true, DEFAULT_SPEED);
+        encoderMoveDistance(inches * -1.0, true, DRIVE_SPEED_DEFAULT);
     }
 
     @Deprecated
@@ -644,7 +597,7 @@ public class MecabotMove extends Mecabot {
     }
 
     public void encoderRotate(double inches, boolean counterClockwise) {
-        encoderRotate(inches, counterClockwise, DEFAULT_SPEED);
+        encoderRotate(inches, counterClockwise, DRIVE_SPEED_DEFAULT);
     }
 
     // Turn in an arc
@@ -689,7 +642,7 @@ public class MecabotMove extends Mecabot {
     }
 
     public void encoderTurn(double inches, boolean counterClockwise) {
-        encoderTurn(inches, counterClockwise, DEFAULT_SPEED);
+        encoderTurn(inches, counterClockwise, DRIVE_SPEED_DEFAULT);
     }
 
     private void waitToReachTargetPosition(WheelPosition dominantWheel, int leftFront, int leftBack, int rightFront, int rightBack) {
@@ -728,24 +681,4 @@ public class MecabotMove extends Mecabot {
         myOpMode.sleep(50);
 
     }
-
-    /*
-     * Utility functions for use by sub classes
-     * Useful for subsystem motors other than the drive train
-     */
-    public void waitUntilMotorBusy(DcMotor motor) {
-        ElapsedTime runTime = new ElapsedTime();
-        while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < TIMEOUT_SHORT)){
-            myOpMode.sleep(50);
-        }
-    }
-    public void motorRunToPosition(DcMotor motor, int position, double speed) {
-        motor.setTargetPosition(position);
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setPower(speed);
-        waitUntilMotorBusy(motor);
-        motor.setPower(MOTOR_STOP_SPEED);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    }
-
 }

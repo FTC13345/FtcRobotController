@@ -5,9 +5,8 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 public class TeleOpDriver implements Runnable {
 
@@ -16,20 +15,20 @@ public class TeleOpDriver implements Runnable {
     // member variables for state
     protected LinearOpMode  myOpMode;       // Access to the OpMode object
     protected RRMecanumDrive drive;
-    protected MecabotMove   robot;          // Access to the Robot hardware
+    protected MecabotDrive robot;          // Access to the Robot hardware
     protected Gamepad       gamepad1;
     protected Telemetry     telemetry;
 
     protected Thread        myThread;
     protected boolean       isRunning = false;
-    protected double        speedMultiplier = MecabotMove.DRIVE_SPEED_MAX;
+    protected double        speedMultiplier = MecabotDrive.DRIVE_SPEED_MAX;
 
     // record position that we need to return to repeatedly
     double xpos, ypos, tpos;
     boolean autoDriving = false;
 
     /* Constructor */
-    public TeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, MecabotMove aRobot) {
+    public TeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, MecabotDrive aRobot) {
         // Save reference to OpMode and Hardware map
         myOpMode = opMode;
         gamepad1 = opMode.gamepad1;
@@ -77,13 +76,13 @@ public class TeleOpDriver implements Runnable {
         else { // !gamepad1.start --> which means bumper buttons pressed alone
             //update speedMultiplier for FAST or SLOW driving
             if (gamepad1.right_bumper) {
-                speedMultiplier = MecabotMove.DRIVE_SPEED_MAX;
+                speedMultiplier = MecabotDrive.DRIVE_SPEED_MAX;
                 robot.setFastBlue();
                 // as a dual action of this button stop autodriving
                 autoDriving = false;
             }
             else if (gamepad1.left_bumper) {
-                speedMultiplier = MecabotMove.DRIVE_SPEED_DEFAULT;
+                speedMultiplier = MecabotDrive.DRIVE_SPEED_DEFAULT;
                 robot.setSlowBlue();
                 // as a dual action of this button stop autodriving
                 autoDriving = false;
@@ -93,10 +92,10 @@ public class TeleOpDriver implements Runnable {
 
     public void buttonHandler() {
         if (gamepad1.a) {
-            robot.odometryRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
+            robot.odometryRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_DEFAULT, MecabotDrive.TIMEOUT_ROTATE);
         }
         else if (gamepad1.b) {
-            robot.gyroRotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS, MecabotMove.ROTATE_SPEED_DEFAULT, MecabotMove.TIMEOUT_ROTATE);
+            robot.gyroRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_DEFAULT, MecabotDrive.TIMEOUT_ROTATE);
         }
     }
 
@@ -184,7 +183,7 @@ public class TeleOpDriver implements Runnable {
         }
         if (gamepad1.x) {
             Trajectory goToShoot = drive.trajectoryBuilder(drive.getPoseEstimate())
-                    .lineToLinearHeading(new Pose2d(FieldUGoal.ORIGIN - 4.0, FieldUGoal.GOALY - 8.5, FieldUGoal.ANGLE_POS_X_AXIS))
+                    .lineToLinearHeading(new Pose2d(ORIGIN - 4.0, flip4Red(GOALY - ROBOT_RADIUS), ANGLE_POS_X_AXIS))
                     .build();
             drive.followTrajectoryAsync(goToShoot);
             autoDriving = true;
@@ -192,8 +191,8 @@ public class TeleOpDriver implements Runnable {
 /*
         if (autoDriving) {
             telemetry.addData("Driving Towards", "X %2.2f | Y %2.2f | Angle %3.2f", xpos, ypos, tpos);
-            double distance = robot.goTowardsPosition(xpos, ypos, MecabotMove.DRIVE_SPEED_DEFAULT, true);
-            if (distance < MecabotMove.DIST_MARGIN) { // we have reached
+            double distance = robot.goTowardsPosition(xpos, ypos, MecabotDrive.DRIVE_SPEED_DEFAULT, true);
+            if (distance < MecabotDrive.DIST_MARGIN) { // we have reached
                 autoDriving = false;
             }
         }

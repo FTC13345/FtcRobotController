@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 
+import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+
 /** Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
  *  X Axis is parallel to red alliance wall with positive values towards the tower goals and powershots
@@ -20,7 +22,6 @@ public class FieldUGoal {
 
 
     // field distances between objects
-    //static final double     HALF_TAB                    = 0.75 / 2;
     public static final double     TILE_LENGTH                 = 23.5;
     public static final double     TILE_WITHOUT_TABS           = 22.75;
     public static final double     ROBOT_RADIUS                = 8.5;
@@ -32,7 +33,6 @@ public class FieldUGoal {
     public static final double     TILE_1_CENTER               = TILE_LENGTH / 2;
     public static final double     TILE_2_CENTER               = TILE_1_CENTER + TILE_LENGTH;
     public static final double     TILE_3_CENTER               = TILE_2_CENTER + TILE_LENGTH;
-    static final double     BEHIND_LAUNCH_LINE          = TILE_1_CENTER - ROBOT_RADIUS;
 
 
     public static final double     TARGET_ZONE_A_X             = TILE_1_CENTER;
@@ -57,7 +57,19 @@ public class FieldUGoal {
     public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-7.5;
     static final double     DISTANCE_BETWEEN_POWERSHOT  = -7.5;
 
+    public static AllianceColor aColor = AllianceColor.BLUE;
 
+    public static double flip4Red(double value) {
+        if (aColor == AllianceColor.RED) {
+            value = -value;
+        }
+        return value;
+    }
 
-
+    public static double flipAngle4Red(double value) {
+        if (aColor == AllianceColor.RED) {
+            value = MathFunctions.angleWrap(180 - value);
+        }
+        return value;
+    }
 }

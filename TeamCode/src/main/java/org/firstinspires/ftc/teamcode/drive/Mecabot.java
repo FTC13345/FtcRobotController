@@ -67,8 +67,6 @@ public class Mecabot {
     public static final double WIDTH = 17.0;    // exact length 17.4 in see https://www.gobilda.com/strafer-chassis-kit-3209-0001-0002/
     public static final double HALF_WIDTH = WIDTH / 2;
 
-    public static final double MOTOR_STOP_SPEED = 0.0;
-
     /* local OpMode members. */
     // The hardware map obtained from OpMode
     HardwareMap hwMap;
