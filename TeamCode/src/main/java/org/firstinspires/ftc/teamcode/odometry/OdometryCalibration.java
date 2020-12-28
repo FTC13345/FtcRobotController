@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.odometry;
 
+import android.app.slice.Slice;
+
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -25,6 +27,11 @@ import java.io.File;
  */
 @TeleOp(name = "Odometry System Calibration", group = "Calibration")
 public class OdometryCalibration extends LinearOpMode {
+
+    final double PIVOT_SPEED = 0.4;
+    final double SLOW_SPEED = 0.2;
+    final double rotations = 10;
+
     //Drive motors
     DcMotor right_front, right_back, left_front, left_back;
     //Odometry Wheels
@@ -36,8 +43,6 @@ public class OdometryCalibration extends LinearOpMode {
     //Hardware Map Names for drive motors and odometry wheels. THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE
     String rfName = "rightFrontDrive", rbName = "rightBackDrive", lfName = "leftFrontDrive", lbName = "leftBackDrive";
     String verticalLeftEncoderName = "leftODwheel", verticalRightEncoderName = "rightODwheel", horizontalEncoderName = "intakeMotor";
-
-    final double PIVOT_SPEED = 0.4;
 
     // THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE (change the ticks per rotation and the wheel diameter
     // The amount of encoder ticks for each inch the robot moves.
@@ -69,29 +74,46 @@ public class OdometryCalibration extends LinearOpMode {
 
         //Odometry System Calibration Init Complete
         telemetry.addData("Odometry Calibration", "All Init Complete, Ready to Start");
+        telemetry.addData("Odometry Calibration", "Press X to stop");
         telemetry.update();
 
         waitForStart();
 
+        boolean done = false;
+        double target = rotations * 360; // degrees
+        double speed = PIVOT_SPEED;
+        double headingCurrent;
+        double headingLast = 0;
+        double headingDelta;
+        double headingCumulative = 0;
+
         // Begin calibration, by pivoting the robot in place, in this setup rotate right is positive angle
         // if robot is unable to pivot at these speeds, please adjust the constant at the top of the code
-        while(getZAngle() < 90 && opModeIsActive()){
-            if(getZAngle() < 60) {
-                setPowerAll(-PIVOT_SPEED, -PIVOT_SPEED, PIVOT_SPEED, PIVOT_SPEED); // rotate right
-            }else{
-                setPowerAll(-PIVOT_SPEED/2, -PIVOT_SPEED/2, PIVOT_SPEED/2, PIVOT_SPEED/2); // rotate right
+        do {
+
+            headingCurrent = getZAngle();
+            headingDelta = MathFunctions.angleWrap(headingCurrent - headingLast);
+            headingCumulative += headingDelta;
+            headingLast = headingCurrent;
+
+            if (Math.abs(headingCumulative) > target - 20) {
+                speed = SLOW_SPEED;
             }
+            setPowerAll(speed); // rotate
 
             telemetry.addData("IMU Angle", getZAngle());
+            telemetry.addData("Total Rotation", headingCumulative);
             telemetry.update();
-        }
+
+        } while(!(gamepad1.x) && (Math.abs(headingCumulative) < target) && opModeIsActive());
 
         //Stop the robot
-        setPowerAll(0, 0, 0, 0);
+        setPowerAll(0.0);
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
         while(timer.milliseconds() < 2000 && opModeIsActive()){
             telemetry.addData("IMU Angle", getZAngle());
+            telemetry.addData("Total Rotation", headingCumulative);
             telemetry.update();
         }
 
@@ -111,8 +133,8 @@ public class OdometryCalibration extends LinearOpMode {
         // Note that: length of arc for 1 radian angle = radius of circle
         // Therefore wheel base separation = sum of left arc length and right arc length for 1 radian rotation
         double verticalEncoderTicks = Math.abs(verticalLeftCount) + (Math.abs(verticalRightCount));
-        double verticalEncoderTicksPerDegree = verticalEncoderTicks/angle;
-        double verticalEncoderTicksPerRadian = (180*verticalEncoderTicks)/(Math.PI*angle);
+        double verticalEncoderTicksPerDegree = verticalEncoderTicks/headingCumulative;
+        double verticalEncoderTicksPerRadian = (180*verticalEncoderTicks)/(Math.PI*headingCumulative);
         double wheelBaseSeparationInches = verticalEncoderTicksPerRadian/ ENCODER_COUNT_PER_INCH;
 
         double horizontalCountPerRadian = Math.abs(horizontalCount)/Math.toRadians(angle);
@@ -203,16 +225,13 @@ public class OdometryCalibration extends LinearOpMode {
 
     /**
      * Sets power to all four drive motors
-     * @param rf power for right front motor
-     * @param rb power for right back motor
-     * @param lf power for left front motor
-     * @param lb power for left back motor
+     * @param speed power for all the  motors
      */
-    private void setPowerAll(double rf, double rb, double lf, double lb){
-        right_front.setPower(rf);
-        right_back.setPower(rb);
-        left_front.setPower(lf);
-        left_back.setPower(lb);
+    private void setPowerAll(double speed){
+        right_front.setPower(speed);
+        right_back.setPower(speed);
+        left_front.setPower(-speed);
+        left_back.setPower(-speed);
     }
 
 }
