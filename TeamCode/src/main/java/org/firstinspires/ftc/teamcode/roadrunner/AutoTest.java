@@ -58,6 +58,7 @@ public class AutoTest extends LinearOpMode {
 
         if (isStopRequested()) return;
 
+        robot.pickUpWobble();
         robot.runShooterFlywheel();
 
         drive.followTrajectory(goToShoot);
