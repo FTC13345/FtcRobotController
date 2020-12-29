@@ -228,10 +228,10 @@ public class OdometryCalibration extends LinearOpMode {
      * @param speed power for all the  motors
      */
     private void setPowerAll(double speed){
-        right_front.setPower(speed);
-        right_back.setPower(speed);
-        left_front.setPower(-speed);
-        left_back.setPower(-speed);
+        right_front.setPower(-speed);
+        right_back.setPower(-speed);
+        left_front.setPower(+speed);
+        left_back.setPower(+speed);
     }
 
 }

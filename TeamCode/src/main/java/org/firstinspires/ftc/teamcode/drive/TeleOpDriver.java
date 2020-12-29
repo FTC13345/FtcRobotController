@@ -145,11 +145,11 @@ public class TeleOpDriver implements Runnable {
         // Read pose
         Pose2d poseEstimate = drive.getPoseEstimate();
         // Print pose to telemetry
-        telemetry.addLine("Runner Position ")
-                .addData("X", "%2.2f", poseEstimate.getX())
-                .addData("Y", "%2.2f", poseEstimate.getY())
-                .addData("Angle", "%3.2f", Math.toDegrees(poseEstimate.getHeading()));
-        telemetry.update();
+//        telemetry.addLine("Runner Position ")
+//                .addData("X", "%2.2f", poseEstimate.getX())
+//                .addData("Y", "%2.2f", poseEstimate.getY())
+//                .addData("Angle", "%3.2f", Math.toDegrees(poseEstimate.getHeading()));
+//        telemetry.update();
     }
 
 
