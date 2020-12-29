@@ -45,7 +45,8 @@ public class DriveConstants {
      */
     public static double WHEEL_RADIUS = 50 / 25.4f; // 1.9685 in // 13345 goBilda mecanum wheels 1st gen part# 3213-3606-0001
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 383 / 25.4f; // 15.08 in // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
+    public static double TRACK_WIDTH = 16.18f; // 383mm / 25.4 // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
+    public static double WHEEL_BASE = 13.78f; // 13.78 in // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
