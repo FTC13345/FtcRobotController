@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -12,6 +15,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
+import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import java.util.List;
@@ -29,6 +33,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     // OpMode members here
     /* Declare OpMode members. */
+    RRMecanumDrive rrmdrive;
     UGoalRobot robot;
     MecabotDrive mcdrive;
     OdometryGlobalPosition globalPosition;
@@ -59,6 +64,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     protected String actionString = "Inactive";
     protected String message = "NO";
 
+    // Roadrunner Trajectories
+    Trajectory goToShootRings;
+    Trajectory goToPlaceWobble1;
+    Trajectory goToPickWobble2;
+    Trajectory goToPlaceWobble2;
+    Trajectory goToPark;
+
     /*
      * Abstract methods, must be implemented by the sub-classes
      */
@@ -84,6 +96,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Initialize the robot hardware and drive system variables.
+        rrmdrive = new RRMecanumDrive(hardwareMap);
         robot = new UGoalRobot(hardwareMap, this);
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
@@ -104,6 +117,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
         runRingStackDetection();
 
+        buildTrajectories();
     }
 
     // for testing mainly, at the end wait for driver to press STOP, meanwhile
@@ -126,66 +140,53 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // this is already set in init() but in case someone moved the robot location manually.
         setOdometryStartingPosition();
 
-        // Start doing the tasks for points
+        // run full auto using Roadrunner drive. Assumption that buildTrajectories() has been called during init()
+        fullAutoRoadRunner();
+    }
+
+    /*****************************
+     * Roadrunner movement using Follow Trajectories with dead wheel odometry
+     ****************************/
+    private void buildTrajectories() {
+        goToShootRings = rrmdrive.trajectoryBuilder(new Pose2d(-62, 32, 0))
+                .splineTo(new Vector2d(-34, 20), 0)  // 12 inches right, 28 inches forward
+                .splineTo(new Vector2d(-6, 28), 0)  // 8 inches left, another 28 inches forward
+                .build();
+        goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
+                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 4), 0)
+                .build();
+        goToPickWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end(), true)
+                .splineTo(new Vector2d(-FieldUGoal.TILE_1_FROM_ORIGIN, FieldUGoal.TILE_2_CENTER + 4), 0)
+                .build();
+        goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPickWobble2.end())
+                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 4), 0)
+                .build();
+        goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
+                .lineTo(new Vector2d(6, 28))
+                .build();
+    }
+
+    public void fullAutoRoadRunner() {
         robot.pickUpWobble();
-        encoderDriveToShootHighGoal();
+        robot.runShooterFlywheel();
+        rrmdrive.followTrajectory(goToShootRings);
         robot.shootRingsIntoHighGoal();
-        encoderDriveToTargetZone(countRingStack);
+        rrmdrive.followTrajectory(goToPlaceWobble1);
         robot.deliverWobble();
-        encoderDriveToPark(countRingStack);
+        sleep(250);
+        robot.setWobbleArmPickup();
+        rrmdrive.followTrajectory(goToPickWobble2);
+        robot.pickUpWobble();
+        rrmdrive.followTrajectory(goToPlaceWobble2);
+        robot.deliverWobble();
+        sleep(250);
         robot.setWobbleArmDown();
+        rrmdrive.followTrajectory(goToPark);
     }
 
-    protected void setupTelemetry() {
-
-        actionString = "Telemetry";
-        drvrTelemetry.addLine("Auto ")
-                .addData(getColorString(), new Func<String>() {
-                    @Override
-                    public String value() {
-                        return getAction();
-                    }
-                })
-                .addData("msg", new Func<String>() {
-                    @Override
-                    public String value() {
-                        return getMessage();
-                    }
-                });
-        drvrTelemetry.addLine("Position ")
-                .addData("X", "%3.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getXinches();
-                    }
-                })
-                .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getYinches();
-                    }
-                })
-                .addData("Angle", "%4.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getOrientationDegrees();
-                    }
-                })
-                .addData("F", new Func<String>() {
-                    public String value() {
-                        return mcdrive.getDirectionStr();
-                    }
-                });
-        drvrTelemetry.addLine("Move ")
-                .addData("", new Func<String>() {
-                    @Override
-                    public String value() {
-                        return mcdrive.getMovementStatus();
-                    }
-                });
-        message = "Done";
-        drvrTelemetry.update();
-    }
+  /*****************************
+     * Image Recognition Methods
+     ****************************/
 
     /**
      * Initialize the Vuforia localization engine.
@@ -319,6 +320,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         tfod.shutdown();
     }
 
+    /*****************************
+     * Encoder Movement Methods - include a mix of Road Runner and Home Brew
+     ****************************/
+
+    public void fullAutoEncoderDrive() {
+        robot.pickUpWobble();
+        encoderDriveToShootHighGoal();
+        robot.shootRingsIntoHighGoal();
+        encoderDriveToTargetZone(countRingStack);
+        robot.deliverWobble();
+        encoderDriveToPark(countRingStack);
+        robot.setWobbleArmDown();
+    }
 
     // using move distance methods to go to high goal
     public void encoderDriveToShootHighGoal(){
@@ -389,4 +403,57 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //mcdrive.rotateToHeading(180);
     }
 
+    /*****************************
+     * Telemetry debug printous setup
+     ****************************/
+    protected void setupTelemetry() {
+
+        actionString = "Telemetry";
+        drvrTelemetry.addLine("Auto ")
+                .addData(getColorString(), new Func<String>() {
+                    @Override
+                    public String value() {
+                        return getAction();
+                    }
+                })
+                .addData("msg", new Func<String>() {
+                    @Override
+                    public String value() {
+                        return getMessage();
+                    }
+                });
+        drvrTelemetry.addLine("Position ")
+                .addData("X", "%3.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getXinches();
+                    }
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getYinches();
+                    }
+                })
+                .addData("Angle", "%4.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getOrientationDegrees();
+                    }
+                })
+                .addData("F", new Func<String>() {
+                    public String value() {
+                        return mcdrive.getDirectionStr();
+                    }
+                });
+        drvrTelemetry.addLine("Move ")
+                .addData("", new Func<String>() {
+                    @Override
+                    public String value() {
+                        return mcdrive.getMovementStatus();
+                    }
+                });
+        message = "Done";
+        drvrTelemetry.update();
+    }
 }
