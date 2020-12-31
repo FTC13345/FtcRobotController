@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
+import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
@@ -59,6 +60,7 @@ public class UGoalRobot {
 //    int ovalRotationTicks = 0;
 
     // mecanum drive train
+    private RRMecanumDrive rrmdrive;
     private MecabotDrive mcdrive;
     private LinearOpMode myOpMode;       // Access to the OpMode object
 
@@ -84,7 +86,8 @@ public class UGoalRobot {
     public Servo liftArm = null;
 
     // constructor
-    public UGoalRobot(HardwareMap ahwMap, LinearOpMode opMode) {
+    public UGoalRobot(HardwareMap ahwMap, RRMecanumDrive drive, LinearOpMode opMode) {
+        rrmdrive = drive;
         mcdrive = new MecabotDrive(ahwMap, opMode);
         myOpMode = opMode;
         this.init(ahwMap);
@@ -280,12 +283,12 @@ public class UGoalRobot {
     public void deliverWobble() {
         // bring wobble arm down to release
         setWobbleFingerOpen();
-        // stow away the wobble arm
+        myOpMode.sleep(200); // allow the finger hardware to open
     }
 
     public void pickUpWobble(){
-        setWobbleArmPickup();
         setWobbleFingerOpen();
+        setWobbleArmPickup();
         myOpMode.sleep(100);
         setWobbleFingerClosed();
         myOpMode.sleep(100);
@@ -339,12 +342,12 @@ public class UGoalRobot {
     // This method gives the angle from the robot to the goal or powershot target in DEGREES
     public double calculateRobotHeadingToShoot(double targetX, double targetY) {
 
-        double robotX = mcdrive.getOdometry().getXinches();
+        double robotX = rrmdrive.getPoseEstimate().getX();
         // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
         // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
         // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
         // actually position on the field to the right of the intended Target Y coordinate
-        double robotY = mcdrive.getOdometry().getYinches() + ROBOT_SHOOTING_CURVE_OFFSET;
+        double robotY = rrmdrive.getPoseEstimate().getY() + ROBOT_SHOOTING_CURVE_OFFSET;
         // This code only works reliably when robot Orientation/Heading is zero, i.e. its facing +ve X-Axis direction
         // because the compensation of ROBOT_SHOOTING_CURVE_OFFSET only in Y-axis may not be accurate at other headings
 
@@ -370,13 +373,13 @@ public class UGoalRobot {
      */
     public double calculateShooterPlatformTiltAngle(double targetX, double targetY, double targetHeight) {
 
-        double xDiff = targetX - mcdrive.getOdometry().getXinches();
-        double yDiff = targetY - mcdrive.getOdometry().getYinches();
+        double xDiff = targetX - rrmdrive.getPoseEstimate().getX();
+        double yDiff = targetY - rrmdrive.getPoseEstimate().getY();
         double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
 
-        // TEMPORARY SINCE ODOMETRY IS NOT WORKING  RELIABLY
-        // WE ARE GOING TO ASSUME THAT ROBOT IS DIRECTLY FACING THE TARGET (Heading is +ve X-Axis) AND POSITIONED at Y-Axis line (to be behind launch line)
-        // THEREFORE DISANCE IS SIMPLY THE X-COORDINATE OF THE TARGET
+        // OPTION: Enable the code line below if/when Odometry is not working reliably and we want to ingore robot position in calculation of tilt angle.
+        // WE ARE GOING TO ASSUME THAT ROBOT IS DIRECTLY FACING THE TARGET (Heading is +ve X-Axis) AND POSITIONED at Y-Axis line
+        // (to be positined behind launch line), THEREFORE DISANCE TO GOAL IS SIMPLY THE X-COORDINATE OF THE TARGET
         //distance = targetX;
 
         double angleRad = Math.atan(targetHeight/distance);
@@ -404,12 +407,13 @@ public class UGoalRobot {
      */
     public void tiltShooterPlatform(double tiltAngle) {
 
-        shooterPlatformTiltAngle = tiltAngle;    // record for telemetry printout, do not delete this line
+        // add a constant offset of 2 degrees based on field tuning
+        shooterPlatformTiltAngle = tiltAngle + 2;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
         // MATH to convert platform tilt angle to rotation of oval supports under platform
-        // scales 25 degrees (range is 20-45 degrees) of shooter platform movement to fraction of range of oval rotation
+        // scales 25 degrees (range is 20-35 degrees) of shooter platform movement to fraction of range of oval rotation
         double position = (tiltAngle - SHOOTER_PLATFORM_ANGLE_MIN)  / (SHOOTER_PLATFORM_ANGLE_MAX - SHOOTER_PLATFORM_ANGLE_MIN);
 
         angleServo.setPosition(position);
@@ -477,12 +481,10 @@ public class UGoalRobot {
         tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
         // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
         // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
-        runIntake(1.0);
-        for (int i = 0; i<5; i++) {
+        for (int i = 0; i<4; i++) {
             myOpMode.sleep(1200); // allow some time for the flywheel to gain full speed after each shot
             shootRing();
         }
-        stopIntake();
         stopShooterFlywheel();
     }
 

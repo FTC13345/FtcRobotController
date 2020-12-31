@@ -24,7 +24,6 @@ public class TeleOpDriver implements Runnable {
     protected double        speedMultiplier = MecabotDrive.DRIVE_SPEED_MAX;
 
     // record position that we need to return to repeatedly
-    double xpos, ypos, tpos;
     boolean autoDriving = false;
 
     /* Constructor */

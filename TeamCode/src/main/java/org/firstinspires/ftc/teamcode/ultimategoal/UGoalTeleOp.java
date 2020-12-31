@@ -61,7 +61,7 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // Create main OpMode member objects initialize the hardware variables.
         rrmdrive = new RRMecanumDrive(hardwareMap);
-        robot = new UGoalRobot(hardwareMap, this);
+        robot = new UGoalRobot(hardwareMap, rrmdrive,this);
         mcdrive = robot.getDrive();
         driver = new TeleOpDriver(this, rrmdrive, mcdrive);
 
@@ -149,9 +149,9 @@ public class UGoalTeleOp extends LinearOpMode {
         //auto aim for High Goal
         if (gamepad2.x && !gamepad2.start) {
 // TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
-            double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, GOALY);
-            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
-            mcdrive.rotateToHeading(targetAngle);
+//            double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, GOALY);
+//            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
+//            mcdrive.rotateToHeading(targetAngle);
 
             robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT);
         }
@@ -208,11 +208,11 @@ public class UGoalTeleOp extends LinearOpMode {
         // Wobble finger
         if (gamepad2.right_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_CLOSED);
-            //release the intake down to the ground. This is button overloading.
-            robot.dropIntakeAssembly();
         }
         if (gamepad2.left_bumper) {
             robot.wobbleFinger.setPosition(UGoalRobot.WOBBLE_FINGER_OPEN);
+            //release the intake down to the ground. This is button overloading.
+            robot.dropIntakeAssembly();
         }
 
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP

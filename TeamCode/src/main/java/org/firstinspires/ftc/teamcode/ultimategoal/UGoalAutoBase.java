@@ -97,7 +97,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         // Initialize the robot hardware and drive system variables.
         rrmdrive = new RRMecanumDrive(hardwareMap);
-        robot = new UGoalRobot(hardwareMap, this);
+        robot = new UGoalRobot(hardwareMap, rrmdrive, this);
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
@@ -153,13 +153,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .splineTo(new Vector2d(-6, 28), 0)  // 8 inches left, another 28 inches forward
                 .build();
         goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 4), 0)
+                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 6), 0)
                 .build();
         goToPickWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end(), true)
-                .splineTo(new Vector2d(-FieldUGoal.TILE_1_FROM_ORIGIN, FieldUGoal.TILE_2_CENTER + 4), 0)
+                .lineTo(new Vector2d(-FieldUGoal.TILE_2_FROM_ORIGIN, FieldUGoal.TILE_2_CENTER + 6))
                 .build();
         goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPickWobble2.end())
-                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 4), 0)
+                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 6), 0)
                 .build();
         goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
                 .lineTo(new Vector2d(6, 28))
@@ -173,15 +173,16 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.shootRingsIntoHighGoal();
         rrmdrive.followTrajectory(goToPlaceWobble1);
         robot.deliverWobble();
-        sleep(250);
-        robot.setWobbleArmPickup();
+        robot.setWobbleArmDown();
+        sleep(200); // allow the arm to close down so that the wobble doesn't get dragged along
         rrmdrive.followTrajectory(goToPickWobble2);
         robot.pickUpWobble();
         rrmdrive.followTrajectory(goToPlaceWobble2);
         robot.deliverWobble();
-        sleep(250);
         robot.setWobbleArmDown();
+        sleep(200); // allow the arm to close down so that the wobble doesn't get dragged along
         rrmdrive.followTrajectory(goToPark);
+        robot.dropIntakeAssembly();
     }
 
   /*****************************
