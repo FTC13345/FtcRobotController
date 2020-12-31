@@ -343,13 +343,6 @@ public class UGoalTeleOp extends LinearOpMode {
                         return mcdrive.rightBackDrive.getCurrentPosition();
                     }
                 });
-        drvrTelemetry.addLine("Move ")
-                .addData("", new Func<String>() {
-                    @Override
-                    public String value() {
-                        return mcdrive.getMovementStatus();
-                    }
-                });
         drvrTelemetry.addLine("Tilt ")
                 .addData("Angle", "%.1f", new Func<Double>() {
                     @Override
@@ -367,6 +360,13 @@ public class UGoalTeleOp extends LinearOpMode {
                     @Override
                     public Integer value() {
                         return robot.wobblePickupArm.getCurrentPosition();
+                    }
+                });
+        drvrTelemetry.addLine("Move ")
+                .addData("", new Func<String>() {
+                    @Override
+                    public String value() {
+                        return mcdrive.getMovementStatus();
                     }
                 });
         drvrTelemetry.update();

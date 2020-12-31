@@ -407,23 +407,27 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * Telemetry debug printous setup
      ****************************/
     protected void setupTelemetry() {
-
-        actionString = "Telemetry";
-        drvrTelemetry.addLine("Auto ")
-                .addData(getColorString(), new Func<String>() {
+        drvrTelemetry.addLine("Runner Position ")
+                .addData("X", "%2.2f", new Func<Double>() {
                     @Override
-                    public String value() {
-                        return getAction();
+                    public Double value() {
+                        return rrmdrive.getPoseEstimate().getX();
                     }
                 })
-                .addData("msg", new Func<String>() {
+                .addData("Y", "%2.2f", new Func<Double>() {
                     @Override
-                    public String value() {
-                        return getMessage();
+                    public Double value() {
+                        return rrmdrive.getPoseEstimate().getY();
+                    }
+                })
+                .addData("Head", "%3.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading());
                     }
                 });
-        drvrTelemetry.addLine("Position ")
-                .addData("X", "%3.2f", new Func<Double>() {
+        drvrTelemetry.addLine("Global Position ")
+                .addData("X", "%2.2f", new Func<Double>() {
                     @Override
                     public Double value() {
                         return globalPosition.getXinches();
@@ -435,15 +439,73 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return globalPosition.getYinches();
                     }
                 })
-                .addData("Angle", "%4.2f", new Func<Double>() {
+                .addData("Head", "%3.2f", new Func<Double>() {
                     @Override
                     public Double value() {
                         return globalPosition.getOrientationDegrees();
                     }
+                });
+        drvrTelemetry.addLine("Odometry ")
+                .addData("L", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getVerticalLeftCount();
+                    }
                 })
-                .addData("F", new Func<String>() {
-                    public String value() {
-                        return mcdrive.getDirectionStr();
+                .addData("R", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getVerticalRightCount();
+                    }
+                })
+                .addData("X", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return globalPosition.getHorizontalCount();
+                    }
+                });
+        drvrTelemetry.addLine("Drivetrain ")
+                .addData("LF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return mcdrive.leftFrontDrive.getCurrentPosition();
+                    }
+                })
+                .addData("LB", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return mcdrive.leftBackDrive.getCurrentPosition();
+                    }
+                })
+                .addData("RF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return mcdrive.rightFrontDrive.getCurrentPosition();
+                    }
+                })
+                .addData("RB", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return mcdrive.rightBackDrive.getCurrentPosition();
+                    }
+                });
+        drvrTelemetry.addLine("Tilt ")
+                .addData("Angle", "%.1f", new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return robot.shooterPlatformTiltAngle;
+                    }
+                })
+                .addData("Pos", "%.2f",  new Func<Double>() {
+                    @Override
+                    public Double value() {
+                        return robot.angleServo.getPosition();
+                    }
+                })
+                .addData("Wobble Arm", "%3d", new Func<Integer>() {
+                    @Override
+                    public Integer value() {
+                        return robot.wobblePickupArm.getCurrentPosition();
                     }
                 });
         drvrTelemetry.addLine("Move ")
