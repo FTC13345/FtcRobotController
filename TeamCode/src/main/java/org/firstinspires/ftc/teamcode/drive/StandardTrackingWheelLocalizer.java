@@ -27,14 +27,14 @@ import java.util.List;
 @Config
 public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer {
     public static double TICKS_PER_REV = 8192;   // FTC Team 13345 Mecabot odometry encoder (Rev magnetic encoder) has 8192 ticks per rotation
-    public static double WHEEL_RADIUS = 19/25.4f; // in | odometry wheel has 38mm diameter = 19mm radius = 0.748 in
+    public static double WHEEL_RADIUS = 19/25.4; // in | odometry wheel has 38mm diameter = 19mm radius = 0.748 in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder) speed
 
-    public static double LATERAL_DISTANCE = 14.7; // in; distance between the left and right wheels
+    public static double LATERAL_DISTANCE = 14.4; // in; distance between the left and right wheels
     public static double FORWARD_OFFSET = 6.5; // in; offset of the lateral wheel
 
-    public static double X_MULTIPLIER = 1.018f;    // measured using LocalizationTest tuning opmode
-    public static double Y_MULTIPLIER = 1.018f;       // measured using LocalizationTest tuning opmode
+    public static double X_MULTIPLIER = 1.008;    // measured using LocalizationTest tuning opmode
+    public static double Y_MULTIPLIER = 1.0;       // measured using LocalizationTest tuning opmode
 
     private Encoder leftEncoder, rightEncoder, frontEncoder;
 

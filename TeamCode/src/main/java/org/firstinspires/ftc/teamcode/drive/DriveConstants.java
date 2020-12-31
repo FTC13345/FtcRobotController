@@ -33,7 +33,7 @@ public class DriveConstants {
      * from DriveVelocityPIDTuner.
      */
     public static final boolean RUN_USING_ENCODER = true;
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(12, 0, 4, 12.5);
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(12, 0, 0, 12.5);
 
     /*
      * These are physical constants that can be determined from your robot (including the track
@@ -43,10 +43,10 @@ public class DriveConstants {
      * angular distances although most angular parameters are wrapped in Math.toRadians() for
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
-    public static double WHEEL_RADIUS = 50 / 25.4f; // 1.9685 in // 13345 goBilda mecanum wheels 1st gen part# 3213-3606-0001
+    public static double WHEEL_RADIUS = 50 / 25.4; // 1.9685 in // 13345 goBilda mecanum wheels 1st gen part# 3213-3606-0001
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 16.18f; // 383mm / 25.4 // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
-    public static double WHEEL_BASE = 13.78f; // 13.78 in // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
+    public static double TRACK_WIDTH = 16.3; // 383mm / 25.4 // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
+    public static double WHEEL_BASE = 13.78; // 13.78 in // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
@@ -67,7 +67,7 @@ public class DriveConstants {
      * forces acceleration-limited profiling). All distance units are inches.
      */
     public static DriveConstraints BASE_CONSTRAINTS = new DriveConstraints(
-            52.0, 52.0, 0.0,
+            52.0, 42.0, 0.0,
             Math.toRadians(180.0), Math.toRadians(180.0), 0.0
     );
 
