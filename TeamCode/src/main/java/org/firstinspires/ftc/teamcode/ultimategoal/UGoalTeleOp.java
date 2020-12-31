@@ -36,6 +36,19 @@ public class UGoalTeleOp extends LinearOpMode {
     //Wobble Pos tracker
     int wobblePos = 0;
 
+    void setOdometryStartingPosition() {
+        // This code assumes Robot starts at a position as follows:
+        // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
+        // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
+        // Robot back is touching the perimeter wall.
+        globalPosition.initGlobalPosition(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+        rrmdrive.setPoseEstimate(new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS));
+
+        // Enable this temporarily for Shooter Platform Tilt debugging
+        //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS);
+        //rrmdrive.setPoseEstimate(new Pose2d(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS));
+    }
+
     @Override
     public void runOpMode() {
 
@@ -53,7 +66,7 @@ public class UGoalTeleOp extends LinearOpMode {
         driver = new TeleOpDriver(this, rrmdrive, mcdrive);
 
         globalPosition = mcdrive.getOdometry();
-        resetGlobalPositionToAutoStart();
+        setOdometryStartingPosition();
 
         setupTelemetry();
         telemetry.addData(">", "Hardware initialized");
@@ -68,7 +81,7 @@ public class UGoalTeleOp extends LinearOpMode {
         driver.start();
 
         // set starting position again, sometimes players move the robot between init() and start()
-        resetGlobalPositionToAutoStart();
+        setOdometryStartingPosition();
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             setup();
@@ -111,7 +124,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.resetWobblePickupArmEncoder();
             mcdrive.resetDriveEncoder();
             globalPosition.resetOdometryEncoder();
-            resetGlobalPositionToAutoStart();
+            setOdometryStartingPosition();
         }
     }
 
@@ -372,16 +385,4 @@ public class UGoalTeleOp extends LinearOpMode {
         drvrTelemetry.update();
     }
 
-    void resetGlobalPositionToAutoStart() {
-        // This code assumes Robot starts at a position as follows:
-        // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
-        // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
-        // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
-        rrmdrive.setPoseEstimate(new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS));
-
-        // Enable this temporarily for Shooter Platform Tilt debugging
-        //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS);
-        //rrmdrive.setPoseEstimate(new Pose2d(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS));
-    }
 }
