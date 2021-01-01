@@ -215,16 +215,31 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.dropIntakeAssembly();
         }
 
+        int wobblePosition = robot.wobblePickupArm.getCurrentPosition();
+        //error margin is to prevent the wobble arm from being unable to go to a certain spot
+        int wobbleErrorMargin = robot.WOBBLE_ARM_TICKS_PER_ANGLE * 5;
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
-             if (!gamepad2DpadDebounce && wobblePos < UGoalRobot.WOBBLE_ARM_POS.length - 1){
-                 robot.goToWobblePos(++wobblePos);
+             if (!gamepad2DpadDebounce){
+                 if (wobblePosition < UGoalRobot.WOBBLE_ARM_PICKUP - wobbleErrorMargin){
+                     robot.setWobbleArmPickup();
+                 } else if (wobblePosition < UGoalRobot.WOBBLE_ARM_UP - wobbleErrorMargin) {
+                     robot.goToWobblePos(robot.WOBBLE_ARM_UP + (robot.WOBBLE_ARM_UP - robot.WOBBLE_ARM_RELEASE_DROP_ZONE)/2 );
+                     // above line is to prevent motor timeout and allows it to reach destination
+                     robot.setWobbleArmUp();
+                 }
              }
              gamepad2DpadDebounce = true;
         } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
-            if (!gamepad2DpadDebounce && wobblePos > 0){
-                robot.goToWobblePos(--wobblePos);
-            }
-            gamepad2DpadDebounce = true;
+             if (!gamepad2DpadDebounce){
+                if (wobblePosition > UGoalRobot.WOBBLE_ARM_RELEASE_DROP_ZONE + wobbleErrorMargin){
+                    robot.setWobbleArmRelease();
+                } else if(wobblePosition > UGoalRobot.WOBBLE_ARM_PICKUP + wobbleErrorMargin){
+                    robot.setWobbleArmPickup();
+                } else if (wobblePosition > UGoalRobot.WOBBLE_ARM_DOWN + wobbleErrorMargin){
+                    robot.setWobbleArmDown();
+                }
+             }
+             gamepad2DpadDebounce = true;
         } else {
             gamepad2DpadDebounce = false;
         }

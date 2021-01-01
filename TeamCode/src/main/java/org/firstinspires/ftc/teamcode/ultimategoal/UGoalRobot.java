@@ -38,11 +38,11 @@ public class UGoalRobot {
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
     static final int        WOBBLE_ARM_TICKS_PER_ANGLE      = WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_DOWN                 = 0 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int[]      WOBBLE_ARM_POS                  = {WOBBLE_ARM_DOWN,WOBBLE_ARM_PICKUP,WOBBLE_ARM_RELEASE_DROP_ZONE,WOBBLE_ARM_UP};
+    static final int        WOBBLE_ARM_STARTING_POS         = 0 * WOBBLE_ARM_TICKS_PER_ANGLE;
+    static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
+    static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
+    static final int        WOBBLE_ARM_PICKUP               = 75 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
+    static final int        WOBBLE_ARM_DOWN                 = 0 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
 
     static final int        LIFT_TOP                    = 320;
     static final int        LIFT_BOTTOM                 = 10;
@@ -256,24 +256,23 @@ public class UGoalRobot {
     }
 
     public void setWobbleArmUp(){
-        goToWobblePos(3);
+        goToWobblePos(WOBBLE_ARM_UP);
     }
 
     public void setWobbleArmRelease(){
-        goToWobblePos(2);
+        goToWobblePos(WOBBLE_ARM_RELEASE_DROP_ZONE);
     }
 
     public void setWobbleArmPickup(){
-        goToWobblePos(1);
+        goToWobblePos(WOBBLE_ARM_PICKUP);
     }
 
     public void setWobbleArmDown(){
-        goToWobblePos(0);
+        goToWobblePos(WOBBLE_ARM_DOWN);
     }
 
     public void goToWobblePos(int pos){
-        motorRunToPosition(wobblePickupArm, WOBBLE_ARM_POS[pos], MecabotDrive.DRIVE_SPEED_FAST);
-        myOpMode.sleep(200);
+        motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_FAST);
     }
 
     // This assumes we have a wobble goal held and is held vertically
