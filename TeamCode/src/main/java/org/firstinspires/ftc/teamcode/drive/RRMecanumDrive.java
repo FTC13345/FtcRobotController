@@ -23,6 +23,7 @@ import com.acmerobotics.roadrunner.trajectory.constraints.MecanumConstraints;
 import com.acmerobotics.roadrunner.util.NanoClock;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -71,6 +72,7 @@ public class RRMecanumDrive extends MecanumDrive {
         FOLLOW_TRAJECTORY
     }
 
+    private LinearOpMode myOpMode;       // Access to the OpMode object
     private FtcDashboard dashboard;
     private NanoClock clock;
 
@@ -93,9 +95,10 @@ public class RRMecanumDrive extends MecanumDrive {
 
     private Pose2d lastPoseOnTurn;
 
-    public RRMecanumDrive(HardwareMap hardwareMap) {
+    public RRMecanumDrive(HardwareMap hardwareMap, LinearOpMode opMode) {
         super(kV, kA, kStatic, TRACK_WIDTH, WHEEL_BASE, LATERAL_MULTIPLIER);
 
+        myOpMode = opMode;
         dashboard = FtcDashboard.getInstance();
         dashboard.setTelemetryTransmissionInterval(25);
 
@@ -229,6 +232,7 @@ public class RRMecanumDrive extends MecanumDrive {
 
     public void update() {
         updatePoseEstimate();
+        myOpMode.telemetry.update();
 
         Pose2d currentPose = getPoseEstimate();
         Pose2d lastError = getLastError();

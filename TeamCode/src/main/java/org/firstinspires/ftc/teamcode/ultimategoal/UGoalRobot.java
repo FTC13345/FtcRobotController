@@ -20,7 +20,7 @@ public class UGoalRobot {
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
-    static final double     ROBOT_SHOOTING_CURVE_OFFSET = -8.5; // inches
+    static final double     ROBOT_SHOOTING_Y_OFFSET     = -7.25; // inches
 
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
@@ -37,12 +37,12 @@ public class UGoalRobot {
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
-    static final int        WOBBLE_ARM_TICKS_PER_ANGLE      = WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_STARTING_POS         = 0 * WOBBLE_ARM_TICKS_PER_ANGLE;
-    static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
-    static final int        WOBBLE_ARM_RELEASE_DROP_ZONE    = 90 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
-    static final int        WOBBLE_ARM_PICKUP               = 75 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
-    static final int        WOBBLE_ARM_DOWN                 = 0 * WOBBLE_ARM_TICKS_PER_ANGLE - WOBBLE_ARM_STARTING_POS;
+    static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
+    static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
+    static final int        WOBBLE_ARM_RAISED               = 135 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
+    static final int        WOBBLE_ARM_HORIZONTAL           = 90 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
+    static final int        WOBBLE_ARM_PICKUP               = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
+    static final int        WOBBLE_ARM_DOWN                 = 0;
 
     static final int        LIFT_TOP                    = 320;
     static final int        LIFT_BOTTOM                 = 10;
@@ -145,7 +145,7 @@ public class UGoalRobot {
      */
     public void waitUntilMotorBusy(DcMotor motor) {
         ElapsedTime runTime = new ElapsedTime();
-        while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < MecabotDrive.TIMEOUT_SHORT)){
+        while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < MecabotDrive.TIMEOUT_DEFAULT)){
             myOpMode.sleep(50);
         }
     }
@@ -259,8 +259,12 @@ public class UGoalRobot {
         goToWobblePos(WOBBLE_ARM_UP);
     }
 
-    public void setWobbleArmRelease(){
-        goToWobblePos(WOBBLE_ARM_RELEASE_DROP_ZONE);
+    public void setWobbleArmRaised(){
+        goToWobblePos(WOBBLE_ARM_RAISED);
+    }
+
+    public void setWobbleArmHorizontal(){
+        goToWobblePos(WOBBLE_ARM_HORIZONTAL);
     }
 
     public void setWobbleArmPickup(){
@@ -283,15 +287,36 @@ public class UGoalRobot {
         // bring wobble arm down to release
         setWobbleFingerOpen();
         myOpMode.sleep(200); // allow the finger hardware to open
+        setWobbleArmRaised();
     }
 
     public void pickUpWobble(){
         setWobbleFingerOpen();
         setWobbleArmPickup();
-        myOpMode.sleep(100);
         setWobbleFingerClosed();
-        myOpMode.sleep(100);
-        setWobbleArmRelease();
+        myOpMode.sleep(200);
+        setWobbleArmHorizontal();
+    }
+
+    public void moveWobbleArmUpwards() {
+        int wobblePosition = wobblePickupArm.getCurrentPosition();
+        if (wobblePosition < WOBBLE_ARM_PICKUP - WOBBLE_ARM_ERROR_MARGIN){
+            setWobbleArmPickup();
+        } else if (wobblePosition < WOBBLE_ARM_UP - WOBBLE_ARM_ERROR_MARGIN) {
+            setWobbleArmRaised();   // this line is to prevent motor timeout and allows it to reach destination
+            setWobbleArmUp();
+        }
+    }
+
+    public void moveWobbleArmDownwards() {
+        int wobblePosition = wobblePickupArm.getCurrentPosition();
+        if (wobblePosition > WOBBLE_ARM_HORIZONTAL + WOBBLE_ARM_ERROR_MARGIN) {
+            setWobbleArmHorizontal();
+        } else if (wobblePosition > WOBBLE_ARM_PICKUP + WOBBLE_ARM_ERROR_MARGIN) {
+            setWobbleArmPickup();
+        } else if (wobblePosition > WOBBLE_ARM_DOWN + UGoalRobot.WOBBLE_ARM_ERROR_MARGIN) {
+            setWobbleArmDown();
+        }
     }
 
     public void resetWobblePickupArmEncoder() {
@@ -346,9 +371,9 @@ public class UGoalRobot {
         // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
         // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
         // actually position on the field to the right of the intended Target Y coordinate
-        double robotY = rrmdrive.getPoseEstimate().getY() + ROBOT_SHOOTING_CURVE_OFFSET;
+        double robotY = rrmdrive.getPoseEstimate().getY() + ROBOT_SHOOTING_Y_OFFSET;
         // This code only works reliably when robot Orientation/Heading is zero, i.e. its facing +ve X-Axis direction
-        // because the compensation of ROBOT_SHOOTING_CURVE_OFFSET only in Y-axis may not be accurate at other headings
+        // because the compensation of ROBOT_SHOOTING_Y_OFFSET only in Y-axis may not be accurate at other headings
 
         double xDiff = targetX - robotX;
         double yDiff = targetY - robotY;
@@ -406,8 +431,8 @@ public class UGoalRobot {
      */
     public void tiltShooterPlatform(double tiltAngle) {
 
-        // add a constant offset of 2 degrees based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 2;    // record value before clipping for telemetry printout, do not delete this line
+        // add a constant offset based on field tuning
+        shooterPlatformTiltAngle = tiltAngle + 1;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
@@ -466,7 +491,7 @@ public class UGoalRobot {
     public void driveToShootHighGoal() {
         // drive to desired location
         //if red reverse the y
-        mcdrive.goToPosition(ORIGIN, flip4Red(GOALY - ROBOT_SHOOTING_CURVE_OFFSET));
+        mcdrive.goToPosition(ORIGIN, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET));
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
@@ -505,7 +530,7 @@ public class UGoalRobot {
     
     public void driveToShootPowerShot1() {
         // drive to desired location
-        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_CURVE_OFFSET));
+        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET));
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
@@ -525,7 +550,7 @@ public class UGoalRobot {
     
     public void driveToShootPowerShot2() {
         // drive to desired location
-        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_CURVE_OFFSET));
+        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET));
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height
@@ -533,7 +558,7 @@ public class UGoalRobot {
     }
     public void driveToShootPowerShot3() {
         // drive to desired location
-        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_CURVE_OFFSET));
+        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET));
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
         // tilt platform for goal height

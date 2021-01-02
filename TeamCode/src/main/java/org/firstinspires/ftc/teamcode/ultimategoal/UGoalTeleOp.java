@@ -45,8 +45,8 @@ public class UGoalTeleOp extends LinearOpMode {
         rrmdrive.setPoseEstimate(new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS));
 
         // Enable this temporarily for Shooter Platform Tilt debugging
-        //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS);
-        //rrmdrive.setPoseEstimate(new Pose2d(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_CURVE_OFFSET, ANGLE_POS_X_AXIS));
+        //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_Y_OFFSET, ANGLE_POS_X_AXIS);
+        //rrmdrive.setPoseEstimate(new Pose2d(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_Y_OFFSET, ANGLE_POS_X_AXIS));
     }
 
     @Override
@@ -60,7 +60,7 @@ public class UGoalTeleOp extends LinearOpMode {
         //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Create main OpMode member objects initialize the hardware variables.
-        rrmdrive = new RRMecanumDrive(hardwareMap);
+        rrmdrive = new RRMecanumDrive(hardwareMap, this);
         robot = new UGoalRobot(hardwareMap, rrmdrive,this);
         mcdrive = robot.getDrive();
         driver = new TeleOpDriver(this, rrmdrive, mcdrive);
@@ -217,27 +217,14 @@ public class UGoalTeleOp extends LinearOpMode {
 
         int wobblePosition = robot.wobblePickupArm.getCurrentPosition();
         //error margin is to prevent the wobble arm from being unable to go to a certain spot
-        int wobbleErrorMargin = robot.WOBBLE_ARM_TICKS_PER_ANGLE * 5;
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
              if (!gamepad2DpadDebounce){
-                 if (wobblePosition < UGoalRobot.WOBBLE_ARM_PICKUP - wobbleErrorMargin){
-                     robot.setWobbleArmPickup();
-                 } else if (wobblePosition < UGoalRobot.WOBBLE_ARM_UP - wobbleErrorMargin) {
-                     robot.goToWobblePos(robot.WOBBLE_ARM_RELEASE_DROP_ZONE + (robot.WOBBLE_ARM_UP - robot.WOBBLE_ARM_RELEASE_DROP_ZONE)/2 );
-                     // above line is to prevent motor timeout and allows it to reach destination
-                     robot.setWobbleArmUp();
-                 }
+                 robot.moveWobbleArmUpwards();
              }
              gamepad2DpadDebounce = true;
         } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
              if (!gamepad2DpadDebounce){
-                if (wobblePosition > UGoalRobot.WOBBLE_ARM_RELEASE_DROP_ZONE + wobbleErrorMargin){
-                    robot.setWobbleArmRelease();
-                } else if(wobblePosition > UGoalRobot.WOBBLE_ARM_PICKUP + wobbleErrorMargin){
-                    robot.setWobbleArmPickup();
-                } else if (wobblePosition > UGoalRobot.WOBBLE_ARM_DOWN + wobbleErrorMargin){
-                    robot.setWobbleArmDown();
-                }
+                 robot.moveWobbleArmDownwards();
              }
              gamepad2DpadDebounce = true;
         } else {

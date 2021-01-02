@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import java.util.List;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
@@ -18,7 +19,8 @@ import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
-import java.util.List;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
+
 
 /**
  * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
@@ -96,7 +98,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Initialize the robot hardware and drive system variables.
-        rrmdrive = new RRMecanumDrive(hardwareMap);
+        rrmdrive = new RRMecanumDrive(hardwareMap, this);
         robot = new UGoalRobot(hardwareMap, rrmdrive, this);
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
@@ -118,6 +120,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         runRingStackDetection();
 
         buildTrajectories();
+
+        telemetry.addData(">", "Ready TO GO, please press START");    //
+        telemetry.update();
     }
 
     // for testing mainly, at the end wait for driver to press STOP, meanwhile
@@ -153,16 +158,16 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .splineTo(new Vector2d(-6, 28), 0)  // 8 inches left, another 28 inches forward
                 .build();
         goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 6), 0)
+                .splineTo(new Vector2d(TILE_3_CENTER - 4, TILE_2_FROM_ORIGIN), 0)
                 .build();
         goToPickWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end(), true)
-                .lineTo(new Vector2d(-FieldUGoal.TILE_2_FROM_ORIGIN, FieldUGoal.TILE_2_CENTER + 6))
+                .splineTo(new Vector2d(-(TILE_2_FROM_ORIGIN - 2), TILE_2_FROM_ORIGIN - 6), Math.PI)
                 .build();
         goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPickWobble2.end())
-                .splineTo(new Vector2d(FieldUGoal.TILE_3_CENTER, FieldUGoal.TILE_2_CENTER + 6), 0)
+                .splineTo(new Vector2d(TILE_3_CENTER - 4, TILE_2_FROM_ORIGIN -6), 0)
                 .build();
         goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
-                .lineTo(new Vector2d(6, 28))
+                .lineTo(new Vector2d(TILE_1_CENTER, TILE_2_CENTER + UGoalRobot.ROBOT_SHOOTING_Y_OFFSET))
                 .build();
     }
 
@@ -173,14 +178,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.shootRingsIntoHighGoal();
         rrmdrive.followTrajectory(goToPlaceWobble1);
         robot.deliverWobble();
-        robot.setWobbleArmDown();
-        sleep(200); // allow the arm to close down so that the wobble doesn't get dragged along
+        robot.setWobbleArmRaised();
         rrmdrive.followTrajectory(goToPickWobble2);
         robot.pickUpWobble();
         rrmdrive.followTrajectory(goToPlaceWobble2);
         robot.deliverWobble();
-        robot.setWobbleArmDown();
-        sleep(200); // allow the arm to close down so that the wobble doesn't get dragged along
+        robot.setWobbleArmRaised();
         rrmdrive.followTrajectory(goToPark);
         robot.dropIntakeAssembly();
     }
@@ -339,18 +342,18 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void encoderDriveToShootHighGoal(){
         // move around the stack
         mcdrive.encoderMoveRightLeft(12);
-        mcdrive.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS + 1);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS + 1);
         robot.runShooterFlywheel();
         // move back 8 inches to align with the High Goal
         // 3 tiles takes us to launch line, but robot will be half over launch line
         // so we go 2.5 tiles instead, because of the robot's radius and margin of error due to tape width
-        mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH * 2.1);
+        mcdrive.encoderMoveForwardBack(TILE_LENGTH * 2.1);
         // start flywheel motor early to let it gain full speed
         mcdrive.encoderMoveRightLeft(-8);
         // we want to run the intake during shooting to drop the ring into collector, this is a good time to do it.
         robot.dropIntakeAssembly();
         // get ready into position for shooting rings
-        mcdrive.rotateToHeading(FieldUGoal.ANGLE_POS_X_AXIS);
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
 
     // using move distance methods to go to correct target zone
@@ -360,21 +363,21 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // y-axis is toward/away (+/- respectively) from the outside wall, relative to robot left/right
         // the input inches is RELATIVE TO THE ROBOT, NOT COORDINATES
         if (count == 0){
-            mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*0.7);
+            mcdrive.encoderMoveForwardBack(TILE_LENGTH*0.7);
             // already aligned with zone A on the X-axis, so just move on the y toward edge wall
-            mcdrive.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
+            mcdrive.encoderMoveRightLeft(-TILE_LENGTH*0.5);
         }
         else if (count == 1){
             //we are mostly aligned with zone B on the Y-axis, so just move on the x toward goals/powershot
-            mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*1.7);
+            mcdrive.encoderMoveForwardBack(TILE_LENGTH*1.7);
             //but better to move away on y-axis to drop wobble
-            mcdrive.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH*0.5);
+            mcdrive.encoderMoveRightLeft(TILE_LENGTH*0.5);
         }
         else if(count == 4){
             // neither aligned on x nor y
-            mcdrive.encoderMoveForwardBack(FieldUGoal.TILE_LENGTH*2.7);
+            mcdrive.encoderMoveForwardBack(TILE_LENGTH*2.7);
             // move on the y same as target A, as zone A&C have the same y
-            mcdrive.encoderMoveRightLeft(-FieldUGoal.TILE_LENGTH*0.5);
+            mcdrive.encoderMoveRightLeft(-TILE_LENGTH*0.5);
         }
     }
     // using move distance methods to park between powershots and goals, for easy intake of rings from human player
@@ -383,22 +386,22 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (count == 0){
             // for A we are one tile to the left relative to where we would be if we were in B
             // So move by one tile to the right
-            mcdrive.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+            mcdrive.encoderMoveRightLeft(TILE_LENGTH);
             // already on launch line, no need to move along X-Axis
         }
         else if (count == 1){
             //only move back to launch line
-            mcdrive.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH);
+            mcdrive.encoderMoveForwardBack(-TILE_LENGTH);
         }
         else if (count == 4){
             // for C we are one tile to the left relative to where we would be if we were in B
             // So move by one tile to the right
-            mcdrive.encoderMoveRightLeft(FieldUGoal.TILE_LENGTH);
+            mcdrive.encoderMoveRightLeft(TILE_LENGTH);
             //move back to launch line
-            mcdrive.encoderMoveForwardBack(-FieldUGoal.TILE_LENGTH*2);
+            mcdrive.encoderMoveForwardBack(-TILE_LENGTH*2);
         }
         // if using goToPosition, use below and we don't need the parameter
-        // mcdrive.goToPosition(FieldUGoal.ROBOT_RADIUS, FieldUGoal.TILE_1_FROM_ORIGIN);
+        // mcdrive.goToPosition(ROBOT_RADIUS, TILE_1_FROM_ORIGIN);
 
         // turn the robot around so intake faces the human player
         //mcdrive.rotateToHeading(180);
