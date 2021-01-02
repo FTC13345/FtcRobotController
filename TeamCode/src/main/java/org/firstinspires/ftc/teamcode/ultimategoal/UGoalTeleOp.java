@@ -223,7 +223,7 @@ public class UGoalTeleOp extends LinearOpMode {
                  if (wobblePosition < UGoalRobot.WOBBLE_ARM_PICKUP - wobbleErrorMargin){
                      robot.setWobbleArmPickup();
                  } else if (wobblePosition < UGoalRobot.WOBBLE_ARM_UP - wobbleErrorMargin) {
-                     robot.goToWobblePos(robot.WOBBLE_ARM_UP + (robot.WOBBLE_ARM_UP - robot.WOBBLE_ARM_RELEASE_DROP_ZONE)/2 );
+                     robot.goToWobblePos(robot.WOBBLE_ARM_RELEASE_DROP_ZONE + (robot.WOBBLE_ARM_UP - robot.WOBBLE_ARM_RELEASE_DROP_ZONE)/2 );
                      // above line is to prevent motor timeout and allows it to reach destination
                      robot.setWobbleArmUp();
                  }
