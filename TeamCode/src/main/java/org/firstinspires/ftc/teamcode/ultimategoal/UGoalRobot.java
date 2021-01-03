@@ -290,7 +290,7 @@ public class UGoalRobot {
     }
 
     public void goToWobblePos(int pos){
-        motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_FAST);
+        motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_MAX);
     }
 
     public void deliverWobbleRaised() {

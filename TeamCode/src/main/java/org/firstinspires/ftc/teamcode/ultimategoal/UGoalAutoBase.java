@@ -103,8 +103,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Initialize the robot hardware and drive system variables.
         rrmdrive = new RRMecanumDrive(hardwareMap, this);
         robot = new UGoalRobot(hardwareMap, rrmdrive, this);
-        // tighten grip on the pre-loaded wobble
-        robot.setWobbleFingerClosed();
+
+        // Motor and Servo position initializations
+        robot.resetWobblePickupArmEncoder();    // Wobble arm is often manually moved during setup
+        robot.setWobbleFingerClosed();          // tighten grip on the pre-loaded wobble
+
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
@@ -165,7 +168,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      ****************************/
     private void buildTrajectories() {
         goToShootRings = rrmdrive.trajectoryBuilder(new Pose2d(-62, 32, 0))
-                .splineTo(new Vector2d(-34, 20), 0)  // 12 inches right, 28 inches forward
+                .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, 20), 0)  // 12 inches right, 28 inches forward
                 .splineTo(new Vector2d(-6, GOALY - ROBOT_SHOOTING_Y_OFFSET), 0)  // 8 inches left, another 28 inches forward
                 .addTemporalMarker(1.0, new MarkerCallback() {
                     @Override
