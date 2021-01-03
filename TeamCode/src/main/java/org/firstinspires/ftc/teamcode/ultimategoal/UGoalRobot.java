@@ -21,6 +21,7 @@ public class UGoalRobot {
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
     static final double     ROBOT_SHOOTING_Y_OFFSET     = 8.5; // inches
+    static final long       RING_SHOOTING_INTERVAL      = 1000; // milliseconds
 
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
@@ -134,7 +135,9 @@ public class UGoalRobot {
 
         intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
         angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
-        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+        // DO NOT move the Wobble Finger at init, we may have pre-loaded wobble, the opMode will set Wobble finger position before play
+        // wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+
         //liftClaw.setPosition(LIFT_CLAW_OPEN);
         //liftArm.setPosition(LIFT_ARM_INSIDE);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
@@ -146,17 +149,22 @@ public class UGoalRobot {
      */
     public void waitUntilMotorBusy(DcMotor motor) {
         ElapsedTime runTime = new ElapsedTime();
-        while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < MecabotDrive.TIMEOUT_DEFAULT)){
+        while (myOpMode.opModeIsActive() && motor.isBusy() && (runTime.seconds() < MecabotDrive.TIMEOUT_DEFAULT)){
             myOpMode.idle();
         }
     }
     public void motorRunToPosition(DcMotor motor, int position, double speed) {
+        if (!myOpMode.opModeIsActive()) {
+            return;
+        }
         motor.setTargetPosition(position);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
         waitUntilMotorBusy(motor);
-        motor.setPower(MecabotDrive.MOTOR_STOP_SPEED);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // TEMP: the wobble arm is not moving at all randomly, suspecting a timeout issue, therefore disable the STOP after timeout
+        // TEMP: If the motor has reached POSITION without timeout, then the stop should not be required anyway
+        //motor.setPower(MecabotDrive.MOTOR_STOP_SPEED);
+        //motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*
@@ -250,12 +258,17 @@ public class UGoalRobot {
 
     public void setWobbleFingerOpen(){
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+        myOpMode.sleep(150);
     }
 
     public void setWobbleFingerClosed(){
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
+        myOpMode.sleep(150);
     }
 
+    public void setWobbleArmAtRest() {
+        goToWobblePos(0);
+    }
     public void setWobbleArmUp(){
         goToWobblePos(WOBBLE_ARM_UP);
     }
@@ -283,19 +296,16 @@ public class UGoalRobot {
     public void deliverWobbleRaised() {
         setWobbleArmRaised();
         setWobbleFingerOpen();
-        myOpMode.sleep(200); // allow the finger hardware to open
     }
 
     public void deliverWobbleRaiseArm() {
         setWobbleFingerOpen();
-        myOpMode.sleep(200); // allow the finger hardware to open
         setWobbleArmRaised();
     }
     public void pickUpWobble(){
         setWobbleFingerOpen();
         setWobbleArmPickup();
         setWobbleFingerClosed();
-        myOpMode.sleep(200);
         setWobbleArmHorizontal();
     }
 
@@ -511,11 +521,10 @@ public class UGoalRobot {
         // assumption that platform is already tilted for shooting at HIGH GOAL by the caller.
         // This is to allow tilting to be done while the robot is driving.
 
-        // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
-        // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
+        // the pusher seems to miss once in a while so we take an extra shot to ensure 3 rings are shot
         for (int i = 0; i<4 && myOpMode.opModeIsActive(); i++) {
             if (i>0) {
-                myOpMode.sleep(1000); // allow some time for the flywheel to gain full speed after each shot
+                myOpMode.sleep(RING_SHOOTING_INTERVAL); // allow some time for the flywheel to gain full speed after each shot
             }
             shootRing();
         }

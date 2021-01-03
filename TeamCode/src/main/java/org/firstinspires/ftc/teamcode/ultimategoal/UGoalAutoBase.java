@@ -95,8 +95,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * Initialize all hardware and software data structures
      */
     public void initializeOpMode() {
-        // tighten grip on the pre-loaded wobble
-        robot.setWobbleFingerClosed();
         // Redirect telemetry printouts to both Driver Station and FTC Dashboard
         dashTelemetry = FtcDashboard.getInstance().getTelemetry();
         drvrTelemetry = telemetry;
@@ -105,6 +103,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Initialize the robot hardware and drive system variables.
         rrmdrive = new RRMecanumDrive(hardwareMap, this);
         robot = new UGoalRobot(hardwareMap, rrmdrive, this);
+        // tighten grip on the pre-loaded wobble
+        robot.setWobbleFingerClosed();
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
         telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
@@ -116,15 +116,22 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
         setOdometryStartingPosition();
 
-        // start printing messages to driver station asap
+        // start printing messages to driver station asap but only after hardware is initialized and odometry is running
         setupTelemetry();
+
         // initialize the image recognition for ring detection
-        initRingStackDetection();
+        if (!isStopRequested()) {
+            initRingStackDetection();
+        }
         // trajectory building takes 1/2 sec per trajectory, so we want to do this in init()
-        buildTrajectories();
+        if (!isStopRequested()) {
+            buildTrajectories();
+        }
         // start ring stack detection before driver hits PLAY or STOP on driver station
         // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
-        runRingStackDetection();
+        if (!isStopRequested()) {
+            runRingStackDetection(300); // large timeout value so that ring detection continues between INIT and START buttons are pressed
+        }
         // NOTE: The ring stack detection will continue until user presses PLAY button
         // the waitForStart() call that comes after is a formality, the code will pass through because START has been pressed to reach there
     }
@@ -194,19 +201,29 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void fullAutoRoadRunner() {
 
         // robot pickup is not needed since Wobble is preloaded
-        rrmdrive.followTrajectory(goToShootRings);
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(goToShootRings);
+        }
         // shooter flywheel and platform tilting is already done during trajectory driving using RR markers
         robot.shootRingsIntoHighGoal();
-        rrmdrive.followTrajectory(goToPlaceWobble1);
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(goToPlaceWobble1);
+        }
         robot.deliverWobbleRaised();
         // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
-        rrmdrive.followTrajectory(goToPickWobble2);
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(goToPickWobble2);
+        }
         robot.stopIntake();
         robot.pickUpWobble();
-        rrmdrive.followTrajectory(goToPlaceWobble2);
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(goToPlaceWobble2);
+        }
         robot.deliverWobbleRaiseArm();
-        rrmdrive.followTrajectory(goToPark);
-        robot.goToWobblePos(0);
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(goToPark);
+        }
+        robot.setWobbleArmAtRest();
     }
 
   /*****************************
@@ -269,32 +286,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     }
 
     /**
-     * runRingStackDetection()
-     * This method prints all the internal variables using ABC techhnology for image recognition and
-     * calculating the number of rings in the stack on the floor. This is useful for development.
-     * In final program this method is used only in INIT mode, not in PLAY mode
+     * Detects the stack of the rings using image recognition and returns the count of rings in the
+     * stack in front of the robot. Measures for timeout seconds and then returns what is detected
+     * @param timeout Timeout value in seconds
+     * @return  4, 1, or 0 depending on the number of rings
      */
-    public void runRingStackDetection() {
+    public int runRingStackDetection(double timeout) {
 
         actionString = "Ring Stack Detection";
         message = "Nothing";
         telemetry.update();
-        countRingStack = detectRingStackCount(300);
-        telemetry.addData("Rings Detected ", "%d", countRingStack);
-        telemetry.update();
-    }
-
-    /**
-     * Detects the stack of the rings and returns a string based on how many rings are in front
-     * of the robot. Measures for 2 seconds and then returns what is detected
-     * @param timeout Timeout value in seconds
-     * @return  4, 1, or 0 depending on the number of rings
-     */
-    protected int detectRingStackCount(double timeout) {
 
         ElapsedTime time = new ElapsedTime();
         int update = 0;
-        int result = 0;
 
         // Continue detection until driver presses PLAY or STOP button or timeout
         for (int loop = 0; !isStarted() && !isStopRequested() && time.seconds() < timeout; loop++) {
@@ -305,8 +309,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                 if (updatedRecognitions != null) {
                     update++;
-                    telemetry.addData("Time:", "%.0f ms                                                                                                                                                                                                                                                                                                     ", time.milliseconds());
-                    telemetry.addData("Detection count", "%4d in %d tries", update, loop);
+                    telemetry.addData("Ring Detection", "[%.3f s] %4d in %d tries", time.seconds(), update, loop);
                     telemetry.addData("# Object Detected", updatedRecognitions.size());
                     // step through the list of recognitions and display boundary info.
                     int i = 0;
@@ -316,13 +319,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         // if 1 ring in stack then W/H aspect ratio = 1.75
                         // if 4 rings in stack then W/H aspect ratio = 0.95
                         if ((recognition.getWidth() / recognition.getHeight()) > 1.3) {
-                            result = 1;
+                            countRingStack = 1;
                             message = "Single";
                         } else {
-                            result = 4;
+                            countRingStack = 4;
                             message = "Quad";
                         }
                     }
+                    telemetry.addData("Rings Count ", "%d", countRingStack);
                     telemetry.update();
                 }
             }
@@ -334,7 +338,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             sleep(20);
         }
 
-        return result;
+        return countRingStack;
     }
 
     public void shutdownRingStackDetection() {
