@@ -4,6 +4,7 @@ import java.util.List;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -20,6 +21,8 @@ import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
+import static org.firstinspires.ftc.teamcode.ultimategoal.UGoalRobot.ROBOT_SHOOTING_Y_OFFSET;
+
 
 
 /**
@@ -92,6 +95,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * Initialize all hardware and software data structures
      */
     public void initializeOpMode() {
+        // tighten grip on the pre-loaded wobble
+        robot.setWobbleFingerClosed();
         // Redirect telemetry printouts to both Driver Station and FTC Dashboard
         dashTelemetry = FtcDashboard.getInstance().getTelemetry();
         drvrTelemetry = telemetry;
@@ -115,14 +120,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         setupTelemetry();
         // initialize the image recognition for ring detection
         initRingStackDetection();
+        // trajectory building takes 1/2 sec per trajectory, so we want to do this in init()
+        buildTrajectories();
         // start ring stack detection before driver hits PLAY or STOP on driver station
         // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
         runRingStackDetection();
-
-        buildTrajectories();
-
-        telemetry.addData(">", "Ready TO GO, please press START");    //
-        telemetry.update();
+        // NOTE: The ring stack detection will continue until user presses PLAY button
+        // the waitForStart() call that comes after is a formality, the code will pass through because START has been pressed to reach there
     }
 
     // for testing mainly, at the end wait for driver to press STOP, meanwhile
@@ -155,37 +159,54 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     private void buildTrajectories() {
         goToShootRings = rrmdrive.trajectoryBuilder(new Pose2d(-62, 32, 0))
                 .splineTo(new Vector2d(-34, 20), 0)  // 12 inches right, 28 inches forward
-                .splineTo(new Vector2d(-6, 28), 0)  // 8 inches left, another 28 inches forward
+                .splineTo(new Vector2d(-6, GOALY - ROBOT_SHOOTING_Y_OFFSET), 0)  // 8 inches left, another 28 inches forward
+                .addTemporalMarker(1.0, new MarkerCallback() {
+                    @Override
+                    public void onMarkerReached() {
+                        // on the way driving to high goal, turn on the flywheel and tilt the platform at suitable angle
+                        robot.runShooterFlywheel();
+                        robot.tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT, ORIGIN, GOALY - ROBOT_SHOOTING_Y_OFFSET);
+                    }
+                })
                 .build();
         goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
                 .splineTo(new Vector2d(TILE_3_CENTER - 4, TILE_2_FROM_ORIGIN), 0)
                 .build();
         goToPickWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end(), true)
                 .splineTo(new Vector2d(-(TILE_2_FROM_ORIGIN - 2), TILE_2_FROM_ORIGIN - 6), Math.PI)
+                .addTemporalMarker(0.1, new MarkerCallback() {
+                    @Override
+                    public void onMarkerReached() {
+                        // on the way driving to high goal, turn on the flywheel and tilt the platform at suitable angle
+                        robot.dropIntakeAssembly();
+                        robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
+                    }
+                })
                 .build();
         goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPickWobble2.end())
                 .splineTo(new Vector2d(TILE_3_CENTER - 4, TILE_2_FROM_ORIGIN -6), 0)
                 .build();
         goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
-                .lineTo(new Vector2d(TILE_1_CENTER, TILE_2_CENTER + UGoalRobot.ROBOT_SHOOTING_Y_OFFSET))
+                .lineTo(new Vector2d(TILE_1_CENTER, GOALY - ROBOT_SHOOTING_Y_OFFSET))
                 .build();
     }
 
     public void fullAutoRoadRunner() {
-        robot.pickUpWobble();
-        robot.runShooterFlywheel();
+
+        // robot pickup is not needed since Wobble is preloaded
         rrmdrive.followTrajectory(goToShootRings);
+        // shooter flywheel and platform tilting is already done during trajectory driving using RR markers
         robot.shootRingsIntoHighGoal();
         rrmdrive.followTrajectory(goToPlaceWobble1);
-        robot.deliverWobble();
-        robot.setWobbleArmRaised();
+        robot.deliverWobbleRaised();
+        // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
         rrmdrive.followTrajectory(goToPickWobble2);
+        robot.stopIntake();
         robot.pickUpWobble();
         rrmdrive.followTrajectory(goToPlaceWobble2);
-        robot.deliverWobble();
-        robot.setWobbleArmRaised();
+        robot.deliverWobbleRaiseArm();
         rrmdrive.followTrajectory(goToPark);
-        robot.dropIntakeAssembly();
+        robot.goToWobblePos(0);
     }
 
   /*****************************
@@ -255,16 +276,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      */
     public void runRingStackDetection() {
 
-        double timeout = -1.0f;
-
         actionString = "Ring Stack Detection";
         message = "Nothing";
-        telemetry.addData("Ring Stack Detection", "timeout = %.1f", timeout);
         telemetry.update();
         countRingStack = detectRingStackCount(300);
         telemetry.addData("Rings Detected ", "%d", countRingStack);
         telemetry.update();
-
     }
 
     /**
@@ -331,9 +348,10 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void fullAutoEncoderDrive() {
         robot.pickUpWobble();
         encoderDriveToShootHighGoal();
+        robot.tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
         robot.shootRingsIntoHighGoal();
         encoderDriveToTargetZone(countRingStack);
-        robot.deliverWobble();
+        robot.deliverWobbleRaised();
         encoderDriveToPark(countRingStack);
         robot.setWobbleArmDown();
     }

@@ -20,7 +20,7 @@ public class UGoalRobot {
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
-    static final double     ROBOT_SHOOTING_Y_OFFSET     = -7.25; // inches
+    static final double     ROBOT_SHOOTING_Y_OFFSET     = 8.5; // inches
 
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
@@ -37,12 +37,13 @@ public class UGoalRobot {
     static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
+    static final int        WOBBLE_STARTING_POS             = 1600;
     static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_UP                   = 180 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_RAISED               = 135 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_HORIZONTAL           = 90 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_PICKUP               = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_DOWN                 = 0;
+    static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS; // 1140 - 1600 = -460
+    static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS; //  690 - 1600 = -910
+    static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS;  //  518 - 1600 = -1082
+    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS;  //  414 - 1600 = -1186
+    static final int        WOBBLE_ARM_DOWN                 = 0 - WOBBLE_STARTING_POS; // 0 -1600 = -1600
 
     static final int        LIFT_TOP                    = 320;
     static final int        LIFT_BOTTOM                 = 10;
@@ -146,7 +147,7 @@ public class UGoalRobot {
     public void waitUntilMotorBusy(DcMotor motor) {
         ElapsedTime runTime = new ElapsedTime();
         while (motor.isBusy() && myOpMode.opModeIsActive() && (runTime.seconds() < MecabotDrive.TIMEOUT_DEFAULT)){
-            myOpMode.sleep(50);
+            myOpMode.idle();
         }
     }
     public void motorRunToPosition(DcMotor motor, int position, double speed) {
@@ -279,17 +280,17 @@ public class UGoalRobot {
         motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_FAST);
     }
 
-    // This assumes we have a wobble goal held and is held vertically
-    // It lowers arm to horizontal position and drops the goal
-    // Then it folds arm back into robot
-    // speed determines how fast the finger arm motor moves
-    public void deliverWobble() {
-        // bring wobble arm down to release
+    public void deliverWobbleRaised() {
+        setWobbleArmRaised();
+        setWobbleFingerOpen();
+        myOpMode.sleep(200); // allow the finger hardware to open
+    }
+
+    public void deliverWobbleRaiseArm() {
         setWobbleFingerOpen();
         myOpMode.sleep(200); // allow the finger hardware to open
         setWobbleArmRaised();
     }
-
     public void pickUpWobble(){
         setWobbleFingerOpen();
         setWobbleArmPickup();
@@ -388,17 +389,34 @@ public class UGoalRobot {
     }
 
     /**
-     * Calculates and Returns the shooter platform title angle in degrees, to aim at the target
+     * This method tilts the shooter platform according to the detected robot current position on the field
+     * for shooting rings at the specified target.
      *
      * @param targetX   X coordinate of target location
      * @param targetY   Y coordinate of target location
      * @param targetHeight  Height of target from the field floor
-     * @return          Shooter Platform Tilt Angle in Degrees
      */
-    public double calculateShooterPlatformTiltAngle(double targetX, double targetY, double targetHeight) {
+    public void tiltShooterPlatform(double targetX, double targetY, double targetHeight) {
+        double robotX = rrmdrive.getPoseEstimate().getX();
+        double robotY = rrmdrive.getPoseEstimate().getY();
 
-        double xDiff = targetX - rrmdrive.getPoseEstimate().getX();
-        double yDiff = targetY - rrmdrive.getPoseEstimate().getY();
+        tiltShooterPlatform(targetX, targetY, targetHeight, robotX, robotY);
+    }
+
+    /**
+     * This method tilts the shooter platform according to the specified robot position on the field
+     * for shooting rings at the specified target.
+     *
+     * @param targetX   X coordinate of target location
+     * @param targetY   Y coordinate of target location
+     * @param targetHeight  Height of target from the field floor
+     * @param robotX    X coordinate of the robot
+     * @param robotY    Y coordinate of the robot
+     */
+    public void tiltShooterPlatform(double targetX, double targetY, double targetHeight, double robotX, double robotY) {
+
+        double xDiff = targetX - robotX;
+        double yDiff = targetY - (robotY + ROBOT_SHOOTING_Y_OFFSET);  // offset is compensation for robot shooting curved path
         double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
 
         // OPTION: Enable the code line below if/when Odometry is not working reliably and we want to ingore robot position in calculation of tilt angle.
@@ -406,21 +424,8 @@ public class UGoalRobot {
         // (to be positined behind launch line), THEREFORE DISANCE TO GOAL IS SIMPLY THE X-COORDINATE OF THE TARGET
         //distance = targetX;
 
-        double angleRad = Math.atan(targetHeight/distance);
-        return Math.toDegrees(angleRad);
-    }
+        double angle = Math.toDegrees(Math.atan(targetHeight/distance));
 
-    /**
-     * This method allows Robot to shoot from any position on the field, and tilt the shooter platform accordingly.
-     *
-     * @param targetX   X coordinate of target location
-     * @param targetY   Y coordinate of target location
-     * @param targetHeight  Height of target from the field floor
-     */
-    public void tiltShooterPlatform(double targetX, double targetY, double targetHeight) {
-        double angle = calculateShooterPlatformTiltAngle(targetX, targetY, targetHeight);
-        // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
-        // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         tiltShooterPlatform( angle );
     }
 
@@ -431,6 +436,8 @@ public class UGoalRobot {
      */
     public void tiltShooterPlatform(double tiltAngle) {
 
+        // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
+        // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
         shooterPlatformTiltAngle = tiltAngle + 1;    // record value before clipping for telemetry printout, do not delete this line
 
@@ -501,12 +508,15 @@ public class UGoalRobot {
     //aim and shoot three rings into the high goal
     public void shootRingsIntoHighGoal(){
         // assumption that flywheel is already running so it can gain full speed
+        // assumption that platform is already tilted for shooting at HIGH GOAL by the caller.
+        // This is to allow tilting to be done while the robot is driving.
 
-        tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
         // the pusher seems to miss 3rd ring because it hasn't fallen down into the collector yet
         // therefore we run the intake to help 3rd ring drop down and try to shoot 5 times
-        for (int i = 0; i<4; i++) {
-            myOpMode.sleep(1200); // allow some time for the flywheel to gain full speed after each shot
+        for (int i = 0; i<4 && myOpMode.opModeIsActive(); i++) {
+            if (i>0) {
+                myOpMode.sleep(1000); // allow some time for the flywheel to gain full speed after each shot
+            }
             shootRing();
         }
         stopShooterFlywheel();
