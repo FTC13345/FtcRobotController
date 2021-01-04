@@ -51,7 +51,7 @@ public class UGoalRobot {
     static final int        LIFT_UP_RINGS_HEIGHT        = LIFT_TOP;
 
     //Finals
-    static final double SHOOTER_FLYWHEEL_RUN = 1.0;
+    static final double SHOOTER_FLYWHEEL_RUN = 0.8;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
     static final double SHOOTER_PLATFORM_ANGLE_MIN = 20.0f;
     static final double SHOOTER_PLATFORM_ANGLE_MAX = 35.0f;
