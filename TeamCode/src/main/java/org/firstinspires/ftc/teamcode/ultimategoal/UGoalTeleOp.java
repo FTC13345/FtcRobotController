@@ -18,7 +18,7 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 @TeleOp(name = "UGoal TeleOp", group="QT")
 public class UGoalTeleOp extends LinearOpMode {
 
-    private boolean bIgnoreLiftStops = false;
+    private boolean bIgnoreStops = false;
 
     /* Declare OpMode members. */
     RRMecanumDrive rrmdrive;
@@ -88,9 +88,6 @@ public class UGoalTeleOp extends LinearOpMode {
             intake();
             shootRings();
             wobblePickup();
-            // Disabled because the ringsLift has been removed in Robot hardware,
-            // it does not earn enough points according to game strategy, same time can be used wisely
-            // ringsLiftArmClaw();
             telemetry.update();
             idle();
         }
@@ -112,11 +109,11 @@ public class UGoalTeleOp extends LinearOpMode {
         // This is necessary and useful when Robot is powered off with lift still raised high
         // and next power up initializes the lift bottom stop in that raised position
         if ((gamepad2.start) && (gamepad2.left_bumper)) {
-            bIgnoreLiftStops = false;
+            bIgnoreStops = false;
         }
         // Enforces the lift stops (top and bottom) as normal function
         if ((gamepad2.start) && (gamepad2.right_bumper)) {
-            bIgnoreLiftStops = true;
+            bIgnoreStops = true;
         }
 
         if ((gamepad2.start) && (gamepad2.x)) {
@@ -229,49 +226,6 @@ public class UGoalTeleOp extends LinearOpMode {
              gamepad2DpadDebounce = true;
         } else {
             gamepad2DpadDebounce = false;
-        }
-    }
-
-    // lift for the claw putting loaded rings onto the wobble goal, right side
-    public void ringsLiftArmClaw() {
-
-        if (gamepad2.right_stick_y != 0) {
-            //joystick gives a negative value when pushed up, we want the lift to go up when positive
-            double power = -gamepad2.right_stick_y;
-            // Square the number but retain the sign to convert to logarithmic scale
-            // scale the range to 0.15 <= abs(power) <= 1.0 and preserve the sign
-            power = Math.signum(power) * (0.15 + (0.85 * power * power));
-            int pos = robot.getLiftCurrentPosition();
-
-//            //temporarily uncomment below and force slow speed while testing for stops
-//            //Note that if motor direction is reversed, then the LIFT_TOP and LIFT_BOTTOM will have wrong sign
-//            // and the lift will not move in either direction, therefore we also need to disable the LIFT TOP and BOTTOM Stops
-//            power = Math.signum(power) * robot.DRIVE_SPEED_SLOW;
-//            bIgnoreLiftStops = true;
-
-            //if lift stops are being ignored then simply apply the joystick power to the motor
-            if (bIgnoreLiftStops) {
-                telemetry.addData("LIFT ", "at %3d, IGNORING STOPS", pos);
-                robot.runLift(power);
-            }
-            // move lift upwards direction but respect the stop to avoid breaking string
-            else if (power > 0 && pos < robot.LIFT_TOP) {
-                telemetry.addData("Lift Up ", "power %.2f | pos %d", power, pos);
-                robot.runLift(power);
-            }
-            // move lift downwards direction but respect the stop to avoid winding string in opposite direction on the spool
-            else if (power < 0 && pos > robot.LIFT_BOTTOM) {
-                telemetry.addData("Lift Down ", "power %.2f | pos %d", power, pos);
-                robot.runLift(power);
-            }
-            // DO NOT remove the following line, we need to call stopLift() despite power is non-zero, when STOPS are reached
-            else {
-                robot.stopLift();
-            }
-        }
-        // DO NOT remove the following line, we need to call stopLift() when user releases the joystick
-        else {
-            robot.stopLift();
         }
     }
 
