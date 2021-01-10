@@ -32,10 +32,8 @@ public class UGoalRobot {
     static final double     RING_PUSHER_SHOOT_POSITION  = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_CLOSED        = Servo.MIN_POSITION;
     static final double     WOBBLE_FINGER_OPEN          = Servo.MAX_POSITION;
-    static final double     LIFT_CLAW_OPEN              = Servo.MAX_POSITION;
-    static final double     LIFT_CLAW_CLOSED            = Servo.MIN_POSITION;
-    static final double     LIFT_ARM_INSIDE             = Servo.MIN_POSITION;
-    static final double     LIFT_ARM_OUTSIDE            = Servo.MAX_POSITION;
+    static final double     WOBBLE_PRELOAD_CLOSED       = Servo.MIN_POSITION;
+    static final double     WOBBLE_PRELOAD_OPEN         = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
     static final int        WOBBLE_STARTING_POS             = 1600;
@@ -45,10 +43,6 @@ public class UGoalRobot {
     static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS;  //  518 - 1600 = -1082
     static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS;  //  414 - 1600 = -1186
     static final int        WOBBLE_ARM_DOWN                 = 0 - WOBBLE_STARTING_POS; // 0 -1600 = -1600
-
-    static final int        LIFT_TOP                    = 320;
-    static final int        LIFT_BOTTOM                 = 10;
-    static final int        LIFT_UP_RINGS_HEIGHT        = LIFT_TOP;
 
     //Finals
     static final double SHOOTER_FLYWHEEL_RUN = 0.8;
@@ -82,10 +76,8 @@ public class UGoalRobot {
     public Servo ringPusher = null;
     public Servo intakeAssembly = null;
     public CRServo intakeCRServo = null;
-    //finger is for wobble pickup, claw is for putting rings on wobble
-    public Servo wobbleFinger = null;
-    public Servo liftClaw = null;
-    public Servo liftArm = null;
+    public Servo wobbleFinger = null;   // clamp for side wobble pickup
+    public Servo wobblePreload = null;
 
     // constructor
     public UGoalRobot(HardwareMap ahwMap, RRMecanumDrive drive, LinearOpMode opMode) {
@@ -128,18 +120,14 @@ public class UGoalRobot {
         angleServo = ahwMap.get(Servo.class, "angleServo");
         intakeAssembly = ahwMap.get(Servo.class, "intakeAssembly");
         wobbleFinger = ahwMap.get(Servo.class, "wobbleFinger");
-        //liftClaw = ahwMap.get(Servo.class, "wobbleClaw");
-        //liftArm = ahwMap.get(Servo.class, "wobbleClawArm");
+        wobblePreload = ahwMap.get(Servo.class, "wobblePreload");
         ringPusher = ahwMap.get(Servo.class, "ringPusherServo");
         intakeCRServo = ahwMap.get(CRServo.class, "intakeCRServo");
 
         intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
         angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
-        // DO NOT move the Wobble Finger at init, we may have pre-loaded wobble, the opMode will set Wobble finger position before play
-        // wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-
-        //liftClaw.setPosition(LIFT_CLAW_OPEN);
-        //liftArm.setPosition(LIFT_ARM_INSIDE);
+        wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
+        wobblePreload.setPosition(WOBBLE_PRELOAD_CLOSED);         // Clamp the preloaded wobble securely
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         intakeCRServo.setDirection(CRServo.Direction.REVERSE);
     }
@@ -214,42 +202,13 @@ public class UGoalRobot {
     }
 
     /*
-     * Lift, arm and claw operation methods
+     * Wobble Preload methods
      */
-    public int getLiftCurrentPosition() {
-        return liftMotor.getCurrentPosition();
+    public void wobblePreloadClamp() {
+        wobblePreload.setPosition(WOBBLE_PRELOAD_CLOSED);
     }
-
-    public void runLift(double speed) {
-        liftMotor.setPower(speed);
-    }
-    public void stopLift() {
-        //stop and brake lift
-        liftMotor.setPower(MecabotDrive.MOTOR_STOP_SPEED);
-        // Get out of the RunMode RUN_TO_POSITION, so manual player control is possible
-        liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    }
-    public void moveLift(int position) {
-        position = Range.clip(position, LIFT_BOTTOM, LIFT_TOP);
-        motorRunToPosition(liftMotor, position, MecabotDrive.DRIVE_SPEED_DEFAULT);
-    }
-
-    public void rotateClawInside() {
-        //liftArm.setPosition(LIFT_ARM_INSIDE);
-    }
-    public void rotateClawOutside() {
-        //liftArm.setPosition(LIFT_ARM_OUTSIDE);
-    }
-    public void moveClawToPosition(double position) {
-        position = Range.clip(position, LIFT_ARM_INSIDE, LIFT_ARM_OUTSIDE);
-        //liftArm.setPosition(position);
-    }
-
-    public void grabRingsWithClaw() {
-        //liftClaw.setPosition(LIFT_CLAW_CLOSED);
-    }
-    public void releaseRingsWithClaw() {
-        //liftClaw.setPosition(LIFT_CLAW_OPEN);
+    public void wobblePreloadRelease() {
+        wobblePreload.setPosition(WOBBLE_PRELOAD_OPEN);
     }
 
     /*
@@ -333,39 +292,6 @@ public class UGoalRobot {
     public void resetWobblePickupArmEncoder() {
         wobblePickupArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-    }
-
-    /*
-     * Methods to lift claw with rings out of robot onto wobble goal
-     */
-    /**
-     * liftMotor is set to run to position, and uses the parameter to determine that distance
-     * constant LIFT_UP_RINGS_HEIGHT is the height we lift the claw to deposit rings onto wobble goal
-     * @param height is encoder counts that tells the lift how high to go
-     */
-    public void wobbleLift(int height){
-        liftMotor.setTargetPosition(height);
-        liftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        liftMotor.setPower(MecabotDrive.DRIVE_SPEED_DEFAULT);
-    }
-
-    //rings will be put on the wobble on the RIGHT side of the robot
-    //we will have to turn around to grab it on the LEFT side
-    //uses lift to lift claw, swings it to outside, then lift to lower rings onto wobble goal
-    //when done, it resets by lowering lift and folding the claw and arm back into robot
-    public void putRingsOnWobble(){
-        //pickup rings inside robot
-        grabRingsWithClaw();
-        //lift the claw to predetermined height
-        //This gives room to swing out claw and drop the rings onto wobble
-        wobbleLift(LIFT_UP_RINGS_HEIGHT);
-        //rotates claw outside to put it outside the robot next to wobble goal
-        //liftArm.setPosition(LIFT_ARM_OUTSIDE);
-        //.setPosition(LIFT_CLAW_OPEN);
-        //reset, lower lift and put claw back into robot out of the way
-        wobbleLift(LIFT_BOTTOM);
-        //liftClaw.setPosition(LIFT_CLAW_CLOSED);
-        //liftArm.setPosition(LIFT_ARM_INSIDE);
     }
 
     /*
