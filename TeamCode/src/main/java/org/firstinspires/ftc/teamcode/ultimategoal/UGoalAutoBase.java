@@ -71,12 +71,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     // Roadrunner Trajectories
     Trajectory goToShootRings;
-    Trajectory goToPlaceWobble1A;
-    Trajectory goToPlaceWobble1B;
-    Trajectory goToPlaceWobble1C;
-    Trajectory goToPickWobble2A;
-    Trajectory goToPickWobble2B;
-    Trajectory goToPickWobble2C;
+    Trajectory goToPlaceWobble1;
     Trajectory goToPlaceWobble2;
     Trajectory goToPark;
 
@@ -130,17 +125,20 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (!isStopRequested()) {
             initRingStackDetection();
         }
+
+        // start ring stack detection before driver hits PLAY or STOP on driver station
+        // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
+        if (!isStopRequested()) {
+            runRingStackDetection(5); // large timeout value so that ring detection continues between INIT and START buttons are pressed
+                                                // decreased timeout from 300 -> 5 in order to allow time for trajectory building after ring detection
+        }
+        // NOTE: The ring stack detection will continue until user presses PLAY button (Changed 5 seconds only then trajectory building)
+        // the waitForStart() call that comes after is a formality, the code will pass through because START has been pressed to reach there
+
         // trajectory building takes 1/2 sec per trajectory, so we want to do this in init()
         if (!isStopRequested()) {
             buildTrajectories();
         }
-        // start ring stack detection before driver hits PLAY or STOP on driver station
-        // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
-        if (!isStopRequested()) {
-            runRingStackDetection(300); // large timeout value so that ring detection continues between INIT and START buttons are pressed
-        }
-        // NOTE: The ring stack detection will continue until user presses PLAY button
-        // the waitForStart() call that comes after is a formality, the code will pass through because START has been pressed to reach there
     }
 
     // for testing mainly, at the end wait for driver to press STOP, meanwhile
@@ -241,41 +239,30 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     public void fullAutoRoadRunner() {
 
-        // robot pickup is not needed since Wobble is preloaded
+        if (!opModeIsActive()) {
+            return;
+        }
+
+        robot.pickUpWobble();
+
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToShootRings);
         }
         // shooter flywheel and platform tilting is already done during trajectory driving using RR markers
         robot.shootRingsIntoHighGoal();
 
-        Trajectory placeWobble;
-        Trajectory pickupWobble;
-        if (countRingStack == 4) {
-            placeWobble = goToPlaceWobble1C;
-            pickupWobble = goToPickWobble2C;
-        }
-        if (countRingStack == 1) {
-            placeWobble = goToPlaceWobble1B;
-            pickupWobble = goToPickWobble2B;
-        }
-        else { // (countRingStack == 0)
-            placeWobble = goToPlaceWobble1A;
-            pickupWobble = goToPickWobble2A;
-        }
         if (opModeIsActive()) {
-            rrmdrive.followTrajectory(placeWobble);
+            rrmdrive.followTrajectory(goToPlaceWobble1);
         }
+
         robot.deliverWobbleRaised();
-        if (opModeIsActive()) {
-            // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
-            rrmdrive.followTrajectory(pickupWobble);
-        }
-        robot.stopIntake();
-        robot.pickUpWobble();
+
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPlaceWobble2);
         }
-        robot.deliverWobbleRaiseArm();
+
+       // TODO: Release wobble preload here
+
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPark);
         }
