@@ -185,15 +185,15 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .build();
 
         goToPlaceWobble1A = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(TARGET_ZONE_A_X, TARGET_ZONE_A_Y), 0)
+                .splineTo(new Vector2d(TARGET_ZONE_A_X, TARGET_ZONE_A_Y - 12), 0)
                 .build();
 
         goToPlaceWobble1B = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(TARGET_ZONE_B_X, TARGET_ZONE_B_Y), 0)
+                .splineTo(new Vector2d(TARGET_ZONE_B_X, TARGET_ZONE_B_Y - 12), 0)
                 .build();
 
         goToPlaceWobble1C = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(TILE_3_CENTER - 4, TILE_2_FROM_ORIGIN), 0)
+                .splineTo(new Vector2d(TARGET_ZONE_C_X - 4, TARGET_ZONE_C_Y - 12), 0)
                 .build();
 
          goToPickWobble2A = rrmdrive.trajectoryBuilder(goToPlaceWobble1A.end(), true)
@@ -232,7 +232,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
         goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPickWobble2A.end())
-                .splineTo(new Vector2d(TILE_3_CENTER - 4, TILE_2_FROM_ORIGIN -6), 0)
+                .splineTo(new Vector2d(TARGET_ZONE_C_X - 4, TILE_2_FROM_ORIGIN -18), 0)
                 .build();
         goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
                 .lineTo(new Vector2d(TILE_1_CENTER, GOALY - ROBOT_SHOOTING_Y_OFFSET))
@@ -248,25 +248,28 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // shooter flywheel and platform tilting is already done during trajectory driving using RR markers
         robot.shootRingsIntoHighGoal();
 
-        if (rings == 4) {
-            rrmdrive.followTrajectory(goToPlaceWobble1C);
-            robot.deliverWobbleRaised();
+        Trajectory placeWobble;
+        Trajectory pickupWobble;
+        if (countRingStack == 4) {
+            placeWobble = goToPlaceWobble1C;
+            pickupWobble = goToPickWobble2C;
+        }
+        if (countRingStack == 1) {
+            placeWobble = goToPlaceWobble1B;
+            pickupWobble = goToPickWobble2B;
+        }
+        else { // (countRingStack == 0)
+            placeWobble = goToPlaceWobble1A;
+            pickupWobble = goToPickWobble2A;
+        }
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(placeWobble);
+        }
+        robot.deliverWobbleRaised();
+        if (opModeIsActive()) {
             // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
-            rrmdrive.followTrajectory(goToPickWobble2C);
+            rrmdrive.followTrajectory(pickupWobble);
         }
-        if (rings == 1) {
-             rrmdrive.followTrajectory(goToPlaceWobble1B);
-             robot.deliverWobbleRaised();
-             // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
-             rrmdrive.followTrajectory(goToPickWobble2B);
-        }
-        if (rings == 0) {
-            rrmdrive.followTrajectory(goToPlaceWobble1A);
-            robot.deliverWobbleRaised();
-            // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
-            rrmdrive.followTrajectory(goToPickWobble2A);
-        }
-
         robot.stopIntake();
         robot.pickUpWobble();
         if (opModeIsActive()) {
