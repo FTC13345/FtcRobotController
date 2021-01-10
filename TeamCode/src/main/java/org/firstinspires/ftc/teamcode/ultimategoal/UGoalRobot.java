@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -36,13 +37,12 @@ public class UGoalRobot {
     static final double     WOBBLE_PRELOAD_OPEN         = Servo.MAX_POSITION;
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
-    static final int        WOBBLE_STARTING_POS             = 1600;
-    static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;
-    static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS; // 1140 - 1600 = -460
-    static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS; //  690 - 1600 = -910
-    static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS;  //  518 - 1600 = -1082
-    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360 - WOBBLE_STARTING_POS;  //  414 - 1600 = -1186
-    static final int        WOBBLE_ARM_DOWN                 = 0 - WOBBLE_STARTING_POS; // 0 -1600 = -1600
+    static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;    // 35
+    static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 1140
+    static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 690
+    static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 518
+    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 414
+    static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
     static final double SHOOTER_FLYWHEEL_RUN = 0.8;
@@ -78,6 +78,9 @@ public class UGoalRobot {
     public CRServo intakeCRServo = null;
     public Servo wobbleFinger = null;   // clamp for side wobble pickup
     public Servo wobblePreload = null;
+
+    // Hardware switch
+    public DigitalChannel wobbleLowLimit;
 
     // constructor
     public UGoalRobot(HardwareMap ahwMap, RRMecanumDrive drive, LinearOpMode opMode) {
@@ -130,6 +133,9 @@ public class UGoalRobot {
         wobblePreload.setPosition(WOBBLE_PRELOAD_CLOSED);         // Clamp the preloaded wobble securely
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         intakeCRServo.setDirection(CRServo.Direction.REVERSE);
+
+        wobbleLowLimit = ahwMap.get(DigitalChannel.class, "wobbleLowLimit");
+        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
     }
 
     /*
@@ -225,9 +231,6 @@ public class UGoalRobot {
         myOpMode.sleep(150);
     }
 
-    public void setWobbleArmAtRest() {
-        goToWobblePos(0);
-    }
     public void setWobbleArmUp(){
         goToWobblePos(WOBBLE_ARM_UP);
     }
@@ -252,20 +255,19 @@ public class UGoalRobot {
         motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_MAX);
     }
 
-    public void deliverWobbleRaised() {
-        setWobbleArmRaised();
-        setWobbleFingerOpen();
-    }
-
-    public void deliverWobbleRaiseArm() {
-        setWobbleFingerOpen();
-        setWobbleArmRaised();
-    }
     public void pickUpWobble(){
         setWobbleFingerOpen();
         setWobbleArmPickup();
         setWobbleFingerClosed();
         setWobbleArmHorizontal();
+    }
+    public void deliverWobble() {
+        setWobbleFingerOpen();
+        myOpMode.sleep(400);
+    }
+    public void deliverWobbleRaiseArm() {
+        setWobbleFingerOpen();
+        setWobbleArmRaised();
     }
 
     public void moveWobbleArmUpwards() {

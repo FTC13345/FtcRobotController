@@ -109,8 +109,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot = new UGoalRobot(hardwareMap, rrmdrive, this);
 
         // Motor and Servo position initializations
-        robot.resetWobblePickupArmEncoder();    // Wobble arm is often manually moved during setup
-        robot.setWobbleFingerClosed();          // tighten grip on the pre-loaded wobble
+        robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
+        if (robot.wobbleLowLimit.getState() == false) {     // switch is pressed, wobble arm is at bottom
+            robot.resetWobblePickupArmEncoder();
+            telemetry.addData(">", "Wobble Arm encoder reset to ZERO");
+        }
 
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
@@ -265,7 +268,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(placeWobble);
         }
-        robot.deliverWobbleRaised();
+        robot.deliverWobbleRaiseArm();
         if (opModeIsActive()) {
             // Intake is dropped down and starts running during trajectory driving to pickup wobble 2
             rrmdrive.followTrajectory(pickupWobble);
@@ -279,7 +282,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPark);
         }
-        robot.setWobbleArmAtRest();
+        robot.setWobbleArmDown();
     }
 
   /*****************************
@@ -411,7 +414,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
         robot.shootRingsIntoHighGoal();
         encoderDriveToTargetZone(countRingStack);
-        robot.deliverWobbleRaised();
+        robot.deliverWobbleRaiseArm();
         encoderDriveToPark(countRingStack);
         robot.setWobbleArmDown();
     }
