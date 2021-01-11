@@ -134,8 +134,8 @@ public class UGoalRobot {
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         intakeCRServo.setDirection(CRServo.Direction.REVERSE);
 
-        wobbleLowLimit = ahwMap.get(DigitalChannel.class, "wobbleLowLimit");
-        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
+//        wobbleLowLimit = ahwMap.get(DigitalChannel.class, "wobbleLowLimit");
+//        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
     }
 
     /*
@@ -155,6 +155,7 @@ public class UGoalRobot {
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
         waitUntilMotorBusy(motor);
+        myOpMode.sleep(1500);
         // TEMP: the wobble arm is not moving at all randomly, suspecting a timeout issue, therefore disable the STOP after timeout
         // TEMP: If the motor has reached POSITION without timeout, then the stop should not be required anyway
         //motor.setPower(MecabotDrive.MOTOR_STOP_SPEED);

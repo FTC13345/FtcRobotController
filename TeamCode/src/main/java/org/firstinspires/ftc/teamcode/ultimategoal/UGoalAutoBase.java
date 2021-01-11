@@ -105,10 +105,10 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         // Motor and Servo position initializations
         robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
-        if (robot.wobbleLowLimit.getState() == false) {     // switch is pressed, wobble arm is at bottom
-            robot.resetWobblePickupArmEncoder();
-            telemetry.addData(">", "Wobble Arm encoder reset to ZERO");
-        }
+//        if (robot.wobbleLowLimit.getState() == false) {     // switch is pressed, wobble arm is at bottom
+//            robot.resetWobblePickupArmEncoder();
+//            telemetry.addData(">", "Wobble Arm encoder reset to ZERO");
+//        }
 
         telemetry.addData(">", "Hardware initialized");
         // Send telemetry message to signify robot waiting;
@@ -191,8 +191,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .splineTo(new Vector2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 8), 0)
                         .build();
 
-                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
-                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 14, 90))
+                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end())
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 14, 60))
                         .build();
                 break;
             case 1:
@@ -200,8 +200,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .splineTo(new Vector2d(TARGET_ZONE_B_X - 3, TARGET_ZONE_B_Y - 8), 0)
                         .build();
 
-                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
-                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_B_X - 3, TARGET_ZONE_B_Y - 14, 90))
+                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end())
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_B_X - 3, TARGET_ZONE_B_Y - 14, Math.PI / 2))
                         .build();
                 break;
             case 0:
@@ -209,8 +209,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .splineTo(new Vector2d(TARGET_ZONE_A_X - 3, TARGET_ZONE_A_Y - 8), 0)
                         .build();
 
-                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
-                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_A_X - 3, TARGET_ZONE_A_Y - 14, 90))
+                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end())
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_A_X - 3, TARGET_ZONE_A_Y - 14, Math.PI / 2))
                         .build();
             default:
                 break;
@@ -244,6 +244,31 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (!opModeIsActive()) {
             return;
         }
+/*
+        ElapsedTime time = new ElapsedTime();
+
+        robot.setWobbleFingerOpen();
+        telemetry.addData(">", "finger opened: " + time.seconds());
+        //sleep(2000);
+
+        robot.setWobbleArmPickup();
+        telemetry.addData(">", "wobble arm up: " + time.seconds());
+        //sleep(2000);
+
+        robot.setWobbleFingerClosed();
+        telemetry.addData(">", "finger closed: " + time.seconds());
+        //sleep(2000);
+
+        robot.setWobbleArmHorizontal();
+        telemetry.addData(">", "arm horizontal: " + time.seconds());
+        telemetry.update();
+
+        sleep(5000);
+        robot.setWobbleFingerOpen();
+        robot.setWobbleArmDown();
+
+        waitForStop();
+ */
 
         // pickup 2nd wobble also, 1st wobble is preloaded
         robot.pickUpWobble();
@@ -268,6 +293,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             rrmdrive.followTrajectory(goToPark);
         }
         robot.setWobbleArmDown();
+
+
     }
 
   /*****************************
