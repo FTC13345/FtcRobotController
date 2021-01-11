@@ -185,18 +185,41 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
 
-        goToPlaceWobble1A = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(TARGET_ZONE_A_X, TARGET_ZONE_A_Y - 12), 0)
-                .build();
+        switch (countRingStack) {
+            case 4:
+                goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
+                        .splineTo(new Vector2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 8), 0)
+                        .build();
 
-        goToPlaceWobble1B = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(TARGET_ZONE_B_X, TARGET_ZONE_B_Y - 12), 0)
-                .build();
+                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 14, 90))
+                        .build();
+                break;
+            case 1:
+                goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
+                        .splineTo(new Vector2d(TARGET_ZONE_B_X - 3, TARGET_ZONE_B_Y - 8), 0)
+                        .build();
 
-        goToPlaceWobble1C = rrmdrive.trajectoryBuilder(goToShootRings.end())
-                .splineTo(new Vector2d(TARGET_ZONE_C_X - 4, TARGET_ZONE_C_Y - 12), 0)
-                .build();
+                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_B_X - 3, TARGET_ZONE_B_Y - 14, 90))
+                        .build();
+                break;
+            case 0:
+                goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
+                        .splineTo(new Vector2d(TARGET_ZONE_A_X - 3, TARGET_ZONE_A_Y - 8), 0)
+                        .build();
 
+                goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_A_X - 3, TARGET_ZONE_A_Y - 14, 90))
+                        .build();
+            default:
+                break;
+        }
+
+
+
+
+/*
          goToPickWobble2A = rrmdrive.trajectoryBuilder(goToPlaceWobble1A.end(), true)
                  .splineTo(new Vector2d(-(TILE_2_FROM_ORIGIN - 2), TILE_2_FROM_ORIGIN - 6), Math.PI)
                  .addTemporalMarker(0.1, new MarkerCallback() {
@@ -208,33 +231,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                      }
                  })
                  .build();
+*/
 
-        goToPickWobble2B = rrmdrive.trajectoryBuilder(goToPlaceWobble1B.end(), true)
-                .splineTo(new Vector2d(-(TILE_2_FROM_ORIGIN - 2), TILE_2_FROM_ORIGIN - 6), Math.PI)
-                .addTemporalMarker(0.1, new MarkerCallback() {
-                    @Override
-                    public void onMarkerReached() {
-                        // on the way driving to high goal, turn on the flywheel and tilt the platform at suitable angl
-                        robot.dropIntakeAssembly();
-                        robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
-                    }
-                })
-                .build();
 
-        goToPickWobble2C = rrmdrive.trajectoryBuilder(goToPlaceWobble1C.end(), true)
-                .splineTo(new Vector2d(-(TILE_2_FROM_ORIGIN - 2), TILE_2_FROM_ORIGIN - 6), Math.PI)
-                .addTemporalMarker(0.1, new MarkerCallback() {
-                    @Override
-                    public void onMarkerReached() {
-                        // on the way driving to high goal, turn on the flywheel and tilt the platform at suitable angle
-                        robot.dropIntakeAssembly();
-                        robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
-                    }
-                })
-                .build();
-        goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPickWobble2A.end())
-                .splineTo(new Vector2d(TARGET_ZONE_C_X - 4, TILE_2_FROM_ORIGIN -18), 0)
-                .build();
         goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
                 .lineTo(new Vector2d(TILE_1_CENTER, GOALY - ROBOT_SHOOTING_Y_OFFSET))
                 .build();
@@ -246,6 +245,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             return;
         }
 
+        // pickup 2nd wobble also, 1st wobble is preloaded
         robot.pickUpWobble();
 
         if (opModeIsActive()) {
@@ -257,14 +257,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPlaceWobble1);
         }
-
         robot.deliverWobbleRaiseArm();
 
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPlaceWobble2);
         }
-
-       // TODO: Release wobble preload here
+        robot.wobblePreloadRelease();
 
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPark);
