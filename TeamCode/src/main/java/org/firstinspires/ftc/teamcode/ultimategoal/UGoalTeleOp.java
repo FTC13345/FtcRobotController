@@ -140,8 +140,10 @@ public class UGoalTeleOp extends LinearOpMode {
         }
         // Shoot when B is pressed
         if (gamepad2.b) {
-            robot.shootRing();
-
+            //check if flywheel is running
+            if (robot.isShooterFlywheelRunning()) {
+                robot.shootRing();
+            }
         }
         //auto aim for High Goal
         if (gamepad2.x && !gamepad2.start) {
@@ -212,7 +214,6 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.dropIntakeAssembly();
         }
 
-        int wobblePosition = robot.wobblePickupArm.getCurrentPosition();
         //error margin is to prevent the wobble arm from being unable to go to a certain spot
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
              if (!gamepad2DpadDebounce){

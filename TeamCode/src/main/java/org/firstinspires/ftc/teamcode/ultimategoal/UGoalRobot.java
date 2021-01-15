@@ -36,12 +36,12 @@ public class UGoalRobot {
     static final double     WOBBLE_PRELOAD_CLOSED       = Servo.MIN_POSITION;
     static final double     WOBBLE_PRELOAD_OPEN         = Servo.MAX_POSITION;
 
-    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = 2486;  // for 360 degree of rotation. Core-hex motor encoder ticks per rev
-    static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;    // 35
-    static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 1140
-    static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 690
-    static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 518
-    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 414
+    static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = (int) 753.2*2;  // for 360 degree of rotation. 5202 Series Yellow Jacket Planetary Gear Motor encoder ticks per rev * gear ratio
+    static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;    // 20
+    static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 690
+    static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 418
+    static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 313
+    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 251
     static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
@@ -107,7 +107,7 @@ public class UGoalRobot {
         leftODwheel.setDirection(DcMotor.Direction.FORWARD);
         rightODwheel.setDirection(DcMotor.Direction.FORWARD);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
-        wobblePickupArm.setDirection(DcMotor.Direction.FORWARD);
+        wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
         flywheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
         leftODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -253,7 +253,7 @@ public class UGoalRobot {
     }
 
     public void goToWobblePos(int pos){
-        motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_MAX);
+        motorRunToPosition(wobblePickupArm, pos, MecabotDrive.DRIVE_SPEED_DEFAULT);
     }
 
     public void pickUpWobble(){
@@ -276,7 +276,6 @@ public class UGoalRobot {
         if (wobblePosition < WOBBLE_ARM_PICKUP - WOBBLE_ARM_ERROR_MARGIN){
             setWobbleArmPickup();
         } else if (wobblePosition < WOBBLE_ARM_UP - WOBBLE_ARM_ERROR_MARGIN) {
-            setWobbleArmRaised();   // this line is to prevent motor timeout and allows it to reach destination
             setWobbleArmUp();
         }
     }
