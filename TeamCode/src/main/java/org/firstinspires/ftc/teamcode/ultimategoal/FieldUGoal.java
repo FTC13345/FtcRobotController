@@ -1,7 +1,11 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+
+import static org.firstinspires.ftc.teamcode.ultimategoal.UGoalRobot.ROBOT_SHOOTING_Y_OFFSET;
 
 /** Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
@@ -73,4 +77,13 @@ public class FieldUGoal {
         }
         return value;
     }
+
+    enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3}
+
+    // record position that we need to return to repeatedly
+    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 4.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 4.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 4.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+
 }

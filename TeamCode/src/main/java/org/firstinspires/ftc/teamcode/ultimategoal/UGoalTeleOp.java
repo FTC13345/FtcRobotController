@@ -61,7 +61,7 @@ public class UGoalTeleOp extends LinearOpMode {
         rrmdrive = new RRMecanumDrive(hardwareMap, this);
         robot = new UGoalRobot(hardwareMap, rrmdrive,this);
         mcdrive = robot.getDrive();
-        driver = new TeleOpDriver(this, rrmdrive, mcdrive);
+        driver = new UGoalTeleOpDriver(this, rrmdrive, mcdrive, robot);
         globalPosition = mcdrive.getOdometry();
 
         // set the starting Pose same as last saved Pose from the AUTO Opmode
@@ -167,20 +167,6 @@ public class UGoalTeleOp extends LinearOpMode {
         }
         if (gamepad2.dpad_left) {
             robot.tiltShooterPlatformMax();
-        }
-        if (gamepad1.start) {
-            if (gamepad1.dpad_up) {
-                robot.driveToShootHighGoal();
-            }
-            if (gamepad1.dpad_left) {
-                robot.driveToShootPowerShot1();
-            }
-            if (gamepad1.dpad_down) {
-                robot.driveToShootPowerShot2();
-            }
-            if (gamepad1.dpad_right) {
-                robot.driveToShootPowerShot3();
-            }
         }
     }
 

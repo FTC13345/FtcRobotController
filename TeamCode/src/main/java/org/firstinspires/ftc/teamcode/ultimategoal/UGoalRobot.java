@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -436,19 +438,65 @@ public class UGoalRobot {
     }
 
     /*****************************
-     * Autonomous Program Methods
+     * Autonomous Program Methods using RoadRunner MecanumDrive
      ****************************/
-    /*
-     * Auto Drive To and Shoot Rings into High Goal
-     */
-    public void driveToShootHighGoal() {
+    public void rrdriveToShootTarget(Target target) {
+        Pose2d poseStart = rrmdrive.getPoseEstimate();
+        Pose2d poseEnd = poseHighGoal;
+        switch(target) {
+            case HIGHGOAL: poseEnd = poseHighGoal;
+                break;
+            case POWERSHOT_1: poseEnd = posePowerShot1;
+                break;
+            case POWERSHOT_2: poseEnd = posePowerShot2;
+                break;
+            case POWERSHOT_3: poseEnd = posePowerShot3;
+                break;
+        }
+        Trajectory goToShoot = rrmdrive.trajectoryBuilder(poseStart)
+                .lineToLinearHeading(poseEnd)
+                .build();
+        rrmdrive.followTrajectoryAsync(goToShoot);
+    }
+
+    /*****************************
+     * Autonomous Program Methods using MecabotDrive
+     ****************************/
+    public void mcdriveToShootHighGoal() {
         // drive to desired location
         //if red reverse the y
-        mcdrive.goToPosition(ORIGIN, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET));
+        mcdrive.goToPosition(poseHighGoal.getX(), poseHighGoal.getY());
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        // tilt platform for goal height
-        tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT);
+    }
+
+    public void mcdriveToShootPowerShot1() {
+        // drive to desired location
+        mcdrive.goToPosition(posePowerShot1.getX(), posePowerShot1.getY());
+        // rotate to face the goal squarely
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
+    }
+
+    //instead of using go to position, use mecanum wheels to move a short distance sideways
+    public void mcdriveToNextPowerShot(){
+        //move using mecanum sideways to next powershot
+        //if blue, moving toward center is negative, constant is already negative
+        mcdrive.odometryMoveRightLeft(flip4Red(DISTANCE_BETWEEN_POWERSHOT));
+        // rotate to face the goal squarely
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
+    }
+    
+    public void mcdriveToShootPowerShot2() {
+        // drive to desired location
+        mcdrive.goToPosition(posePowerShot2.getX(), posePowerShot2.getY());
+        // rotate to face the goal squarely
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
+    }
+    public void mcdriveToShootPowerShot3() {
+        // drive to desired location
+        mcdrive.goToPosition(posePowerShot3.getX(), posePowerShot3.getY());
+        // rotate to face the goal squarely
+        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
 
     //aim and shoot three rings into the high goal
@@ -467,76 +515,36 @@ public class UGoalRobot {
         stopShooterFlywheel();
     }
 
+    //Power shot 1 is furthest power shot from center
+    public void shootPowerShot1(){
+        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
+        shootRing();
+    }
+    //Power shot 2 is in the middle
+    public void shootPowerShot2(){
+        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_2_Y), POWER_SHOT_HEIGHT);
+        shootRing();
+    }
+    //Power shot 3 is closest to center
+    public void shootPowerShot3(){
+        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_3_Y), POWER_SHOT_HEIGHT);
+        shootRing();
+    }
+
     /*
      * Auto Drive To and Shoot Rings into the 3 Power Shots
      */
     public void goShoot3Powershot(){
         //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
         //first powershot
-        driveToShootPowerShot1();
+        mcdriveToShootPowerShot1();
         shootPowerShot1();
         // second powershot
-        driveToNextPowerShot();
+        mcdriveToNextPowerShot();
         shootPowerShot2();
         // third powershot
-        driveToNextPowerShot();
+        mcdriveToNextPowerShot();
         shootPowerShot3();
-    }
-    
-    public void driveToShootPowerShot1() {
-        // drive to desired location
-        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET));
-        // rotate to face the goal squarely
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        // tilt platform for goal height
-        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
-    }
-
-    //instead of using go to position, use mecanum wheels to move a short distance sideways
-    public void driveToNextPowerShot(){
-        //move using mecanum sideways to next powershot
-        //if blue, moving toward center is negative, constant is already negative
-        mcdrive.odometryMoveRightLeft(flip4Red(DISTANCE_BETWEEN_POWERSHOT));
-        // rotate to face the goal squarely
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        // tilt platform for goal height
-        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
-    }
-    
-    public void driveToShootPowerShot2() {
-        // drive to desired location
-        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET));
-        // rotate to face the goal squarely
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        // tilt platform for goal height
-        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_2_Y), POWER_SHOT_HEIGHT);
-    }
-    public void driveToShootPowerShot3() {
-        // drive to desired location
-        mcdrive.goToPosition(ORIGIN, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET));
-        // rotate to face the goal squarely
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        // tilt platform for goal height
-        tiltShooterPlatform(GOALX, flip4Red(POWERSHOT_3_Y), POWER_SHOT_HEIGHT);
-    }
-
-    //Power shot 1 is furthest power shot from center
-    public void shootPowerShot1(){
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
-        shootRing();
-    }
-    //Power shot 2 is in the middle
-    public void shootPowerShot2(){
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_2_Y), POWER_SHOT_HEIGHT);
-        shootRing();
-    }
-    //Power shot 3 is closest to center
-    public void shootPowerShot3(){
-        mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
-        tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_3_Y), POWER_SHOT_HEIGHT);
-        shootRing();
     }
 
 }
