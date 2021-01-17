@@ -74,6 +74,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     // Roadrunner Trajectories
     Trajectory goToShootRings;
+    Trajectory pickupStack;
+    Trajectory goToShoot2;
     Trajectory goToPlaceWobble1;
     Trajectory goToPlaceWobble2;
     Trajectory goToPark;
@@ -188,6 +190,23 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
 
+        pickupStack = rrmdrive.trajectoryBuilder(goToShootRings.end())
+                .splineTo(new Vector2d(-TILE_LENGTH, GOALY), 0)
+                .build();
+
+        goToShoot2 = rrmdrive.trajectoryBuilder(pickupStack.end())
+                .splineTo(new Vector2d(-6, GOALY - ROBOT_SHOOTING_Y_OFFSET), 0)
+                .addTemporalMarker(1.0, new MarkerCallback() {
+                    @Override
+                    public void onMarkerReached() {
+                        // on the way driving to high goal, turn on the flywheel and tilt the platform at suitable angle
+                        robot.runShooterFlywheel();
+                        robot.tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT, ORIGIN, GOALY - ROBOT_SHOOTING_Y_OFFSET);
+                    }
+                })
+                .build();
+
+
         switch (countRingStack) {
             case 4:
                 goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
@@ -195,7 +214,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .build();
 
                 goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end())
-                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 14, 60))
+                        .lineToLinearHeading(new Pose2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 14, Math.PI / 2))
                         .build();
                 break;
             case 1:
@@ -238,7 +257,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
 
         goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
-                .lineTo(new Vector2d(TILE_1_CENTER, GOALY - ROBOT_SHOOTING_Y_OFFSET))
+                .lineToLinearHeading(new Pose2d(TILE_1_CENTER, GOALY - ROBOT_SHOOTING_Y_OFFSET, Math.PI))
                 .build();
     }
 
@@ -279,6 +298,21 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToShootRings);
         }
+        // shooter flywheel and platform tilting is already done during trajectory driving using RR markers
+        robot.shootRingsIntoHighGoal();
+
+        robot.runIntake(1.0);
+
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(pickupStack);
+        }
+
+        robot.stopIntake();
+
+        if (opModeIsActive()) {
+            rrmdrive.followTrajectory(goToShoot2);
+        }
+
         // shooter flywheel and platform tilting is already done during trajectory driving using RR markers
         robot.shootRingsIntoHighGoal();
 
