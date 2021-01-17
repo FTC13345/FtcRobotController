@@ -188,7 +188,7 @@ public class UGoalTeleOp extends LinearOpMode {
 
     public void intake() {
 
-        double power = 0;
+        double power;
         if (gamepad2.right_trigger > 0) { // intake is sucking the ring in to the robot
             power = gamepad2.right_trigger;
         } else if (gamepad2.left_trigger > 0) { // intake is ejecting the ring out of the robot
@@ -227,6 +227,39 @@ public class UGoalTeleOp extends LinearOpMode {
              gamepad2DpadDebounce = true;
         } else {
             gamepad2DpadDebounce = false;
+        }
+
+        if (gamepad2.right_stick_y != 0) {
+            //joystick gives a negative value when pushed up, we want the wobbelArm to go up when positive
+            double power = -gamepad2.right_stick_y;
+            // Square the number but retain the sign to convert to logarithmic scale
+            // scale the range to 0.15 <= abs(power) <= 1.0 and preserve the sign
+            power = Math.signum(power) * (0.15 + (0.85 * power * power));
+            int pos = robot.wobblePickupArm.getCurrentPosition();
+
+            //if stops are being ignored then simply apply the joystick power to the motor
+            if (bIgnoreStops) {
+                telemetry.addData("Wobble ", "at %d, IGNORING STOPS", pos);
+                robot.moveWobbleArm(power);
+            }
+            // move upwards direction but respect the stop to avoid mechanical damage
+            else if (power > 0 && pos < UGoalRobot.WOBBLE_ARM_MAX) {
+                telemetry.addData("Wobble Up ", "power %.2f | pos %d", power, pos);
+                robot.moveWobbleArm(power);
+            }
+            // move downwards direction but respect the stop to avoid mechanical damage
+            else if (power < 0 && pos > UGoalRobot.WOBBLE_ARM_DOWN) {
+                telemetry.addData("Wobble Down ", "power %.2f | pos %d", power, pos);
+                robot.moveWobbleArm(power);
+            }
+            // DO NOT remove the following line, we need to call stopWobbleArm() despite power is non-zero, when STOPS are reached
+            else {
+                robot.stopWobbleArm();
+            }
+        }
+        // DO NOT remove the following line, we need to call stopWobbleArm() when user releases the joystick
+        else {
+            robot.stopWobbleArm();
         }
     }
 

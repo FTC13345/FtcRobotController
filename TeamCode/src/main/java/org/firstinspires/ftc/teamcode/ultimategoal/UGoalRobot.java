@@ -38,6 +38,7 @@ public class UGoalRobot {
 
     static final int        WOBBLE_ARM_TICKS_PER_REVOLUTION = (int) 753.2*2;  // for 360 degree of rotation. 5202 Series Yellow Jacket Planetary Gear Motor encoder ticks per rev * gear ratio
     static final int        WOBBLE_ARM_ERROR_MARGIN         = 5 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;    // 20
+    static final int        WOBBLE_ARM_MAX                  = 180 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 753
     static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 690
     static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 418
     static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 313
@@ -232,6 +233,13 @@ public class UGoalRobot {
         myOpMode.sleep(150);
     }
 
+    public void moveWobbleArm(double speed) {
+        wobblePickupArm.setPower(speed);
+    }
+    public void stopWobbleArm() {
+        wobblePickupArm.setPower(MecabotDrive.MOTOR_STOP_SPEED);
+    }
+
     public void setWobbleArmUp(){
         goToWobblePos(WOBBLE_ARM_UP);
     }
@@ -283,7 +291,7 @@ public class UGoalRobot {
     public void moveWobbleArmDownwards() {
         int wobblePosition = wobblePickupArm.getCurrentPosition();
         if (wobblePosition > WOBBLE_ARM_HORIZONTAL + WOBBLE_ARM_ERROR_MARGIN) {
-            setWobbleArmHorizontal();
+            setWobbleArmRaised();
         } else if (wobblePosition > WOBBLE_ARM_PICKUP + WOBBLE_ARM_ERROR_MARGIN) {
             setWobbleArmPickup();
         } else if (wobblePosition > WOBBLE_ARM_DOWN + UGoalRobot.WOBBLE_ARM_ERROR_MARGIN) {
