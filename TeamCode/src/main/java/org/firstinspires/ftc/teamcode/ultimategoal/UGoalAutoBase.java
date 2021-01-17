@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import android.annotation.SuppressLint;
+
 import java.util.List;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
@@ -55,13 +58,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             "AaWyywn/////AAABmaAngwd4NkiEkXFbiZ1MImx0IwrsJG3V9OjzrHWGA6QPXrxSP0CV2b4p72Y9v1dF1KXuTQn6Dffd9kKnvaVI6TpogRmvX8l9Z3njpjFwTmuhKY4WPXpqt3LeybKxPOEKo3vwXMy8NArm48Cqv/PfjLO5F9aCzo/U7jT738LvSBGsRuIHa+5OfohJeUwIqPDrmFb0TTysRtDsE+rbecEhs0yQqs5YJWKJ8IcOoErWDx+ba3yAvHSd51fjsXEfGNNUIkFHHHm+cLWCIIiZlj5gVSO+t4oKtDxv9Ev43NykdZASzPXiFgWSxmYDvYet48AjdMVMt6NUDOh08eAwCe+rUq0UMdqJCK6Ve4JftfakLu0S";
 
     /**
-     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
+     * the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
     private VuforiaLocalizer vuforia;
 
     /**
-     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
+     * the variable we will use to store our instance of the TensorFlow Object
      * Detection engine.
      */
     private TFObjectDetector tfod;
@@ -78,7 +81,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     /*
      * Abstract methods, must be implemented by the sub-classes
      */
-    public abstract void setOdometryStartingPosition();
+    public abstract void setPoseStart();
 
     public abstract String getColorString();
 
@@ -119,7 +122,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         mcdrive = robot.getDrive();
         globalPosition = mcdrive.getOdometry();
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
-        setOdometryStartingPosition();
+        setPoseStart();
 
         // start printing messages to driver station asap but only after hardware is initialized and odometry is running
         setupTelemetry();
@@ -162,7 +165,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     public void runFullAutoProgram() {
 
         // this is already set in init() but in case someone moved the robot location manually.
-        setOdometryStartingPosition();
+        setPoseStart();
 
         // run full auto using Roadrunner drive. Assumption that buildTrajectories() has been called during init()
         fullAutoRoadRunner();
@@ -297,7 +300,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     }
 
-  /*****************************
+    /*
+     ****************************
      * Image Recognition Methods
      ****************************/
 
@@ -337,10 +341,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         initVuforia();
         initTfod();
 
-        /**
-         * Activate TensorFlow Object Detection before we wait for the start command.
-         * Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
-         **/
+        // Activate TensorFlow Object Detection before we wait for the start command.
+        // Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
         if (tfod != null) {
             tfod.activate();
 
@@ -362,6 +364,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * @param timeout Timeout value in seconds
      * @return  4, 1, or 0 depending on the number of rings
      */
+    @SuppressLint("DefaultLocale")
     public int runRingStackDetection(double timeout) {
 
         actionString = "Ring Stack Detection";

@@ -66,6 +66,13 @@ public class RRMecanumDrive extends MecanumDrive {
 
     public static int POSE_HISTORY_LIMIT = 100;
 
+    /**
+     * Simple static field serving as a storage medium for the bot's pose.
+     * This allows different classes/opmodes to set and read from a central source of truth.
+     * A static field allows data to persist between opmodes (important for auto to teleop)
+     */
+    public static Pose2d savedPose = new Pose2d();
+
     public enum Mode {
         IDLE,
         TURN,
@@ -232,6 +239,7 @@ public class RRMecanumDrive extends MecanumDrive {
 
     public void update() {
         updatePoseEstimate();
+        savedPose = getPoseEstimate();
         myOpMode.telemetry.update();
 
         Pose2d currentPose = getPoseEstimate();

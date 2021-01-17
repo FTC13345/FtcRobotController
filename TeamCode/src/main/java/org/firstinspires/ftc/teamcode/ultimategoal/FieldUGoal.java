@@ -15,11 +15,9 @@ public class FieldUGoal {
     // therefore lot of robot movement calculations are affected by which color you are on
     enum AllianceColor { BLUE, RED}
     public static final double  ANGLE_POS_X_AXIS = 0.0;
-    public static final double  ANGLE_POS_Y_AXIS = 90.0;
-    public static final double  ANGLE_NEG_X_AXIS = 180.0;
-    public static final double  ANGLE_NEG_Y_AXIS = -90.0;
-
-
+    public static final double  ANGLE_POS_Y_AXIS = Math.PI / 2;
+    public static final double  ANGLE_NEG_X_AXIS = Math.PI;
+    public static final double  ANGLE_NEG_Y_AXIS = -ANGLE_POS_Y_AXIS;
 
     // field distances between objects
     public static final double     TILE_LENGTH                 = 23.5;
@@ -34,6 +32,9 @@ public class FieldUGoal {
     public static final double     TILE_2_CENTER               = TILE_1_CENTER + TILE_LENGTH;
     public static final double     TILE_3_CENTER               = TILE_2_CENTER + TILE_LENGTH;
 
+    public static final double     poseStartX = -TILE_3_FROM_ORIGIN + ROBOT_RADIUS;
+    public static final double     poseStartY = TILE_1_FROM_ORIGIN + ROBOT_RADIUS;
+    public static final double     poseStartH = ANGLE_POS_X_AXIS;
 
     public static final double     TARGET_ZONE_A_X             = TILE_1_CENTER;
     public static final double     TARGET_ZONE_A_Y             = TILE_3_CENTER;

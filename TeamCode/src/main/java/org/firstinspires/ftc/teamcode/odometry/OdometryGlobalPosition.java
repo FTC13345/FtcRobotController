@@ -155,12 +155,12 @@ public class OdometryGlobalPosition implements Runnable {
      *
      * @param x X-coordinate value in inches, -61 <= x <= 61
      * @param y Y-coordinate value in inches, -61 <= y <= 61
-     * @param deg orientation angle in Degrees, -180 < deg <= 180, measure from X-Axis, CCW is positive and CW is negative
+     * @param heading orientation angle in Radians, -PI/2 < deg <= +PI/2, measure from X-Axis, CCW is positive and CW is negative
      */
-    public void initGlobalPosition(double x, double y, double deg) {
+    public void setGlobalPosition(double x, double y, double heading) {
         robotGlobalX = x * ENCODER_COUNT_PER_INCH;
         robotGlobalY = y * ENCODER_COUNT_PER_INCH;
-        robotAngleRad = Math.toRadians(deg);
+        robotAngleRad = heading;
     }
     /**
      * Returns the robot's global orientation in Radians unit

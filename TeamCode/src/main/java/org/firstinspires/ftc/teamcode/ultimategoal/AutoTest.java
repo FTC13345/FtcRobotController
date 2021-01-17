@@ -11,10 +11,9 @@ import java.util.List;
 
 @Autonomous(name="AutoTest")
 public class AutoTest extends UGoalAutoBase {
-    @Override
-    public void setOdometryStartingPosition() {
 
-    }
+    @Override
+    public void setPoseStart() { }
 
     @Override
     public String getColorString() {
@@ -22,7 +21,7 @@ public class AutoTest extends UGoalAutoBase {
     }
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
 
     }
 }

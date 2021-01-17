@@ -13,12 +13,11 @@ import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.TeleOpDriver;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
+import static org.firstinspires.ftc.teamcode.drive.RRMecanumDrive.savedPose;
 
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
 public class UGoalTeleOp extends LinearOpMode {
-
-    private boolean bIgnoreStops = false;
 
     /* Declare OpMode members. */
     RRMecanumDrive rrmdrive;
@@ -33,16 +32,15 @@ public class UGoalTeleOp extends LinearOpMode {
     private boolean gamepad2ADebounce = false;
     private boolean gamepad2DpadDebounce = false;
 
-    //Wobble Pos tracker
-    int wobblePos = 0;
+    private boolean bIgnoreStops = false;
 
-    void setOdometryStartingPosition() {
+    void setPoseStart() {
         // This code assumes Robot starts at a position as follows:
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
-        rrmdrive.setPoseEstimate(new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS));
+        globalPosition.setGlobalPosition(poseStartX, poseStartY, poseStartH);
+        rrmdrive.setPoseEstimate(new Pose2d(poseStartX, poseStartY, poseStartH));
 
         // Enable this temporarily for Shooter Platform Tilt debugging
         //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_Y_OFFSET, ANGLE_POS_X_AXIS);
@@ -64,9 +62,11 @@ public class UGoalTeleOp extends LinearOpMode {
         robot = new UGoalRobot(hardwareMap, rrmdrive,this);
         mcdrive = robot.getDrive();
         driver = new TeleOpDriver(this, rrmdrive, mcdrive);
-
         globalPosition = mcdrive.getOdometry();
-        setOdometryStartingPosition();
+
+        // set the starting Pose same as last saved Pose from the AUTO Opmode
+        rrmdrive.setPoseEstimate(savedPose);
+        globalPosition.setGlobalPosition(savedPose.getX(), savedPose.getY(), savedPose.getHeading());
 
         setupTelemetry();
         telemetry.addData(">", "Hardware initialized");
@@ -80,8 +80,6 @@ public class UGoalTeleOp extends LinearOpMode {
         // start the thread which handles driver controls on gamepad1
         driver.start();
 
-        // set starting position again, sometimes players move the robot between init() and start()
-        setOdometryStartingPosition();
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             setup();
@@ -121,7 +119,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.resetWobblePickupArmEncoder();
             mcdrive.resetDriveEncoder();
             globalPosition.resetOdometryEncoder();
-            setOdometryStartingPosition();
+            setPoseStart();
         }
     }
 

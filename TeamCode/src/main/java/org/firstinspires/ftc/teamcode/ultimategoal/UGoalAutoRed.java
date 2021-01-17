@@ -9,6 +9,9 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_POS_X
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ROBOT_RADIUS;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_1_FROM_ORIGIN;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_3_FROM_ORIGIN;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStartH;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStartX;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStartY;
 
 
 @Autonomous(name="RED Full Auto", group="QT")
@@ -21,18 +24,18 @@ public class UGoalAutoRed extends UGoalAutoBase {
     }
 
     @Override
-    public void setOdometryStartingPosition() {
+    public void setPoseStart() {
 
         // This code assumes Robot starts at a position as follows:
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.initGlobalPosition(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, -TILE_1_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
-        rrmdrive.setPoseEstimate(new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, -TILE_1_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS));
+        globalPosition.setGlobalPosition(poseStartX, poseStartY, poseStartH);
+        rrmdrive.setPoseEstimate(new Pose2d(poseStartX, poseStartY, poseStartH));
     }
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
 
         FieldUGoal.aColor = AllianceColor.RED;
 
