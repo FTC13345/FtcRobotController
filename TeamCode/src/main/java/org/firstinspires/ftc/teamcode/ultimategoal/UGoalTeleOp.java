@@ -39,8 +39,8 @@ public class UGoalTeleOp extends LinearOpMode {
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.setGlobalPosition(poseStartX, poseStartY, poseStartH);
-        rrmdrive.setPoseEstimate(new Pose2d(poseStartX, poseStartY, poseStartH));
+        globalPosition.setGlobalPosition(poseStartX, poseStartY, ANGLE_POS_X_AXIS);
+        rrmdrive.setPoseEstimate(poseStart);
 
         // Enable this temporarily for Shooter Platform Tilt debugging
         //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_Y_OFFSET, ANGLE_POS_X_AXIS);

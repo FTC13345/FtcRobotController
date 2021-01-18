@@ -31,6 +31,12 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
         else if (gamepad1.b) {
             mcdrive.gyroRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_SLOW, MecabotDrive.TIMEOUT_SHORT);
         }
+        else if (gamepad1.x) {      // Reset odometry values at the high goal shooting position
+            rrmdrive.setPoseEstimate(poseHighGoal);
+        }
+        else if (gamepad1.y) {      // Reset odometry values aligned against perimeter wall
+            rrmdrive.setPoseEstimate(poseResetOdometry);
+        }
     }
 
     @Override

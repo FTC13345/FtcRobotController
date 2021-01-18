@@ -5,14 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.AllianceColor;
 
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_POS_X_AXIS;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ROBOT_RADIUS;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_1_FROM_ORIGIN;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_3_FROM_ORIGIN;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStartH;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStartX;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStartY;
-
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 @Autonomous(name="RED Full Auto", group="QT")
 
@@ -30,8 +23,8 @@ public class UGoalAutoRed extends UGoalAutoBase {
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.setGlobalPosition(poseStartX, poseStartY, poseStartH);
-        rrmdrive.setPoseEstimate(new Pose2d(poseStartX, poseStartY, poseStartH));
+        globalPosition.setGlobalPosition(poseStartX, poseStartY, ANGLE_POS_X_AXIS);
+        rrmdrive.setPoseEstimate(poseStart);
     }
 
     @Override
