@@ -24,18 +24,7 @@ import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
-import static org.firstinspires.ftc.teamcode.ultimategoal.UGoalRobot.ROBOT_SHOOTING_Y_OFFSET;
 
-
-
-/**
- * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
- * Each floor tile with all side tabs cut off is 22.75 inch square
- * The tabs add 0.75 to tile width on each side.
- * Field width = 23.5 * 6 - 0.75 = 70.25 each side square
- *
- * Robot is 18x18 square. Robot (x,y) position is at the center of the robot.
- */
 
 public abstract class UGoalAutoBase extends LinearOpMode {
 
@@ -181,8 +170,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
 
-        Vector2d wobble1end = new Vector2d();
-        Pose2d   wobble2end = new Pose2d();
+        Vector2d wobble1end;
+        Pose2d   wobble2end;
         switch (countRingStack) {
             case 4:
                 wobble1end = new Vector2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 8);

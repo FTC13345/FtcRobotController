@@ -20,13 +20,6 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 public class UGoalRobot {
 
-    // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
-    // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
-    // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
-    // actually position on the field to the right of the intended Target Y coordinate
-    static final double     ROBOT_SHOOTING_Y_OFFSET     = 10.0; // inches
-    static final long       RING_SHOOTING_INTERVAL      = 1000; // milliseconds
-
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
     static final double     INTAKE_ASMBLY_DOWN          = Servo.MAX_POSITION; //max is 135 degrees, all the way down

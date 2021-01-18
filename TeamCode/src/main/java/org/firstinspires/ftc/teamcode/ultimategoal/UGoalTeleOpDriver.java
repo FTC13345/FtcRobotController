@@ -41,17 +41,17 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
             setAutoDriving();
             robot.rrdriveToShootTarget(Target.HIGHGOAL);
         }
-        if (gamepad1.dpad_left) {
-            setAutoDriving();
-            robot.rrdriveToShootTarget(Target.POWERSHOT_1);
-        }
         if (gamepad1.dpad_down) {
             setAutoDriving();
-            robot.rrdriveToShootTarget(Target.POWERSHOT_2);
+            robot.rrdriveToShootTarget(Target.POWERSHOT_3);
+        }
+        if (gamepad1.dpad_left) {
+            setAutoDriving();
+            rrmdrive.turn(ROBOT_TURN_SMALL);    // left turn is positive angle delta
         }
         if (gamepad1.dpad_right) {
             setAutoDriving();
-            robot.rrdriveToShootTarget(Target.POWERSHOT_3);
+            rrmdrive.turn(-ROBOT_TURN_SMALL);    // right turn is negative angle delta
         }
     }
 

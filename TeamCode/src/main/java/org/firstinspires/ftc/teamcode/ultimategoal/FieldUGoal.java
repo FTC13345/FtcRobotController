@@ -1,17 +1,20 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
-
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.geometry.Vector2d;
-
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 
-import static org.firstinspires.ftc.teamcode.ultimategoal.UGoalRobot.ROBOT_SHOOTING_Y_OFFSET;
-
-/** Main Configuration for Ultimate Goal Challenge game field
+/* Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
  *  X Axis is parallel to red alliance wall with positive values towards the tower goals and powershots
  *  Y Axis is perpendicular to red alliance wall with positive values towards the blue alliance.
+ */
+/**
+ * Each floor tile is 23.5 inch square (counting tabs on one side and not on the other side)
+ * Each floor tile with all side tabs cut off is 22.75 inch square
+ * The tabs add 0.75 to tile width on each side.
+ * Field width = 23.5 * 6 - 0.75 = 70.25 each side square
+ *
+ * Robot is 18x18 square. Robot (x,y) position is at the center of the robot.
  */
 
 public class FieldUGoal {
@@ -37,10 +40,6 @@ public class FieldUGoal {
     public static final double     TILE_2_CENTER               = TILE_1_CENTER + TILE_LENGTH;
     public static final double     TILE_3_CENTER               = TILE_2_CENTER + TILE_LENGTH;
 
-    public static final double     poseStartX = -TILE_3_FROM_ORIGIN + ROBOT_RADIUS;
-    public static final double     poseStartY = TILE_1_FROM_ORIGIN + ROBOT_RADIUS;
-    public static final double     poseStartH = ANGLE_POS_X_AXIS;
-
     public static final double     TARGET_ZONE_A_X             = TILE_1_CENTER;
     public static final double     TARGET_ZONE_A_Y             = TILE_3_CENTER;
     public static final double     TARGET_ZONE_B_X             = TILE_2_CENTER;
@@ -61,11 +60,23 @@ public class FieldUGoal {
     public static final double POWERSHOT_1_Y            = 19;
     public static final double POWERSHOT_2_Y            = POWERSHOT_1_Y-7.5;
     public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-7.5;
-    static final double     DISTANCE_BETWEEN_POWERSHOT  = -7.5;
+    public static final double DISTANCE_BETWEEN_POWERSHOT  = -7.5;
+
+    // Robot function or game play specific values, maybe these need to do into a different file
+    public static final long        RING_SHOOTING_INTERVAL      = 1000; // milliseconds
+    public static final double      ROBOT_TURN_SMALL            = 0.05; // 0.05 Radians = 2.86 degrees
+    // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
+    // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
+    // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
+    // actually position on the field to the right of the intended Target Y coordinate
+    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 10.0; // inches
 
     enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3}
 
     // record position that we need to return to repeatedly
+    public static final double     poseStartX = -TILE_3_FROM_ORIGIN + ROBOT_RADIUS;
+    public static final double     poseStartY = TILE_1_FROM_ORIGIN + ROBOT_RADIUS;
+    public static final double     poseStartH = ANGLE_POS_X_AXIS;
     public static Pose2d poseStart = new Pose2d(poseStartX, poseStartY, poseStartH);
     public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
