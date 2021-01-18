@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -23,7 +24,7 @@ public class UGoalRobot {
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
-    static final double     ROBOT_SHOOTING_Y_OFFSET     = 8.5; // inches
+    static final double     ROBOT_SHOOTING_Y_OFFSET     = 10.0; // inches
     static final long       RING_SHOOTING_INTERVAL      = 1000; // milliseconds
 
     //constants
@@ -44,7 +45,7 @@ public class UGoalRobot {
     static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 690
     static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 418
     static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 313
-    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 251
+    static final int        WOBBLE_ARM_PICKUP               = 45 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 188
     static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
@@ -158,11 +159,7 @@ public class UGoalRobot {
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
         waitUntilMotorBusy(motor);
-        myOpMode.sleep(1500);
-        // TEMP: the wobble arm is not moving at all randomly, suspecting a timeout issue, therefore disable the STOP after timeout
-        // TEMP: If the motor has reached POSITION without timeout, then the stop should not be required anyway
-        //motor.setPower(MecabotDrive.MOTOR_STOP_SPEED);
-        //motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*
@@ -270,7 +267,10 @@ public class UGoalRobot {
         setWobbleFingerOpen();
         setWobbleArmPickup();
         setWobbleFingerClosed();
-        setWobbleArmHorizontal();
+        if (myOpMode.opModeIsActive()) {
+            myOpMode.sleep(1000); // allow time for finger to grip the wobble
+            setWobbleArmHorizontal();
+        }
     }
     public void deliverWobble() {
         setWobbleFingerOpen();
@@ -336,6 +336,25 @@ public class UGoalRobot {
         return Math.toDegrees(heading);
     }
 
+    /*
+     * Shooter Platform Tilt control methods
+     */
+    public void tiltShooterPlatform(Target target) {
+        double targetY = GOALY;
+        double targetHeight = POWER_SHOT_HEIGHT;
+        switch(target) {
+            case HIGHGOAL: targetHeight = HIGH_GOAL_HEIGHT;
+                break;
+            case POWERSHOT_1: targetY = POWERSHOT_1_Y;
+                break;
+            case POWERSHOT_2: targetY = POWERSHOT_2_Y;
+                break;
+            case POWERSHOT_3: targetY = POWERSHOT_3_Y;
+                break;
+        }
+        tiltShooterPlatform(GOALX, targetY, targetHeight);
+    }
+
     /**
      * This method tilts the shooter platform according to the detected robot current position on the field
      * for shooting rings at the specified target.
@@ -345,10 +364,8 @@ public class UGoalRobot {
      * @param targetHeight  Height of target from the field floor
      */
     public void tiltShooterPlatform(double targetX, double targetY, double targetHeight) {
-        double robotX = rrmdrive.getPoseEstimate().getX();
-        double robotY = rrmdrive.getPoseEstimate().getY();
 
-        tiltShooterPlatform(targetX, targetY, targetHeight, robotX, robotY);
+        tiltShooterPlatform(targetX, targetY, targetHeight, rrmdrive.getPoseEstimate().vec());
     }
 
     /**
@@ -358,13 +375,12 @@ public class UGoalRobot {
      * @param targetX   X coordinate of target location
      * @param targetY   Y coordinate of target location
      * @param targetHeight  Height of target from the field floor
-     * @param robotX    X coordinate of the robot
-     * @param robotY    Y coordinate of the robot
+     * @param robotPosition     X,Y coordinates of the robot on the field
      */
-    public void tiltShooterPlatform(double targetX, double targetY, double targetHeight, double robotX, double robotY) {
+    public void tiltShooterPlatform(double targetX, double targetY, double targetHeight, Vector2d robotPosition) {
 
-        double xDiff = targetX - robotX;
-        double yDiff = targetY - (robotY + ROBOT_SHOOTING_Y_OFFSET);  // offset is compensation for robot shooting curved path
+        double xDiff = targetX - robotPosition.getX();
+        double yDiff = targetY - (robotPosition.getY() + ROBOT_SHOOTING_Y_OFFSET);  // offset is compensation for robot shooting curved path
         double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
 
         // OPTION: Enable the code line below if/when Odometry is not working reliably and we want to ingore robot position in calculation of tilt angle.
@@ -387,7 +403,7 @@ public class UGoalRobot {
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 1;    // record value before clipping for telemetry printout, do not delete this line
+        shooterPlatformTiltAngle = tiltAngle + 1.50;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
@@ -454,9 +470,11 @@ public class UGoalRobot {
                 break;
         }
         Trajectory goToShoot = rrmdrive.trajectoryBuilder(poseStart)
-                .lineToLinearHeading(poseEnd)
+                .splineToLinearHeading(poseEnd, ANGLE_POS_X_AXIS)
                 .build();
-        rrmdrive.followTrajectoryAsync(goToShoot);
+        rrmdrive.followTrajectory(goToShoot);
+        // tilt shooter platform corresponding to both robot current Pose and the target
+        tiltShooterPlatform(target);
     }
 
     /*****************************

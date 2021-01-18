@@ -145,21 +145,11 @@ public class UGoalTeleOp extends LinearOpMode {
         }
         //auto aim for High Goal
         if (gamepad2.x && !gamepad2.start) {
-// TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
-//            double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, GOALY);
-//            telemetry.addData("Rotate to Angle ", "%2.2f for High Goal", targetAngle);
-//            mcdrive.rotateToHeading(targetAngle);
-
-            robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT);
+            robot.tiltShooterPlatform(Target.HIGHGOAL);
         }
         //auto aim for Powershot
         if (gamepad2.y) {
-// TEMPORARY because odometry is not working, do not do rotation towards Goals, driver will do manually using other controls
-//            double targetAngle = robot.calculateRobotHeadingToShoot(GOALX, POWERSHOT_1_Y);
-//            telemetry.addData("Rotate to Angle ", "%2.2f for PowerShot 1", targetAngle);
-//            robot.rotateToHeading(targetAngle);
-
-            robot.tiltShooterPlatform(GOALX, POWERSHOT_1_Y, POWER_SHOT_HEIGHT);
+            robot.tiltShooterPlatform(Target.POWERSHOT_1);
         }
 
         if (gamepad2.dpad_right) {

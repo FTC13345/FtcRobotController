@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.acmerobotics.roadrunner.util.Angle;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
@@ -23,31 +24,34 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
     @Override
     public void  driveGameTeleOp() {
         if (gamepad1.a) {
-            mcdrive.odometryRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_DEFAULT, MecabotDrive.TIMEOUT_ROTATE);
+            // MecabotDrive rotation replaced by RoadRunner rotation. OdometryGlobalPositio is not working reliably
+            // mcdrive.odometryRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_DEFAULT, MecabotDrive.TIMEOUT_ROTATE);
+            rrmdrive.turn(Angle.normDelta(ANGLE_POS_X_AXIS - rrmdrive.getPoseEstimate().getHeading()));
         }
         else if (gamepad1.b) {
-            mcdrive.gyroRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_DEFAULT, MecabotDrive.TIMEOUT_ROTATE);
+            mcdrive.gyroRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_SLOW, MecabotDrive.TIMEOUT_SHORT);
         }
     }
 
     @Override
     public void  driveGameAuto() {
 
+        // NOTE NOTE: The shooting platform tilt is included at the end of auto driving
         if (gamepad1.dpad_up) {
-            robot.rrdriveToShootTarget(Target.HIGHGOAL);
             setAutoDriving();
+            robot.rrdriveToShootTarget(Target.HIGHGOAL);
         }
         if (gamepad1.dpad_left) {
-            robot.rrdriveToShootTarget(Target.POWERSHOT_1);
             setAutoDriving();
+            robot.rrdriveToShootTarget(Target.POWERSHOT_1);
         }
         if (gamepad1.dpad_down) {
-            robot.rrdriveToShootTarget(Target.POWERSHOT_2);
             setAutoDriving();
+            robot.rrdriveToShootTarget(Target.POWERSHOT_2);
         }
         if (gamepad1.dpad_right) {
-            robot.rrdriveToShootTarget(Target.POWERSHOT_3);
             setAutoDriving();
+            robot.rrdriveToShootTarget(Target.POWERSHOT_3);
         }
     }
 

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 
@@ -51,7 +52,7 @@ public class FieldUGoal {
     public static final double HIGH_GOAL_HEIGHT = 35.5;
     public static final double MED_GOAL_HEIGHT = 27;
     public static final double LOW_GOAL_HEIGHT = 17;
-    public static final double POWER_SHOT_HEIGHT = 30;
+    public static final double POWER_SHOT_HEIGHT = 33;
 
     public static final double GOALX                    = TILE_3_FROM_ORIGIN;
     public static final double GOALY                    = TILE_2_CENTER;
@@ -61,6 +62,16 @@ public class FieldUGoal {
     public static final double POWERSHOT_2_Y            = POWERSHOT_1_Y-7.5;
     public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-7.5;
     static final double     DISTANCE_BETWEEN_POWERSHOT  = -7.5;
+
+    enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3}
+
+    // record position that we need to return to repeatedly
+    public static Pose2d poseStart = new Pose2d(poseStartX, poseStartY, poseStartH);
+    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_FROM_ORIGIN), ANGLE_NEG_X_AXIS);
 
     public static AllianceColor aColor = AllianceColor.BLUE;
 
@@ -77,13 +88,5 @@ public class FieldUGoal {
         }
         return value;
     }
-
-    enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3}
-
-    // record position that we need to return to repeatedly
-    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 4.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 4.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 4.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
 
 }
