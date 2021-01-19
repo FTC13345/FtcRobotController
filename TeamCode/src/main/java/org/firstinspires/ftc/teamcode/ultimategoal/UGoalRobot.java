@@ -38,7 +38,7 @@ public class UGoalRobot {
     static final int        WOBBLE_ARM_UP                   = 165 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 690
     static final int        WOBBLE_ARM_RAISED               = 100 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;  // 418
     static final int        WOBBLE_ARM_HORIZONTAL           = 75 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 313
-    static final int        WOBBLE_ARM_PICKUP               = 45 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 188
+    static final int        WOBBLE_ARM_PICKUP               = 60 * WOBBLE_ARM_TICKS_PER_REVOLUTION / 360;   // 251
     static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
@@ -49,8 +49,6 @@ public class UGoalRobot {
 
     // status variables
     double shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
-    // Convertion of oval rotation (degrees) to motor encoder ticks
-//    int ovalRotationTicks = 0;
 
     // mecanum drive train
     private RRMecanumDrive rrmdrive;
@@ -65,8 +63,6 @@ public class UGoalRobot {
     // THis is a motor driven by Spark Mini controller which takes Servo PWM input
     // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
     public DcMotorSimple flywheelMotor = null;
-    // This is unused due to removal of lift hardware, but we do not want to remove lot of code, so we'll declare the variable
-    public DcMotor liftMotor = null;
 
     //Servos
     public Servo angleServo = null;
@@ -152,7 +148,10 @@ public class UGoalRobot {
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
         waitUntilMotorBusy(motor);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // TODO: Verify whether wobble arm reaches target position before timeout and
+        //  we can apply brake and change RUN_MODE without any adverse affects.
+        //motor.setPower(MecabotDrive.DRIVE_SPEED_BRAKE);
+        //motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*
@@ -278,6 +277,8 @@ public class UGoalRobot {
         int wobblePosition = wobblePickupArm.getCurrentPosition();
         if (wobblePosition < WOBBLE_ARM_PICKUP - WOBBLE_ARM_ERROR_MARGIN){
             setWobbleArmPickup();
+        } else if (wobblePosition < WOBBLE_ARM_RAISED - WOBBLE_ARM_ERROR_MARGIN) {
+            setWobbleArmRaised();
         } else if (wobblePosition < WOBBLE_ARM_UP - WOBBLE_ARM_ERROR_MARGIN) {
             setWobbleArmUp();
         }
@@ -285,7 +286,7 @@ public class UGoalRobot {
 
     public void moveWobbleArmDownwards() {
         int wobblePosition = wobblePickupArm.getCurrentPosition();
-        if (wobblePosition > WOBBLE_ARM_HORIZONTAL + WOBBLE_ARM_ERROR_MARGIN) {
+        if (wobblePosition > WOBBLE_ARM_RAISED + WOBBLE_ARM_ERROR_MARGIN) {
             setWobbleArmRaised();
         } else if (wobblePosition > WOBBLE_ARM_PICKUP + WOBBLE_ARM_ERROR_MARGIN) {
             setWobbleArmPickup();

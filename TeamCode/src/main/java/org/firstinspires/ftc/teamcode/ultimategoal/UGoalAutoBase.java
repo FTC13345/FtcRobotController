@@ -63,11 +63,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     // Roadrunner Trajectories
     Trajectory pickupWobble;
-    Trajectory goToShootRings;
+    Trajectory shootRings1;
+    Trajectory placeWobble1;
+    Trajectory placeWobble2;
     Trajectory pickupStack;
-    Trajectory goToShoot2;
-    Trajectory goToPlaceWobble1;
-    Trajectory goToPlaceWobble2;
+    Trajectory shootRings2;
     Trajectory goToPark;
 
     /*
@@ -154,9 +154,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      ****************************/
     private void buildTrajectories() {
         pickupWobble = rrmdrive.trajectoryBuilder(poseStart)
-                .strafeLeft(5.0).build();
+                .strafeLeft(7.0).build();
 
-        goToShootRings = rrmdrive.trajectoryBuilder(pickupWobble.end())
+        shootRings1 = rrmdrive.trajectoryBuilder(pickupWobble.end())
                 .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, 20), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
                 .splineTo(poseHighGoal.vec(), ANGLE_POS_X_AXIS)  // arrive at high goal shooting position
                 .addTemporalMarker(1.0, new MarkerCallback() {
@@ -188,20 +188,33 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 break;
         }
 
-        goToPlaceWobble1 = rrmdrive.trajectoryBuilder(goToShootRings.end())
+        placeWobble1 = rrmdrive.trajectoryBuilder(shootRings1.end())
                 .lineTo(wobble1end)
                 .build();
 
-        goToPlaceWobble2 = rrmdrive.trajectoryBuilder(goToPlaceWobble1.end())
+        placeWobble2 = rrmdrive.trajectoryBuilder(placeWobble1.end())
                 .lineToLinearHeading(wobble2end)
+                .addTemporalMarker(1.0, new MarkerCallback() {
+                    @Override
+                    public void onMarkerReached() {
+                        robot.setWobbleArmDown();
+                    }
+                })
                 .build();
 
-        pickupStack = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end(), true)
+        pickupStack = rrmdrive.trajectoryBuilder(placeWobble2.end(), true)
                 .splineTo(new Vector2d(ORIGIN, GOALY), ANGLE_NEG_X_AXIS)        // align to pickup rings stack
                 .splineTo(new Vector2d(-TILE_LENGTH, GOALY), ANGLE_NEG_X_AXIS)  // location of rings stack
+                .addTemporalMarker(1.0, new MarkerCallback() {
+                    @Override
+                    public void onMarkerReached() {
+                        // Run intake and drive to pickup rings from ring stack
+                        robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
+                    }
+                })
                 .build();
 
-        goToShoot2 = rrmdrive.trajectoryBuilder(pickupStack.end())
+        shootRings2 = rrmdrive.trajectoryBuilder(pickupStack.end())
                 .splineTo(poseHighGoal.vec(), ANGLE_POS_X_AXIS)
                 .addTemporalMarker(0.1, new MarkerCallback() {
                     @Override
@@ -213,7 +226,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
 
-        goToPark = rrmdrive.trajectoryBuilder(goToPlaceWobble2.end())
+        Pose2d lastTask = (countRingStack > 0) ? shootRings2.end() : placeWobble2.end();
+        goToPark = rrmdrive.trajectoryBuilder(lastTask)
                 .lineToLinearHeading(posePark)
                 .build();
     }
@@ -240,39 +254,37 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             sleep(1000); // allow time for finger to grip the wobble
         }
-        robot.setWobbleArmHorizontal(); // raise the wobble to carry away
+        robot.setWobbleArmRaised(); // raise the wobble to carry away
 
         // drive to launch line and shoot rings into high goal
         if (opModeIsActive()) {
-            rrmdrive.followTrajectory(goToShootRings);
+            rrmdrive.followTrajectory(shootRings1);
         }
         robot.shootRingsIntoHighGoal();
 
         // drive to Target Zone and deliver the 2 wobbles
         if (opModeIsActive()) {
-            rrmdrive.followTrajectory(goToPlaceWobble1);
+            rrmdrive.followTrajectory(placeWobble1);
         }
         robot.deliverWobbleRaiseArm();
         if (opModeIsActive()) {
-            rrmdrive.followTrajectory(goToPlaceWobble2);
+            rrmdrive.followTrajectory(placeWobble2);
         }
         robot.wobblePreloadRelease();
-
-        // Run intake and drive to pickup rings from ring stack
         robot.dropIntakeAssembly();
-        robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
-        if (opModeIsActive()) {
-            rrmdrive.followTrajectory(pickupStack);
-        }
-        robot.setWobbleArmDown(); // if this takes time we are ok let intake pickup the rings
 
-        // drive to launch line and shoot rings into high goal
-        if (opModeIsActive()) {
-            rrmdrive.followTrajectory(goToShoot2);
-        }
-        robot.shootRingsIntoHighGoal();
-        robot.stopIntake();
+        if (countRingStack > 0) {
+            if (opModeIsActive()) {
+                rrmdrive.followTrajectory(pickupStack);
+            }
 
+            // drive to launch line and shoot rings into high goal
+            if (opModeIsActive()) {
+                rrmdrive.followTrajectory(shootRings2);
+            }
+            robot.shootRingsIntoHighGoal();
+            robot.stopIntake();
+        }
         // All done, just park at launch line which is nearby
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(goToPark);
