@@ -64,7 +64,7 @@ public class FieldUGoal {
 
     // Robot function or game play specific values, maybe these need to do into a different file
     public static final long        RING_SHOOTING_INTERVAL      = 1000; // milliseconds
-    public static final double      ROBOT_TURN_SMALL            = 0.05; // 0.05 Radians = 2.86 degrees
+    public static final double      ROBOT_ROTATE_POWERSHOT        = 3.6; // degrees by empirical measurement
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
@@ -75,16 +75,16 @@ public class FieldUGoal {
 
     // record position that we need to return to repeatedly
     // Robot starting position is at the audience wall farthest from the Goals, on the start line
-    public static final double     poseStartX = -TILE_3_FROM_ORIGIN + ROBOT_RADIUS;
-    public static final double     poseStartY = TILE_1_FROM_ORIGIN + ROBOT_RADIUS;
-    public static Pose2d poseStart = new Pose2d(poseStartX, poseStartY, ANGLE_POS_X_AXIS);
+    public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_FROM_ORIGIN), ANGLE_NEG_X_AXIS);
     // Robot positioned touching side wall (left side on BLUE field) with front of robot touching Y-Axis line
-    public static Pose2d poseResetOdometry = new Pose2d(ORIGIN - ROBOT_RADIUS, TILE_3_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+    public static Pose2d poseOdoLeft = new Pose2d(ORIGIN - ROBOT_RADIUS, TILE_3_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+    // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
+    public static Pose2d poseOdoRight = new Pose2d(TILE_1_CENTER - ROBOT_RADIUS - 1, -TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
 
     public static AllianceColor aColor = AllianceColor.BLUE;
 

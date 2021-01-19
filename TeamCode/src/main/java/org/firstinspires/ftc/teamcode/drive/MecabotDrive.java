@@ -92,6 +92,28 @@ public class MecabotDrive extends Mecabot {
     }
 
     /**
+     * Rotate the robot by the specified change in angle, using gyroscope as reference.
+     *
+     * @param deltaAngle    The desired angle change in Robot heading in degrees
+     * @param turnSpeed     Speed of rotation
+     * @param timeout       Max time allowed for the operation to complete
+     */
+    public void gyroRotate(double deltaAngle, double turnSpeed, double timeout) {
+        double robotAngle = robot.imu.getAngularOrientation().firstAngle;
+        double targetAngle = robotAngle + deltaAngle;
+        gyroRotateToHeading(targetAngle, turnSpeed, timeout);
+    }
+
+    /**
+     * Rotate the robot by the specified change in angle, using gyroscope as reference.
+     *
+     * @param deltaAngle    The desired angle change in Robot heading in degrees
+     */
+    public void gyroRotate(double deltaAngle) {
+        gyroRotate(deltaAngle, ROTATE_SPEED_SLOW, TIMEOUT_SHORT);
+    }
+
+    /**
      * Rotate the robot to desired angle position using the built in gyro in IMU sensor onboard the REV expansion hub
      * The angle is specified relative to the start position of the robot when the IMU is initialized
      * and gyro angle is intialized to zero degrees.
@@ -99,6 +121,7 @@ public class MecabotDrive extends Mecabot {
      * @param targetAngle   The desired target angle position in degrees. Positive value is counter clockwise from initial zero position
      *                      Negative value is clock wise from initial zero. Angle value wraps around at 180 and -180 degrees.
      * @param turnSpeed     The speed at which to drive the motors for the rotation. 0.0 < turnSpeed <= 1.0
+     * @param timeout       Max time allowed for the operation to complete
      */
     public void gyroRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
@@ -113,9 +136,9 @@ public class MecabotDrive extends Mecabot {
         ElapsedTime runtime = new ElapsedTime();
         // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin
         // Margin is used because the overshoot for even small gyro rotation is 0.15 degrees and higher for larger rotations
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.6) && (runtime.seconds() < timeout)) {
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.3) && (runtime.seconds() < timeout)) {
 
-            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
+            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_SLOW is required to overcome inertia
             double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_SLOW, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
@@ -178,11 +201,11 @@ public class MecabotDrive extends Mecabot {
     }
 
     public void rotateToHeading(double targetAngle, double turnSpeed) {
-        gyroRotateToHeading(targetAngle, turnSpeed, TIMEOUT_ROTATE);
+        gyroRotateToHeading(targetAngle, turnSpeed, TIMEOUT_DEFAULT);
     }
 
     public void rotateToHeading(double targetAngle) {
-        gyroRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_ROTATE);
+        gyroRotateToHeading(targetAngle, ROTATE_SPEED_DEFAULT, TIMEOUT_DEFAULT);
     }
 
     /**
