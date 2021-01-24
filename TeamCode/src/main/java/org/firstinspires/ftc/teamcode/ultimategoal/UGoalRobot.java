@@ -256,23 +256,16 @@ public class UGoalRobot {
     }
 
     public void pickUpWobble(){
-        setWobbleFingerOpen();
-        setWobbleArmPickup();
         setWobbleFingerClosed();
         if (myOpMode.opModeIsActive()) {
-            myOpMode.sleep(1000); // allow time for finger to grip the wobble
-            setWobbleArmHorizontal();
+            myOpMode.sleep(500); // allow time for finger to grip the wobble
+            setWobbleArmRaised();
         }
     }
     public void deliverWobble() {
         setWobbleFingerOpen();
-        myOpMode.sleep(400);
+        myOpMode.sleep(250);
     }
-    public void deliverWobbleRaiseArm() {
-        setWobbleFingerOpen();
-        setWobbleArmRaised();
-    }
-
     public void moveWobbleArmUpwards() {
         int wobblePosition = wobblePickupArm.getCurrentPosition();
         if (wobblePosition < WOBBLE_ARM_PICKUP - WOBBLE_ARM_ERROR_MARGIN){
@@ -397,7 +390,7 @@ public class UGoalRobot {
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 1.50;    // record value before clipping for telemetry printout, do not delete this line
+        shooterPlatformTiltAngle = tiltAngle + 2.0;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 

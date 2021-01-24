@@ -170,45 +170,48 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
 
-        Vector2d wobble1end;
-        Pose2d   wobble2end;
+        double targetZoneX;
+        double targetZoneY;
         switch (countRingStack) {
             case 4:
-                wobble1end = new Vector2d(TARGET_ZONE_C_X - 3, TARGET_ZONE_C_Y - 8);
-                wobble2end = new Pose2d(TARGET_ZONE_C_X, TARGET_ZONE_C_Y - 14, ANGLE_POS_Y_AXIS);
+                targetZoneX = TARGET_ZONE_C_X;
+                targetZoneY = TARGET_ZONE_C_Y;
                 break;
             case 1:
-                wobble1end = new Vector2d(TARGET_ZONE_B_X - 3, TARGET_ZONE_B_Y - 8);
-                wobble2end = new Pose2d(TARGET_ZONE_B_X, TARGET_ZONE_B_Y - 14, ANGLE_POS_Y_AXIS);
+                targetZoneX = TARGET_ZONE_B_X;
+                targetZoneY = TARGET_ZONE_B_Y;
                 break;
             case 0:
             default:
-                wobble1end = new Vector2d(TARGET_ZONE_A_X - 3, TARGET_ZONE_A_Y - 8);
-                wobble2end = new Pose2d(TARGET_ZONE_A_X, TARGET_ZONE_A_Y - 14, ANGLE_POS_Y_AXIS);
+                targetZoneX = TARGET_ZONE_A_X;
+                targetZoneY = TARGET_ZONE_A_Y;
                 break;
         }
 
+        Pose2d wobble1end = new Pose2d(targetZoneX - 3, targetZoneY - 8, ANGLE_POS_X_AXIS);
         placeWobble1 = rrmdrive.trajectoryBuilder(shootRings1.end())
-                .lineTo(wobble1end)
-                .build();
-
-        placeWobble2 = rrmdrive.trajectoryBuilder(placeWobble1.end())
-                .lineToLinearHeading(wobble2end)
+                .lineToLinearHeading(wobble1end)
                 .addTemporalMarker(1.0, new MarkerCallback() {
                     @Override
                     public void onMarkerReached() {
-                        robot.setWobbleArmDown();
+                        robot.setWobbleArmHorizontal();
                     }
                 })
+                .build();
+
+        Pose2d wobble2end = new Pose2d(targetZoneX, targetZoneY - 14, ANGLE_POS_Y_AXIS - 30);
+        placeWobble2 = rrmdrive.trajectoryBuilder(placeWobble1.end())
+                .lineToLinearHeading(wobble2end)
                 .build();
 
         pickupStack = rrmdrive.trajectoryBuilder(placeWobble2.end(), true)
                 .splineTo(new Vector2d(ORIGIN, GOALY), ANGLE_NEG_X_AXIS)        // align to pickup rings stack
                 .splineTo(new Vector2d(-TILE_LENGTH, GOALY), ANGLE_NEG_X_AXIS)  // location of rings stack
-                .addTemporalMarker(1.0, new MarkerCallback() {
+                .addTemporalMarker(0.1, new MarkerCallback() {
                     @Override
                     public void onMarkerReached() {
                         // Run intake and drive to pickup rings from ring stack
+                        robot.dropIntakeAssembly();
                         robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
                     }
                 })
@@ -250,11 +253,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(pickupWobble);
         }
-        robot.setWobbleFingerClosed();
-        if (opModeIsActive()) {
-            sleep(1000); // allow time for finger to grip the wobble
-        }
-        robot.setWobbleArmRaised(); // raise the wobble to carry away
+        robot.pickUpWobble();
 
         // drive to launch line and shoot rings into high goal
         if (opModeIsActive()) {
@@ -266,12 +265,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(placeWobble1);
         }
-        robot.deliverWobbleRaiseArm();
+        robot.deliverWobble();
+        robot.setWobbleArmDown();
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(placeWobble2);
         }
         robot.wobblePreloadRelease();
-        robot.dropIntakeAssembly();
 
         if (countRingStack > 0) {
             if (opModeIsActive()) {
@@ -415,12 +414,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      ****************************/
 
     public void fullAutoEncoderDrive() {
+        robot.setWobbleArmPickup();
         robot.pickUpWobble();
         encoderDriveToShootHighGoal();
         robot.tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
         robot.shootRingsIntoHighGoal();
         encoderDriveToTargetZone(countRingStack);
-        robot.deliverWobbleRaiseArm();
+        robot.deliverWobble();
+        robot.setWobbleArmRaised();
         encoderDriveToPark(countRingStack);
         robot.setWobbleArmDown();
     }
