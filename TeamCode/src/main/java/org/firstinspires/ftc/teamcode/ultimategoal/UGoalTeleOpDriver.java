@@ -11,6 +11,7 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 public class UGoalTeleOpDriver extends TeleOpDriver {
 
     UGoalRobot robot;
+    boolean toggle;
 
     /* Constructor */
     public UGoalTeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, MecabotDrive mcdrive, UGoalRobot aRobot) {
@@ -32,10 +33,10 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
             rrmdrive.setPoseEstimate(poseHighGoal);
             mcdrive.getOdometry().setGlobalPosition(poseHighGoal.getX(), poseHighGoal.getY(), poseHighGoal.getHeading());
         }
-        else if (gamepad1.y) {
-            mcdrive.gyroRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_SLOW, MecabotDrive.TIMEOUT_SHORT);
-        }
     }
+
+    // disabling this functionality due to lack of buttons
+    //mcdrive.gyroRotateToHeading(ANGLE_POS_X_AXIS, MecabotDrive.ROTATE_SPEED_SLOW, MecabotDrive.TIMEOUT_SHORT);
 
     @Override
     public void  driveGameAuto() {
@@ -43,17 +44,26 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
         // NOTE NOTE: The shooting platform tilt is included at the end of auto driving
         if (gamepad1.dpad_up) {
             setAutoDriving();
-            robot.rrdriveToShootTarget(Target.HIGHGOAL);
+            robot.rrdriveToTarget(Target.HIGHGOAL);
         }
         if (gamepad1.dpad_down) {
             setAutoDriving();
-            robot.rrdriveToShootTarget(Target.POWERSHOT_3);
+            robot.rrdriveToTarget(Target.POWERSHOT_3);
         }
         if (gamepad1.dpad_left) {
             mcdrive.gyroRotate(ROBOT_ROTATE_POWERSHOT);
         }
         if (gamepad1.dpad_right) {
             mcdrive.gyroRotate(-ROBOT_ROTATE_POWERSHOT);
+        }
+        if (gamepad1.y) {
+            toggle = !toggle;
+            setAutoDriving();
+            if (toggle) {
+                robot.rrdriveToDropZone(Target.WOBBLE_LANDING_1);
+            } else {
+                robot.rrdriveToDropZone(Target.WOBBLE_LANDING_2);
+            }
         }
     }
 

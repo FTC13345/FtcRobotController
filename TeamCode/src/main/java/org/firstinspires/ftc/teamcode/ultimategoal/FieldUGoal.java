@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 
 /* Main Configuration for Ultimate Goal Challenge game field
@@ -63,7 +65,7 @@ public class FieldUGoal {
     public static final double DISTANCE_BETWEEN_POWERSHOT  = -7.5;
 
     // Robot function or game play specific values, maybe these need to do into a different file
-    public static final long        RING_SHOOTING_INTERVAL      = 1000; // milliseconds
+    public static final long        RING_SHOOTING_INTERVAL      = 600; // milliseconds
     public static final double      ROBOT_ROTATE_POWERSHOT        = 3.6; // degrees by empirical measurement
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
@@ -71,7 +73,7 @@ public class FieldUGoal {
     // actually position on the field to the right of the intended Target Y coordinate
     public static final double      ROBOT_SHOOTING_Y_OFFSET     = 10.0; // inches
 
-    enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3}
+    enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3, WOBBLE_LANDING_1, WOBBLE_LANDING_2}
 
     // record position that we need to return to repeatedly
     // Robot starting position is at the audience wall farthest from the Goals, on the start line
@@ -81,6 +83,9 @@ public class FieldUGoal {
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_FROM_ORIGIN), ANGLE_NEG_X_AXIS);
+    // Robot positioned next to the Audience wall, ready to drop the wobble over the perimeter wall into the landing zone
+    public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));
+    public static Vector2d poseWobbleLanding2 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_1_CENTER));
     // Robot positioned touching side wall (left side on BLUE field) with front of robot touching Y-Axis line
     public static Pose2d poseOdoLeft = new Pose2d(ORIGIN - ROBOT_RADIUS, TILE_3_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line

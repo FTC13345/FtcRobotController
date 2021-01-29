@@ -443,7 +443,7 @@ public class UGoalRobot {
     /*****************************
      * Autonomous Program Methods using RoadRunner MecanumDrive
      ****************************/
-    public void rrdriveToShootTarget(Target target) {
+    public void rrdriveToTarget(Target target) {
         Pose2d poseStart = rrmdrive.getPoseEstimate();
         Pose2d poseEnd = poseHighGoal;
         switch(target) {
@@ -456,12 +456,29 @@ public class UGoalRobot {
             case POWERSHOT_3: poseEnd = posePowerShot3;
                 break;
         }
-        Trajectory goToShoot = rrmdrive.trajectoryBuilder(poseStart)
-                .splineToLinearHeading(poseEnd, ANGLE_POS_X_AXIS)
-                .build();
-        rrmdrive.followTrajectory(goToShoot);
-        // tilt shooter platform corresponding to both robot current Pose and the target
-        tiltShooterPlatform(target);
+        Trajectory goToTarget = rrmdrive.trajectoryBuilder(poseStart)
+                    .lineToLinearHeading(poseEnd)
+                    .build();
+            rrmdrive.followTrajectory(goToTarget);
+            // tilt shooter platform corresponding to both robot current Pose and the target
+            tiltShooterPlatform(target);
+    }
+
+    public void rrdriveToDropZone(Target target) {
+        Pose2d poseStart = rrmdrive.getPoseEstimate();
+        Vector2d poseEnd = new Vector2d();
+        switch(target) {
+            case WOBBLE_LANDING_1:
+                poseEnd = poseWobbleLanding1;
+                break;
+            case WOBBLE_LANDING_2:
+                poseEnd = poseWobbleLanding2;
+                break;
+        }
+        Trajectory goToTarget = rrmdrive.trajectoryBuilder(poseStart)
+                    .splineTo(poseEnd, ANGLE_POS_Y_AXIS)
+                    .build();
+            rrmdrive.followTrajectory(goToTarget);
     }
 
     /*****************************
@@ -505,13 +522,13 @@ public class UGoalRobot {
     }
 
     //aim and shoot three rings into the high goal
-    public void shootRingsIntoHighGoal(){
+    public void shootRingsIntoHighGoal(int n){
         // assumption that flywheel is already running so it can gain full speed
         // assumption that platform is already tilted for shooting at HIGH GOAL by the caller.
         // This is to allow tilting to be done while the robot is driving.
 
         // the pusher seems to miss once in a while so we take an extra shot to ensure 3 rings are shot
-        for (int i = 0; i<4 && myOpMode.opModeIsActive(); i++) {
+        for (int i = 0; i<n && myOpMode.opModeIsActive(); i++) {
             if (i>0) {
                 myOpMode.sleep(RING_SHOOTING_INTERVAL); // allow some time for the flywheel to gain full speed after each shot
             }
