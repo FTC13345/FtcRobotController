@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -32,6 +32,8 @@ public class UGoalTeleOp extends LinearOpMode {
     private boolean gamepad2ADebounce = false;
     private boolean gamepad2DpadDebounce = false;
 
+    enum WOBBLE_ARM_MODE { BUTTONS, JOYSTICK};
+    private WOBBLE_ARM_MODE waMode = WOBBLE_ARM_MODE.BUTTONS;
     private boolean bIgnoreStops = false;
 
     void setPoseStart() {
@@ -191,11 +193,13 @@ public class UGoalTeleOp extends LinearOpMode {
         //error margin is to prevent the wobble arm from being unable to go to a certain spot
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
              if (!gamepad2DpadDebounce){
+                 waMode = WOBBLE_ARM_MODE.BUTTONS;
                  robot.moveWobbleArmUpwards();
              }
              gamepad2DpadDebounce = true;
         } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
              if (!gamepad2DpadDebounce){
+                 waMode = WOBBLE_ARM_MODE.BUTTONS;
                  robot.moveWobbleArmDownwards();
              }
              gamepad2DpadDebounce = true;
@@ -204,6 +208,7 @@ public class UGoalTeleOp extends LinearOpMode {
         }
 
         if (gamepad2.right_stick_y != 0) {
+
             //joystick gives a negative value when pushed up, we want the wobbelArm to go up when positive
             double power = -gamepad2.right_stick_y;
             // Square the number but retain the sign to convert to logarithmic scale
@@ -211,6 +216,11 @@ public class UGoalTeleOp extends LinearOpMode {
             power = Math.signum(power) * (0.15 + (0.85 * power * power));
             int pos = robot.wobblePickupArm.getCurrentPosition();
 
+            if (waMode == WOBBLE_ARM_MODE.BUTTONS) {
+                // if motor is in RUN_TO_POSITION mode then it resists free movement using joystick
+                robot.wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                waMode = WOBBLE_ARM_MODE.JOYSTICK;
+            }
             //if stops are being ignored then simply apply the joystick power to the motor
             if (bIgnoreStops) {
                 telemetry.addData("Wobble ", "at %d, IGNORING STOPS", pos);
@@ -232,7 +242,7 @@ public class UGoalTeleOp extends LinearOpMode {
             }
         }
         // DO NOT remove the following line, we need to call stopWobbleArm() when user releases the joystick
-        else {
+        else if (waMode == WOBBLE_ARM_MODE.JOYSTICK) {
             robot.stopWobbleArm();
         }
     }
