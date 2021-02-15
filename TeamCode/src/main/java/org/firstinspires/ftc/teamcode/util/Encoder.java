@@ -93,8 +93,9 @@ public class Encoder {
     }
 
     public void resetEncoder() {
+        DcMotor.RunMode mode = motor.getMode();
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor.setMode(mode);
         lastPosition = 0;
         velocityEstimate = 0.0;
     }

@@ -60,9 +60,9 @@ public class UGoalTeleOp extends LinearOpMode {
         //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Create main OpMode member objects initialize the hardware variables.
-        rrmdrive = new RRMecanumDrive(hardwareMap, this);
-        robot = new UGoalRobot(hardwareMap, rrmdrive,this);
-        mcdrive = robot.getDrive();
+        robot = new UGoalRobot(hardwareMap,this);
+        mcdrive = robot.getMCBdrive();
+        rrmdrive = robot.getRRMdrive();
         driver = new UGoalTeleOpDriver(this, rrmdrive, mcdrive, robot);
         globalPosition = mcdrive.getOdometry();
 

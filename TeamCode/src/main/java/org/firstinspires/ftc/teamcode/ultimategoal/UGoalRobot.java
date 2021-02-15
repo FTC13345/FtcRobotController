@@ -76,16 +76,17 @@ public class UGoalRobot {
     public DigitalChannel wobbleLowLimit;
 
     // constructor
-    public UGoalRobot(HardwareMap ahwMap, RRMecanumDrive drive, LinearOpMode opMode) {
-        rrmdrive = drive;
-        mcdrive = new MecabotDrive(ahwMap, opMode);
+    public UGoalRobot(HardwareMap hardwareMap, LinearOpMode opMode) {
+        mcdrive = new MecabotDrive(hardwareMap, opMode);
+        rrmdrive = new RRMecanumDrive(hardwareMap, opMode);;
         myOpMode = opMode;
-        this.init(ahwMap);
+        this.init(hardwareMap);
     }
     // mecanum drivetrain used by the Robot
-    MecabotDrive getDrive() {
+    MecabotDrive getMCBdrive() {
         return mcdrive;
     }
+    RRMecanumDrive getRRMdrive() { return rrmdrive; }
 
     // Initialization
     public void init(HardwareMap ahwMap) {

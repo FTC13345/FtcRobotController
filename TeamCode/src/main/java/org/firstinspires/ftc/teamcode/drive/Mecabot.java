@@ -139,9 +139,8 @@ public class Mecabot {
 
         // Set all motors to zero power
         stopDriving();
-        // Set all drivetrain motors to run without encoders.
-        // May want to use RUN_USING_ENCODERS if encoders are installed.
-        setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // RUN_USING_ENCODERS if encoders are installed.
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // lights
         lights = hwMap.get(RevBlinkinLedDriver.class, "lights");
@@ -209,7 +208,7 @@ public class Mecabot {
     }
     public void resetDriveEncoder() {
         setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     public void setDrivePower(double speed) {

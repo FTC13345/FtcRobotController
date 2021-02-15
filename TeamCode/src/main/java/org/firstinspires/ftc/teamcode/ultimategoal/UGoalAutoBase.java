@@ -102,8 +102,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Initialize the robot hardware and drive system variables.
-        rrmdrive = new RRMecanumDrive(hardwareMap, this);
-        robot = new UGoalRobot(hardwareMap, rrmdrive, this);
+        robot = new UGoalRobot(hardwareMap, this);
+        rrmdrive = robot.getRRMdrive();
+        mcdrive = robot.getMCBdrive();
 
         // Motor and Servo position initializations
         robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
@@ -118,7 +119,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         telemetry.update();
 
         // odometry is initialize inside drive system MecabotDrive class
-        mcdrive = robot.getDrive();
         globalPosition = mcdrive.getOdometry();
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
         setPoseStart();
