@@ -534,7 +534,6 @@ public class UGoalRobot {
             }
             shootRing();
         }
-        stopShooterFlywheel();
     }
 
     //Power shot 1 is furthest power shot from center
