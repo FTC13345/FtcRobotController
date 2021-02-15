@@ -68,22 +68,22 @@ public abstract class TeleOpDriver implements Runnable {
         if (gamepad1.start) {
             // Toggle which face of the Robot is front for driving
             if (gamepad1.right_bumper) {
-                mcdrive.setDirectionForward();
+                speedMultiplier = MecabotDrive.DRIVE_SPEED_MAX;
+                mcdrive.setFastBlue();
             } else if (gamepad1.left_bumper) {
-                mcdrive.setDirectionReverse();
+                speedMultiplier = MecabotDrive.DRIVE_SPEED_DEFAULT;
+                mcdrive.setSlowBlue();
             }
         }
         else { // !gamepad1.start --> which means bumper buttons pressed alone
             //update speedMultiplier for FAST or SLOW driving
             if (gamepad1.right_bumper) {
-                speedMultiplier = MecabotDrive.DRIVE_SPEED_MAX;
-                mcdrive.setFastBlue();
+                mcdrive.setDirectionForward();
                 // as a dual action of this button stop autodriving
                 autoDriving = false;
             }
             else if (gamepad1.left_bumper) {
-                speedMultiplier = MecabotDrive.DRIVE_SPEED_DEFAULT;
-                mcdrive.setSlowBlue();
+                mcdrive.setDirectionReverse();
                 // as a dual action of this button stop autodriving
                 autoDriving = false;
             }
@@ -110,13 +110,18 @@ public abstract class TeleOpDriver implements Runnable {
         // use this to square the power while preserving the sign, without scaling the range
         //power *= Math.abs(power);
 
-        double strafe = -gamepad1.left_stick_x;
+        double strafe = (gamepad1.left_trigger > 0) ? +gamepad1.left_trigger : -gamepad1.right_trigger;
         strafe = Math.signum(strafe) * (0.2 + (0.8 * strafe * strafe)) * speedMultiplier;
 
         // similarly for turn power, except also slow down by TURN_FACTOR
         double turn = -gamepad1.right_stick_x;
         turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
 
+        // flip sign of all driving power if we are in REVERSE mode
+        if (mcdrive.isDirectionReverse()) {
+            power = -power;
+            strafe = -strafe;
+        }
         if (rrmdrive != null) {
             driveRRM(power, strafe, turn);
         } else {
