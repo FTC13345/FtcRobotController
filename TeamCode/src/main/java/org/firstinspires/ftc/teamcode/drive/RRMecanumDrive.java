@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ACCEL;
 import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ANG_ACCEL;
@@ -264,16 +265,15 @@ public class RRMecanumDrive extends MecanumDrive {
 
         TelemetryPacket packet = new TelemetryPacket();
         Canvas fieldOverlay = packet.fieldOverlay();
+        String telemetryLine;
 
-        packet.put("mode", mode);
+        packet.put("1 mode", mode);
 
-        packet.put("x", currentPose.getX());
-        packet.put("y", currentPose.getY());
-        packet.put("heading (deg)", Math.toDegrees(currentPose.getHeading()));
+        telemetryLine = String.format(Locale.US, "(%02.2f,%02.2f) %03.2f (deg)", currentPose.getX(), currentPose.getY(), Math.toDegrees(currentPose.getHeading()));
+        packet.put("2 Pose ", telemetryLine);
 
-        packet.put("xError", lastError.getX());
-        packet.put("yError", lastError.getY());
-        packet.put("headingError (deg)", Math.toDegrees(lastError.getHeading()));
+        telemetryLine = String.format(Locale.US, "(%02.2f,%02.2f) %03.2f (deg)", lastError.getX(), lastError.getY(), Math.toDegrees(lastError.getHeading()));
+        packet.put("3 Error", telemetryLine);
 
         switch (mode) {
             case IDLE:
