@@ -206,20 +206,30 @@ public class RRMecanumDrive extends MecanumDrive {
         return new TrajectoryBuilder(startPose, startHeading, velConstraint, accelConstraint);
     }
 
-    public void turnAsync(double angle) {
-        double heading = getPoseEstimate().getHeading();
+    public void turnToHeadingAsync(double targetHeading) {
+        double startHeading = getPoseEstimate().getHeading();
 
         lastPoseOnTurn = getPoseEstimate();
 
         turnProfile = MotionProfileGenerator.generateSimpleMotionProfile(
-                new MotionState(heading, 0, 0, 0),
-                new MotionState(heading + angle, 0, 0, 0),
+                new MotionState(startHeading, 0, 0, 0),
+                new MotionState(targetHeading, 0, 0, 0),
                 MAX_ANG_VEL,
                 MAX_ANG_ACCEL
         );
 
         turnStart = clock.seconds();
         mode = Mode.TURN;
+    }
+
+    public void turnToHeading(double targetHeading) {
+        turnToHeadingAsync(targetHeading);
+        waitForIdle();
+    }
+
+    public void turnAsync(double angle) {
+        double heading = getPoseEstimate().getHeading();
+        turnToHeadingAsync(heading + angle);
     }
 
     public void turn(double angle) {
