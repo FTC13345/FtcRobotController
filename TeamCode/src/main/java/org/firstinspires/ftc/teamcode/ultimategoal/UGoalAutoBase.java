@@ -2,8 +2,6 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.ArrayRes;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,7 +40,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     Telemetry drvrTelemetry;
     Telemetry dashTelemetry;
     int countRingStack;
-    private static final double RINGSTACK_PICKUP_ANGLE = Math.toRadians(40);
 
     //**  image recognition variables **//
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -477,15 +474,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // limit velocity constraint when we want precise positioning at end of trajectory
         TrajectoryVelocityConstraint veloc = new MinVelocityConstraint(Arrays.asList(
                 new AngularVelocityConstraint(DriveConstants.MAX_ANG_VEL),
-                new MecanumVelocityConstraint(30, DriveConstants.TRACK_WIDTH)
+                new MecanumVelocityConstraint(25, DriveConstants.TRACK_WIDTH)
         ));
         // limit acceleration constraint when we want precise positioning at end of trajectory
         TrajectoryAccelerationConstraint accelc = new ProfileAccelerationConstraint(30);
 
-
         shootRings1 = rrmdrive.trajectoryBuilder(poseStart)
-                .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, 20), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
-                .splineTo(poseHighGoal.vec(), ANGLE_POS_X_AXIS)  // arrive at high goal shooting position
+                .splineTo(new Vector2d(-34, 20), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
+                .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())  // arrive at high goal shooting position
                 .addTemporalMarker(1.0, new MarkerCallback() {
                     @Override
                     public void onMarkerReached() {
@@ -497,14 +493,17 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 })
                 .build();
 
-        double xDistance = 6 * Math.cos(RINGSTACK_PICKUP_ANGLE);
-        double yDistance = 6 * Math.sin(RINGSTACK_PICKUP_ANGLE);
-        pickupStack = rrmdrive.trajectoryBuilder(poseHighGoal.plus(new Pose2d(0,0, -RINGSTACK_PICKUP_ANGLE)), true)
-                .lineTo(new Vector2d(-TILE_1_FROM_ORIGIN - xDistance, TILE_2_CENTER + yDistance), veloc, accelc) // location of rings stack
+        Pose2d poseTrajStart = poseHighGoal.plus(new Pose2d(0,0, ANGLE_RINGSTACK_PICKUP)); // We expect Robot turns to ANGLE_RINGSTACK_PICKUP after shooting rings
+        // we want to drive DIST_PAST_RINGSTACK inches through the ring stack, calculate the x,y coordinate values and end vector
+        double xDistance = DIST_PAST_RINGSTACK * Math.cos(ANGLE_RINGSTACK_PICKUP + Math.PI);    // Add 180 deg (PI radians) to calculate correct sign in 3rd or 4th quadrant
+        double yDistance = DIST_PAST_RINGSTACK * Math.sin(ANGLE_RINGSTACK_PICKUP + Math.PI);
+        Vector2d vecTrajEnd = vecRingStack.plus(new Vector2d(xDistance, yDistance));
+        pickupStack = rrmdrive.trajectoryBuilder(poseTrajStart, true)
+                .lineTo(vecTrajEnd, veloc, accelc)
                 .build();
 
         shootRings2 = rrmdrive.trajectoryBuilder(pickupStack.end())
-                .splineTo(poseHighGoal.vec(), Math.toRadians(4))    // Ideal angle is ANGLE_POS_X_AXIS, but we need to compensate for Robot error
+                .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())
                 .build();
 
         double targetZoneX;
@@ -528,34 +527,15 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         Pose2d wobble1end = new Pose2d(targetZoneX - 6, targetZoneY, ANGLE_POS_X_AXIS);
         placeWobble1 = rrmdrive.trajectoryBuilder(shootRings2.end())
                 .lineToLinearHeading(wobble1end)
-                .addTemporalMarker(1.0, new MarkerCallback() {
-                    @Override
-                    public void onMarkerReached() {
-                        robot.stopShooterFlywheel();
-                    }
-                })
                 .build();
 
-        Pose2d wobble2pickup = new Pose2d(-TILE_2_FROM_ORIGIN, TILE_2_CENTER - 3, ANGLE_POS_X_AXIS);
         pickupWobble = rrmdrive.trajectoryBuilder(placeWobble1.end(), true)
-                .lineToLinearHeading(wobble2pickup)
-                .addTemporalMarker(2.0, new MarkerCallback() {
-                    @Override
-                    public void onMarkerReached() {
-                        robot.setWobbleArmPickup();
-                    }
-                })
+                .lineToLinearHeading(poseWobblePickup)
                 .build();
 
-        Pose2d wobble2end = new Pose2d(targetZoneX - 3, targetZoneY - 12, ANGLE_POS_X_AXIS);
+        Pose2d wobble2end = new Pose2d(targetZoneX - 6, targetZoneY - 12, ANGLE_POS_X_AXIS);
         placeWobble2 = rrmdrive.trajectoryBuilder(pickupWobble.end())
                 .lineToLinearHeading(wobble2end)
-                .addTemporalMarker(1.0, new MarkerCallback() {
-                    @Override
-                    public void onMarkerReached() {
-                        robot.setWobbleArmHorizontal();
-                    }
-                })
                 .build();
 
         goToPark = rrmdrive.trajectoryBuilder(placeWobble2.end())
@@ -576,15 +556,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             return;
         }
 
-        // drive to launch line and shoot rings into high goal
+        // drive to shooting pose behind the launch line
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(shootRings1);
         }
-        robot.shootRingsIntoHighGoal(4);    // 3 preloaded rings + 1 extra shot sometimes the ring is not seated in the holder
-
+        // and tilt the platform at suitable angle for current pose
+        robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, rrmdrive.getPoseEstimate().vec());
+        // and shoot rings into high goal
+        if (opModeIsActive()) {
+            robot.shootRingsIntoHighGoal(4);    // 3 preloaded rings + 1 extra shot sometimes the ring is not seated in the holder
+        }
         if (countRingStack > 0) {
             if (opModeIsActive()) {
-                rrmdrive.turn(Math.toRadians(-38));
+                rrmdrive.turnToHeading(ANGLE_RINGSTACK_PICKUP);
             }
             robot.dropIntakeAssembly();
             robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
@@ -599,6 +583,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             robot.shootRingsIntoHighGoal(countRingStack == 1 ? 2 : 4);
             robot.stopIntake();
         }
+        robot.stopShooterFlywheel();
 
         // drive to Target Zone and deliver the 2 wobbles
         if (opModeIsActive()) {
@@ -609,6 +594,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(pickupWobble);
         }
+        robot.setWobbleArmPickup();
         robot.pickUpWobble();
 
         if (opModeIsActive()) {
@@ -622,7 +608,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             rrmdrive.followTrajectory(goToPark);
         }
     }
-
+/*
     private void buildTrajectoriesV2() {
         // limit velocity constraint when we want precise positioning at end of trajectory
         TrajectoryVelocityConstraint veloc = new MinVelocityConstraint(Arrays.asList(
@@ -684,10 +670,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .splineToLinearHeading(wobble2end, ANGLE_POS_X_AXIS)
                 .build();
 
-        // Trial to pick up rings in diagnoal direction on the tile grid
-//        Vector2d lineupPoint = new Vector2d(-TILE_1_CENTER, TILE_1_FROM_ORIGIN * 1.3);
-//        double   lineupTangent = ANGLE_NEG_X_AXIS - Math.toRadians(30);
-
         Vector2d lineupPoint = new Vector2d(ORIGIN, TILE_2_CENTER + 4);
         double   lineupTangent = ANGLE_NEG_X_AXIS;
         lineupToStack = rrmdrive.trajectoryBuilder(placeWobble2.end(), true)
@@ -724,10 +706,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .build();
     }
 
-    /**
-     * do everything in autonomous mode using RoadRunner drive.
-     * Assumption is that buildTrajectories() has been called during init()
-     */
     public void runFullAutoProgramV2() {
 
         // this is already set in init() but in case someone moved the robot location manually.
@@ -782,4 +760,5 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             rrmdrive.followTrajectory(goToPark);
         }
     }
+*/
 }

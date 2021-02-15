@@ -78,11 +78,15 @@ public class FieldUGoal {
     // record position that we need to return to repeatedly
     // Robot starting position is at the audience wall farthest from the Goals, on the start line
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
-    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
+    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS + Math.toRadians(3.0));
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_FROM_ORIGIN), ANGLE_NEG_X_AXIS);
+    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN - 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
+    public static Vector2d vecRingStack = new Vector2d(-TILE_1_FROM_ORIGIN, +TILE_2_CENTER);
+
     // Robot positioned next to the Audience wall, ready to drop the wobble over the perimeter wall into the landing zone
     public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));
     public static Vector2d poseWobbleLanding2 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_1_CENTER));
@@ -90,6 +94,11 @@ public class FieldUGoal {
     public static Pose2d poseOdoLeft = new Pose2d(ORIGIN - ROBOT_RADIUS, TILE_3_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
     public static Pose2d poseOdoRight = new Pose2d(TILE_1_CENTER - ROBOT_RADIUS - 1, -TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+
+    // Ring stack is picked up at an angle heading. Robot rotates to the angle and drives reverse at that angle to pickup rings from stack
+    // theta = Math.atan( 10 / (-17.5)) = -0.51914611 Radians or -29.7448813 degrees  (when poseHighGoal = (-6.0, +25.5) coordinates)
+    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan(vecRingStack.getY() - poseHighGoal.getY() / vecRingStack.getX() - poseHighGoal.getX());
+    public static final double DIST_PAST_RINGSTACK = 6.0; // inches
 
     public static AllianceColor aColor = AllianceColor.BLUE;
 
