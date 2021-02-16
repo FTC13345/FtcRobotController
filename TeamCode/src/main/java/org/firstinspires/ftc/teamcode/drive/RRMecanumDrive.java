@@ -279,10 +279,10 @@ public class RRMecanumDrive extends MecanumDrive {
 
         packet.put("1 mode", mode);
 
-        telemetryLine = String.format(Locale.US, "(%02.2f,%02.2f) %03.2f (deg)", currentPose.getX(), currentPose.getY(), Math.toDegrees(currentPose.getHeading()));
-        packet.put("2 Pose ", telemetryLine);
+        telemetryLine = String.format(Locale.US, "(%02.2f, %02.2f) H: %03.2f (deg)", currentPose.getX(), currentPose.getY(), Math.toDegrees(currentPose.getHeading()));
+        packet.put("2 Pose", telemetryLine);
 
-        telemetryLine = String.format(Locale.US, "(%02.2f,%02.2f) %03.2f (deg)", lastError.getX(), lastError.getY(), Math.toDegrees(lastError.getHeading()));
+        telemetryLine = String.format(Locale.US, "(%02.2f, %02.2f) H: %03.2f (deg)", lastError.getX(), lastError.getY(), Math.toDegrees(lastError.getHeading()));
         packet.put("3 Error", telemetryLine);
 
         switch (mode) {
