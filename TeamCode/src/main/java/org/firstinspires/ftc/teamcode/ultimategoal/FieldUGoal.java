@@ -71,7 +71,7 @@ public class FieldUGoal {
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
-    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 10.0; // inches
+    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 8.0; // inches
 
     enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3, WOBBLE_LANDING_1, WOBBLE_LANDING_2}
 
@@ -79,13 +79,24 @@ public class FieldUGoal {
     // Robot starting position is at the audience wall farthest from the Goals, on the start line
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
-    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS + Math.toRadians(3.0));
+    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_FROM_ORIGIN), ANGLE_NEG_X_AXIS);
-    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN - 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
-    public static Vector2d vecRingStack = new Vector2d(-TILE_1_FROM_ORIGIN, +TILE_2_CENTER);
+    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
+    public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN - 2.0), TILE_2_CENTER);
+
+    // Ring stack is picked up at an angle heading. Robot rotates to the angle and drives reverse at that angle to pickup rings from stack
+    // theta = Math.atan( 10 / (-15.5)) = -0.572966 Radians or -32.828 degrees  (when poseHighGoal = (-6.0, +27.5) coordinates)
+    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan((vecRingStack.getY() - poseHighGoal.getY() + 2.0) / (vecRingStack.getX() - poseHighGoal.getX())); // constant is tuning adjustment
+    public static final Pose2d poseRingPickupStart = poseHighGoal.plus(new Pose2d(0,0, ANGLE_RINGSTACK_PICKUP)); // We expect Robot turns to ANGLE_RINGSTACK_PICKUP after shooting rings
+
+    // we want to drive DIST_PAST_RINGSTACK inches through the ring stack, calculate the x,y coordinate values and end vector
+    static final double DIST_PAST_RINGSTACK = 7.0; // inches
+    static final double xDistance = DIST_PAST_RINGSTACK * Math.cos(ANGLE_RINGSTACK_PICKUP + Math.PI);    // Add 180 deg (PI radians) for reverse direction of robot heading
+    static final double yDistance = DIST_PAST_RINGSTACK * Math.sin(ANGLE_RINGSTACK_PICKUP + Math.PI);
+    public static final Vector2d vecRingPickupEnd = vecRingStack.plus(new Vector2d(xDistance, yDistance));
 
     // Robot positioned next to the Audience wall, ready to drop the wobble over the perimeter wall into the landing zone
     public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));
@@ -94,11 +105,6 @@ public class FieldUGoal {
     public static Pose2d poseOdoLeft = new Pose2d(ORIGIN - ROBOT_RADIUS, TILE_3_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
     public static Pose2d poseOdoRight = new Pose2d(TILE_1_CENTER - ROBOT_RADIUS - 1, -TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
-
-    // Ring stack is picked up at an angle heading. Robot rotates to the angle and drives reverse at that angle to pickup rings from stack
-    // theta = Math.atan( 10 / (-17.5)) = -0.51914611 Radians or -29.7448813 degrees  (when poseHighGoal = (-6.0, +25.5) coordinates)
-    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan(vecRingStack.getY() - poseHighGoal.getY() / vecRingStack.getX() - poseHighGoal.getX());
-    public static final double DIST_PAST_RINGSTACK = 6.0; // inches
 
     public static AllianceColor aColor = AllianceColor.BLUE;
 

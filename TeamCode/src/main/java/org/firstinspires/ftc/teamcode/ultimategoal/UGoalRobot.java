@@ -78,7 +78,7 @@ public class UGoalRobot {
     // constructor
     public UGoalRobot(HardwareMap hardwareMap, LinearOpMode opMode) {
         mcdrive = new MecabotDrive(hardwareMap, opMode);
-        rrmdrive = new RRMecanumDrive(hardwareMap, opMode);;
+        rrmdrive = new RRMecanumDrive(hardwareMap, opMode);
         myOpMode = opMode;
         this.init(hardwareMap);
     }
@@ -259,13 +259,12 @@ public class UGoalRobot {
     public void pickUpWobble(){
         setWobbleFingerClosed();
         if (myOpMode.opModeIsActive()) {
-            myOpMode.sleep(500); // allow time for finger to grip the wobble
-            setWobbleArmRaised();
+            myOpMode.sleep(250); // allow time for finger to grip the wobble
+            setWobbleArmHorizontal();
         }
     }
     public void deliverWobble() {
         setWobbleFingerOpen();
-        myOpMode.sleep(250);
     }
     public void moveWobbleArmUpwards() {
         int wobblePosition = wobblePickupArm.getCurrentPosition();
@@ -391,7 +390,7 @@ public class UGoalRobot {
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 2.0;    // record value before clipping for telemetry printout, do not delete this line
+        shooterPlatformTiltAngle = tiltAngle + 2.5;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
