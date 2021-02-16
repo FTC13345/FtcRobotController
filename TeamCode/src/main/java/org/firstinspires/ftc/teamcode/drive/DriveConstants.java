@@ -42,7 +42,7 @@ public class DriveConstants {
      * angular distances although most angular parameters are wrapped in Math.toRadians() for
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
-    public static double WHEEL_RADIUS = 50 / 25.4; // 1.9685 in // 13345 goBilda mecanum wheels 1st gen part# 3213-3606-0001
+    public static double WHEEL_RADIUS = 48 / 25.4; // 1.8898 in // 13345 goBilda mecanum wheels 2nd gen part# 3213-3606-0002
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
     public static double TRACK_WIDTH = 16.3; // 383mm / 25.4 // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
     public static double WHEEL_BASE = 13.78; // 13.78 in // 13345 goBilda chassis 3209-0001-0002 with mecanum wheel 3606-0000-0100
