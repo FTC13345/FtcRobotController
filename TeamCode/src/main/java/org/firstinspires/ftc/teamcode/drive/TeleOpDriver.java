@@ -102,7 +102,9 @@ public abstract class TeleOpDriver implements Runnable {
         double power = -gamepad1.left_stick_y;
         // Square the number but retain the sign to convert to logarithmic scale
         // scale the range to 0.2 <= abs(power) <= 1.0 and preserve the sign
-        power = Math.signum(power) * (0.2 + (0.8 * power * power)) * speedMultiplier;
+        if (power != 0) {
+            power = Math.signum(power) * (0.2 + (0.8 * power * power)) * speedMultiplier;
+        }
         // OR
         // use this to scale the range without squaring the power value
         //power = Math.signum(power) * (0.25 + (0.75 * Math.abs(power)));
@@ -111,11 +113,15 @@ public abstract class TeleOpDriver implements Runnable {
         //power *= Math.abs(power);
 
         double strafe = (gamepad1.left_trigger > 0) ? +gamepad1.left_trigger : -gamepad1.right_trigger;
-        strafe = Math.signum(strafe) * (0.2 + (0.8 * strafe * strafe)) * speedMultiplier;
+        if (strafe != 0) {
+            strafe = Math.signum(strafe) * (0.2 + (0.8 * strafe * strafe)) * speedMultiplier;
+        }
 
         // similarly for turn power, except also slow down by TURN_FACTOR
         double turn = -gamepad1.right_stick_x;
-        turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
+        if (turn != 0) {
+            turn = Math.signum(turn) * (0.1 + (TURN_FACTOR * turn * turn));
+        }
 
         // flip sign of all driving power if we are in REVERSE mode
         if (mcdrive.isDirectionReverse()) {
@@ -137,21 +143,12 @@ public abstract class TeleOpDriver implements Runnable {
 
         // Update the drive class
         rrmdrive.update();
-
-        // Read pose
-        Pose2d poseEstimate = rrmdrive.getPoseEstimate();
-        // Print pose to telemetry
-//        telemetry.addLine("Runner Position ")
-//                .addData("X", "%2.2f", poseEstimate.getX())
-//                .addData("Y", "%2.2f", poseEstimate.getY())
-//                .addData("Angle", "%3.2f", Math.toDegrees(poseEstimate.getHeading()));
-//        telemetry.update();
     }
 
 
     public void driveMecabot(double power, double strafe, double turn) {
         // when we want to move sideways (MECANUM)
-        if (Math.abs(strafe) > 0.2) {
+        if (Math.abs(strafe) > 0) {
             mcdrive.driveMecanum(strafe);
             telemetry.addData("Mecanum ", "%.2f", power);
         }
