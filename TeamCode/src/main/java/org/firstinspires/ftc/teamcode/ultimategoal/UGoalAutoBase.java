@@ -41,7 +41,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     Telemetry drvrTelemetry;
     Telemetry dashTelemetry;
     int countRingStack;
-    boolean realtimeTrajectories = false;
+    boolean realtimeTrajectories = true;
 
     //**  image recognition variables **//
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -120,19 +120,17 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 //            robot.resetWobblePickupArmEncoder();
 //            telemetry.addData(">", "Wobble Arm encoder reset to ZERO");
 //        }
-
-        telemetry.addData(">", "Hardware initialized");
-
-        do {
-            telemetry.addData("ANGLE_RINGSTACK_PICKUP (Deg)", "%3.3f", Math.toDegrees(ANGLE_RINGSTACK_PICKUP));
-            telemetry.addData("Input", "Trajectory Calculation, (A)Pre-computed or (B)Realtime?");
-            telemetry.addData("Input", "Press A or B on gamepad 1 (driver)");
-            telemetry.update();
-        } while ((!gamepad1.a) && (!gamepad1.b));
-
-        if (gamepad1.b) {
-            realtimeTrajectories = true;
-        }
+//
+//        telemetry.addData(">", "Hardware initialized");
+//
+//        do {
+//            telemetry.addData("ANGLE_RINGSTACK_PICKUP (Deg)", "%3.3f", Math.toDegrees(ANGLE_RINGSTACK_PICKUP));
+//            telemetry.addData("Input", "Trajectory Calculation, (A)Pre-computed or (B)Realtime?");
+//            telemetry.addData("Input", "Press A or B on gamepad 1 (driver)");
+//            telemetry.update();
+//        } while ((!gamepad1.a) && (!gamepad1.b));
+//
+//        realtimeTrajectories = (gamepad1.b) ? true : false;
 
         // Send telemetry message to signify robot waitidng;
         telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
@@ -146,24 +144,22 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // start printing messages to driver station asap but only after hardware is initialized and odometry is running
         setupTelemetry();
 
-        // initialize the image recognition for ring detection
-        if (!isStopRequested()) {
-            initRingStackDetection();
-        }
-
-        // start ring stack detection before driver hits PLAY or STOP on driver station
-        // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
-        if (!isStopRequested()) {
-            runRingStackDetection(5); // large timeout value so that ring detection continues between INIT and START buttons are pressed
-                                                // decreased timeout from 300 -> 5 in order to allow time for trajectory building after ring detection
-        }
-        // NOTE: The ring stack detection will continue until user presses PLAY button (Changed 5 seconds only then trajectory building)
-        // the waitForStart() call that comes after is a formality, the code will pass through because START has been pressed to reach there
-
         // trajectory building takes 1/2 sec per trajectory, so we want to do this in init()
         if (!isStopRequested()) {
             buildTrajectories();
         }
+        // initialize the image recognition for ring detection
+        if (!isStopRequested()) {
+            initRingStackDetection();
+        }
+        // start ring stack detection before driver hits PLAY or STOP on driver station
+        // this should be the last task in this method since we don't want to waste time in initializations when PLAY has started
+        if (!isStopRequested()) {
+            runRingStackDetection(600); // large timeout value so that ring detection continues between INIT and START buttons are pressed
+        }
+        // NOTE: The ring stack detection will continue until user presses PLAY button
+        // the waitForStart() call that comes after is a formality, the code will pass through because START has been pressed to reach there
+
     }
 
     // for testing mainly, at the end wait for driver to press STOP, meanwhile
@@ -259,8 +255,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                 if (updatedRecognitions != null) {
                     update++;
-                    telemetry.addData("Ring Detection", "[%.3f s] %4d in %d tries", time.seconds(), update, loop);
-                    telemetry.addData("# Object Detected", updatedRecognitions.size());
+                    telemetry.addData("Ring Detection", "[%.3f s] %4d in %d tries (%d objects in view)",
+                            time.seconds(), update, loop, updatedRecognitions.size());
                     // step through the list of recognitions and display boundary info.
                     int i = 0;
                     for (Recognition recognition : updatedRecognitions) {
@@ -404,6 +400,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading());
                     }
                 });
+        /*
         drvrTelemetry.addLine("Global Position ")
                 .addData("X", "%2.2f", new Func<Double>() {
                     @Override
@@ -423,6 +420,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         return globalPosition.getOrientationDegrees();
                     }
                 });
+         */
         drvrTelemetry.addLine("Odometry ")
                 .addData("L", "%5.0f", new Func<Double>() {
                     @Override

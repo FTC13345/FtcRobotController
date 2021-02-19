@@ -32,7 +32,7 @@ public class UGoalTeleOp extends LinearOpMode {
     private boolean gamepad2ADebounce = false;
     private boolean gamepad2DpadDebounce = false;
 
-    enum WOBBLE_ARM_MODE { BUTTONS, JOYSTICK};
+    enum WOBBLE_ARM_MODE { BUTTONS, JOYSTICK}
     private WOBBLE_ARM_MODE waMode = WOBBLE_ARM_MODE.BUTTONS;
     private boolean bIgnoreStops = false;
 
@@ -267,6 +267,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading());
                     }
                 });
+        /*
         drvrTelemetry.addLine("Global Position ")
                 .addData("X", "%2.2f", new Func<Double>() {
                     @Override
@@ -286,6 +287,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return globalPosition.getOrientationDegrees();
                     }
                 });
+         */
         drvrTelemetry.addLine("Odometry ")
                 .addData("L", "%5.0f", new Func<Double>() {
                     @Override
@@ -349,6 +351,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return robot.wobblePickupArm.getCurrentPosition();
                     }
                 });
+        /*
         drvrTelemetry.addLine("Move ")
                 .addData("", new Func<String>() {
                     @Override
@@ -356,6 +359,7 @@ public class UGoalTeleOp extends LinearOpMode {
                         return mcdrive.getMovementStatus();
                     }
                 });
+         */
         drvrTelemetry.update();
     }
 
