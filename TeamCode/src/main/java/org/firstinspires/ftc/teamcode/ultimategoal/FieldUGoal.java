@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.util.Angle;
 
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 
@@ -80,16 +81,17 @@ public class FieldUGoal {
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d poseHighGoal2 = new Pose2d(poseHighGoal.vec(), Angle.norm(ANGLE_POS_X_AXIS - Math.toRadians(4)));
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_FROM_ORIGIN), ANGLE_NEG_X_AXIS);
-    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
+    public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_CENTER), ANGLE_NEG_X_AXIS);
+    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN + 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
     public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN - 2.0), TILE_2_CENTER);
 
     // Ring stack is picked up at an angle heading. Robot rotates to the angle and drives reverse at that angle to pickup rings from stack
     // theta = Math.atan( 10 / (-15.5)) = -0.572966 Radians or -32.828 degrees  (when poseHighGoal = (-6.0, +27.5) coordinates)
-    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan((vecRingStack.getY() - poseHighGoal.getY() + 2.0) / (vecRingStack.getX() - poseHighGoal.getX())); // constant is tuning adjustment
+    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan((vecRingStack.getY() - poseHighGoal.getY() + 2.5) / (vecRingStack.getX() - poseHighGoal.getX())); // constant is tuning adjustment
     public static final Pose2d poseRingPickupStart = poseHighGoal.plus(new Pose2d(0,0, ANGLE_RINGSTACK_PICKUP)); // We expect Robot turns to ANGLE_RINGSTACK_PICKUP after shooting rings
 
     // we want to drive DIST_PAST_RINGSTACK inches through the ring stack, calculate the x,y coordinate values and end vector

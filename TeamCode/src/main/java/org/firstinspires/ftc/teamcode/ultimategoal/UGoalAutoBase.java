@@ -514,11 +514,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .build();
 
         shootRings2 = rrmdrive.trajectoryBuilder(pickupStack.end())
-                .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())
+                .splineTo(poseHighGoal2.vec(), poseHighGoal2.getHeading())
                 .build();
 
         double targetZoneX;
         double targetZoneY;
+        double parkingEndTangent = ANGLE_NEG_X_AXIS;
         switch (countRingStack) {
             case 4:
                 targetZoneX = TARGET_ZONE_C_X;
@@ -532,17 +533,18 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             default:
                 targetZoneX = TARGET_ZONE_A_X;
                 targetZoneY = TARGET_ZONE_A_Y;
+                parkingEndTangent = ANGLE_POS_X_AXIS;
                 break;
         }
 
-        poseWobble1deliver = new Pose2d(targetZoneX - 6, targetZoneY, ANGLE_POS_X_AXIS);
+        poseWobble1deliver = new Pose2d(targetZoneX - 8, targetZoneY, ANGLE_POS_X_AXIS);
         placeWobble1 = rrmdrive.trajectoryBuilder(shootRings2.end())
                 .lineToLinearHeading(poseWobble1deliver)
                 .build();
 
         pickupWobble = rrmdrive.trajectoryBuilder(placeWobble1.end(), true)
                 .splineToLinearHeading(poseWobblePickup, ANGLE_POS_Y_AXIS)
-                .addTemporalMarker(2.0, new MarkerCallback() {
+                .addTemporalMarker(0.6, new MarkerCallback() {
                     @Override
                     public void onMarkerReached() {
                         robot.setWobbleArmPickup();
@@ -555,8 +557,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .lineToLinearHeading(poseWobble2deliver)
                 .build();
 
-        goToPark = rrmdrive.trajectoryBuilder(placeWobble2.end())
-                .lineToLinearHeading(posePark)
+        goToPark = rrmdrive.trajectoryBuilder(placeWobble2.end(), ANGLE_NEG_Y_AXIS) // move away from the wobble goals to avoid hitting them during rotation
+                .splineToLinearHeading(posePark, parkingEndTangent)
                 .build();
     }
 
@@ -589,7 +591,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (countRingStack > 0) {
             if (opModeIsActive()) {
                 // Turn at an angle to pickup rings from stack
-                rrmdrive.turnToHeading(Angle.norm(ANGLE_RINGSTACK_PICKUP));
+                rrmdrive.turn(ANGLE_RINGSTACK_PICKUP);
             }
 
             // Drive in reverse rings from stack on the field
@@ -607,7 +609,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             if (realtimeTrajectories) {
                 currentPose = rrmdrive.getPoseEstimate();
                 shootRings2 = rrmdrive.trajectoryBuilder(currentPose)
-                        .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())
+                        .splineTo(poseHighGoal2.vec(), poseHighGoal2.getHeading())
                         .addTemporalMarker(0.2, new MarkerCallback() {
                             @Override
                             public void onMarkerReached() {
@@ -645,7 +647,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             currentPose = rrmdrive.getPoseEstimate();
             pickupWobble = rrmdrive.trajectoryBuilder(currentPose, true)
                     .splineToLinearHeading(poseWobblePickup, ANGLE_POS_Y_AXIS)
-                    .addTemporalMarker(2.0, new MarkerCallback() {
+                    .addTemporalMarker(0.6, new MarkerCallback() {
                         @Override
                         public void onMarkerReached() {
                             robot.setWobbleArmPickup();

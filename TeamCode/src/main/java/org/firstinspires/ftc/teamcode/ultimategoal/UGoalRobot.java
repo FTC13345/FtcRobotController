@@ -42,7 +42,7 @@ public class UGoalRobot {
     static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
-    static final double SHOOTER_FLYWHEEL_RUN = 0.8;
+    static final double SHOOTER_FLYWHEEL_RUN = 0.7;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
     static final double SHOOTER_PLATFORM_ANGLE_MIN = 20.0f;
     static final double SHOOTER_PLATFORM_ANGLE_MAX = 35.0f;
@@ -149,10 +149,6 @@ public class UGoalRobot {
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
         waitUntilMotorBusy(motor);
-        // TODO: Verify whether wobble arm reaches target position before timeout and
-        //  we can apply brake and change RUN_MODE without any adverse affects.
-        //motor.setPower(MecabotDrive.DRIVE_SPEED_BRAKE);
-        //motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*
@@ -390,7 +386,7 @@ public class UGoalRobot {
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 2.5;    // record value before clipping for telemetry printout, do not delete this line
+        shooterPlatformTiltAngle = tiltAngle + 2.0;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
