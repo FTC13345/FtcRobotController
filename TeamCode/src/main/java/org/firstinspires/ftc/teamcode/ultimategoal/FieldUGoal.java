@@ -91,7 +91,7 @@ public class FieldUGoal {
 
     // Ring stack is picked up at an angle heading. Robot rotates to the angle and drives reverse at that angle to pickup rings from stack
     // theta = Math.atan( 10 / (-15.5)) = -0.572966 Radians or -32.828 degrees  (when poseHighGoal = (-6.0, +27.5) coordinates)
-    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan((vecRingStack.getY() - poseHighGoal.getY() + 2.5) / (vecRingStack.getX() - poseHighGoal.getX())); // constant is tuning adjustment
+    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan((vecRingStack.getY() - poseHighGoal.getY() + 3.0) / (vecRingStack.getX() - poseHighGoal.getX())); // constant is tuning adjustment
     public static final Pose2d poseRingPickupStart = poseHighGoal.plus(new Pose2d(0,0, ANGLE_RINGSTACK_PICKUP)); // We expect Robot turns to ANGLE_RINGSTACK_PICKUP after shooting rings
 
     // we want to drive DIST_PAST_RINGSTACK inches through the ring stack, calculate the x,y coordinate values and end vector
