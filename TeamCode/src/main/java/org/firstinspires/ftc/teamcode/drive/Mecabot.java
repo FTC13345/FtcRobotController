@@ -48,14 +48,14 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
  */
 public class Mecabot {
     // drive train motors
-    public DcMotor leftFrontDrive = null;
-    public DcMotor leftBackDrive = null;
-    public DcMotor rightFrontDrive = null;
-    public DcMotor rightBackDrive = null;
+    public DcMotor leftFrontDrive;
+    public DcMotor leftBackDrive;
+    public DcMotor rightFrontDrive;
+    public DcMotor rightBackDrive;
 
     // Lights control
-    public RevBlinkinLedDriver lights = null;
-    public RevBlinkinLedDriver.BlinkinPattern pattern = null;
+    public RevBlinkinLedDriver lights;
+    public RevBlinkinLedDriver.BlinkinPattern pattern;
 
     // Robot front and rear can be flipped for driving purposes
     // Define enum constant for whether robot is in NORMAL forward mode or in REVERSE mode
@@ -342,6 +342,9 @@ public class Mecabot {
     }
 
     // set light color methods
+    public void setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern pattern) {
+        lights.setPattern(pattern);
+    }
     public void setLightGreen() {
         pattern = RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE;
         lights.setPattern(pattern);

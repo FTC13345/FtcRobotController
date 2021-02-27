@@ -35,6 +35,7 @@ public class UGoalTeleOp extends LinearOpMode {
     enum WOBBLE_ARM_MODE { BUTTONS, JOYSTICK}
     private WOBBLE_ARM_MODE waMode = WOBBLE_ARM_MODE.BUTTONS;
     private boolean bIgnoreStops = false;
+    private int loop = 0;
 
     void setPoseStart() {
         // This code assumes Robot starts at a position as follows:
@@ -84,6 +85,9 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            if (++loop % 10 == 0) {
+                robot.setLED4RingsCount();
+            }
             setup();
             intake();
             shootRings();

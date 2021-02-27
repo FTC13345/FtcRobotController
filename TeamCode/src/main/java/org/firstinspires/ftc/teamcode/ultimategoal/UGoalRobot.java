@@ -3,16 +3,20 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 
@@ -72,6 +76,9 @@ public class UGoalRobot {
     public Servo wobbleFinger = null;   // clamp for side wobble pickup
     public Servo wobblePreload = null;
 
+    // Color sensor
+    public NormalizedColorSensor ringSensor = null;
+
     // Hardware switch
     public DigitalChannel wobbleLowLimit;
 
@@ -128,8 +135,59 @@ public class UGoalRobot {
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         intakeCRServo.setDirection(CRServo.Direction.REVERSE);
 
+        ringSensor = ahwMap.get(NormalizedColorSensor.class, "ringColorSensor");
+
 //        wobbleLowLimit = ahwMap.get(DigitalChannel.class, "wobbleLowLimit");
 //        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
+    }
+
+    /*
+     * Ring count detection inside the hopper using the color/distance sensor
+     */
+    public int ringsCountInHopper() {
+        /* If this color sensor also has a distance sensor, use that to count rings in the hopper
+         * Note that the reported distance is only useful at very close range, and is impacted by
+         * ambient light and surface reflectivity. */
+        int count = 0;
+        double distance = 0;
+        if (ringSensor instanceof DistanceSensor) {
+            distance = ((DistanceSensor) ringSensor).getDistance(DistanceUnit.CM);
+            if (distance > 3.25) {
+                count = 0;
+            } else if (distance > 2.95) {
+                count = 1;
+            } else if (distance > 2.60) {
+                count = 2;
+            } else if (distance > 2.20) {
+                count = 3;
+            } else {
+                count = 4;
+            }
+        }
+        myOpMode.telemetry.addData("Rings in Hopper ", "Dist (cm) %.3f, Count %d", distance, count);
+        myOpMode.telemetry.update();
+        return count;
+    }
+
+    public void setLED4RingsCount() {
+
+        switch (ringsCountInHopper()) {
+            case 0:
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
+                break;
+            case 1:
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
+                break;
+            case 2:
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.GOLD);
+                break;
+            case 3:
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
+                break;
+            default:
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.STROBE_RED);
+                break;
+        }
     }
 
     /*
@@ -148,7 +206,9 @@ public class UGoalRobot {
         motor.setTargetPosition(position);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
-        waitUntilMotorBusy(motor);
+        // disabled, do not wait for motor to reach target position, this is necessary to not block the thread
+        //waitUntilMotorBusy(motor);
+        // caller must realize that the call is asynchronous and motor will take timee after return from this call
     }
 
     /*
@@ -529,6 +589,7 @@ public class UGoalRobot {
                 myOpMode.sleep(RING_SHOOTING_INTERVAL); // allow some time for the flywheel to gain full speed after each shot
             }
             shootRing();
+            setLED4RingsCount();
         }
     }
 
