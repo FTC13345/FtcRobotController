@@ -2,15 +2,17 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import android.annotation.SuppressLint;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.acmerobotics.roadrunner.trajectory.constraints.*;
+import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MecanumVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -26,7 +28,32 @@ import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_NEG_X_AXIS;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_NEG_Y_AXIS;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_POS_X_AXIS;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_POS_Y_AXIS;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.GOALX;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.GOALY;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.HIGH_GOAL_HEIGHT;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_A_X;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_A_Y;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_B_X;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_B_Y;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_C_X;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_C_Y;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_1_FROM_ORIGIN;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_LENGTH;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.flip4Red;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseHighGoal;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseHighGoal2;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.posePark;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseRingPickupStart;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStart;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseWobblePickup;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.vecRingPickupEnd;
 
 
 public abstract class UGoalAutoBase extends LinearOpMode {
@@ -299,7 +326,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         robot.pickUpWobble();
         encoderDriveToShootHighGoal();
         robot.tiltShooterPlatform(GOALX, flip4Red(GOALY), HIGH_GOAL_HEIGHT);
-        robot.shootRingsIntoHighGoal(4);
+        robot.shootRingsIntoHighGoal(3);
         encoderDriveToTargetZone(countRingStack);
         robot.deliverWobble();
         robot.setWobbleArmRaised();
@@ -450,8 +477,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .build();
                 break;
             case RINGS_STACK_PICKUP:
-                trajectory = rrmdrive.trajectoryBuilder(beginPose, true)
-                        .lineTo(vecRingPickupEnd, veloc, accelc)
+                trajectory = rrmdrive.trajectoryBuilder(beginPose, Math.toRadians(90))//robot facing forward but we want trajectory to start at a 90 angle to give enough room to turn and drive straight backward
+                        .splineToConstantHeading(vecRingPickupEnd, Math.toRadians(180))//We want the trajectory to be facing 180 degrees, which faces the stack rings
                         .build();
                 break;
             case SHOOT_RINGS_STACK:
@@ -514,16 +541,16 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     // and tilt the platform at suitable angle for current pose
                     robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, rrmdrive.getPoseEstimate().vec());
                     // and shoot rings into high goal
-                    robot.shootRingsIntoHighGoal(4);    // 3 preloaded rings + 1 extra shot sometimes the ring is not seated in the holder
+                    robot.shootRingsIntoHighGoal(3);    // 3 preloaded rings
                     break;
-
+                /*
                 case 3:
                     // If Ringstack on the field has 1 or 4 rings, Pick up additional rings from the field for shooting into high goal
                     // Turn at an angle to pickup rings from stack
                     rrmdrive.turn(ANGLE_RINGSTACK_PICKUP);
                     break;
 
-                // Drive in reverse rings from stack on the field
+                // Drive in reverse rings from stack on the field */
                 case 4:
                     robot.dropIntakeAssembly();
                     robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
@@ -532,18 +559,18 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     robot.setLED4RingsCount();
                     break;
 
-                // drive to launch line and shoot rings into high goal
+                // drive to launch line to shoot rings into high goal
                 case 5:
                     shootRings2 = buildTrajectory(TRAJ.SHOOT_RINGS_STACK);
                     rrmdrive.followTrajectory(shootRings2);
                     robot.setLED4RingsCount();
                     break;
-
-                // if only 1 ring in stack, then 2 shot attempts are enough, otherwise 4 shot attempts for 3 rings
+                //aim and shoot the rings into high goal
+                // if only 1 ring in stack, then 2 shot attempts are enough and we have enough time for an extra shot, otherwise 3 shot attempts for 3 rings
                 case 6:
                     // and tilt the platform at suitable angle for current pose
                     robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, rrmdrive.getPoseEstimate().vec());
-                    robot.shootRingsIntoHighGoal(countRingStack == 1 ? 2 : 4);
+                    robot.shootRingsIntoHighGoal(countRingStack == 1 ? 2 : 3);
                     robot.stopIntake();
                     break;
                 // case 7, 8, 9 placeholder for 2nd round of starter stack pickup
@@ -699,7 +726,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         if (opModeIsActive()) {
             rrmdrive.followTrajectory(shootRings1);
         }
-        robot.shootRingsIntoHighGoal(4);    // 3 preloaded rings + 1 extra shot sometimes the ring is not seated in the holder
+        robot.shootRingsIntoHighGoal(3);    // 3 preloaded rings
 
         // drive to Target Zone and deliver the 2 wobbles
         if (opModeIsActive()) {
@@ -723,8 +750,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             if (opModeIsActive()) {
                 rrmdrive.followTrajectory(shootRings2);
             }
-            // if only 1 ring in stack, then 2 shot attempts are enough, otherwise 4 shot attempts for 3 rings
-            robot.shootRingsIntoHighGoal(countRingStack == 1 ? 2 : 4);
+            // if only 1 ring in stack, then 2 shot attempts are enough, otherwise 3 shot attempts for 3 rings
+            robot.shootRingsIntoHighGoal(countRingStack == 1 ? 2 : 3;
 
             robot.stopIntake();
         }
