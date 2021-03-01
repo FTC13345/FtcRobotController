@@ -88,11 +88,11 @@ public class FieldUGoal {
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_CENTER), ANGLE_NEG_X_AXIS);
     public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN + 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
-    public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN - 2.0), TILE_2_CENTER);
 
-    public static final Vector2d vecRingPickupEnd = vecRingStack.plus(new Vector2d(-2, 0));
-    //* TODO Figure out how much more distance needs to be traveled. Placeholder 6 inches for now to remove errors
-    public static final Vector2d vecRingPickupEnd2 = vecRingStack.plus(new Vector2d( -7, 0));//same y distance
+    public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN), TILE_2_CENTER + 1.0);
+    public static final Vector2d vecRingPickupStart = vecRingStack.plus(new Vector2d(+14.0, 0));
+    public static final Vector2d vecRingPickupEnd = vecRingStack;
+    public static final Vector2d vecRingPickupEnd2 = vecRingStack.plus(new Vector2d( -7, 2));//same y distance
 
     // Robot positioned next to the Audience wall, ready to drop the wobble over the perimeter wall into the landing zone
     public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));
