@@ -82,6 +82,7 @@ public class FieldUGoal {
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d poseHighGoal2 = new Pose2d(poseHighGoal.vec(), Angle.norm(ANGLE_POS_X_AXIS - Math.toRadians(4)));
+    public static Pose2d poseHighGoal3 = new Pose2d(poseHighGoal.vec(), Angle.norm(ANGLE_POS_X_AXIS - Math.toRadians(8)));
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
@@ -89,16 +90,9 @@ public class FieldUGoal {
     public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN + 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
     public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN - 2.0), TILE_2_CENTER);
 
-    // Ring stack is picked up at an angle heading. Robot rotates to the angle and drives reverse at that angle to pickup rings from stack
-    // theta = Math.atan( 10 / (-15.5)) = -0.572966 Radians or -32.828 degrees  (when poseHighGoal = (-6.0, +27.5) coordinates)
-    public static final double ANGLE_RINGSTACK_PICKUP = Math.atan((vecRingStack.getY() - poseHighGoal.getY() + 3.0) / (vecRingStack.getX() - poseHighGoal.getX())); // constant is tuning adjustment
-    public static final Pose2d poseRingPickupStart = poseHighGoal.plus(new Pose2d(0,0, ANGLE_RINGSTACK_PICKUP)); // We expect Robot turns to ANGLE_RINGSTACK_PICKUP after shooting rings
-
-    // we want to drive DIST_PAST_RINGSTACK inches through the ring stack, calculate the x,y coordinate values and end vector
-    static final double DIST_PAST_RINGSTACK = 7.0; // inches
-    static final double xDistance = DIST_PAST_RINGSTACK * Math.cos(ANGLE_RINGSTACK_PICKUP + Math.PI);    // Add 180 deg (PI radians) for reverse direction of robot heading
-    static final double yDistance = DIST_PAST_RINGSTACK * Math.sin(ANGLE_RINGSTACK_PICKUP + Math.PI);
-    public static final Vector2d vecRingPickupEnd = vecRingStack.plus(new Vector2d(xDistance, yDistance));
+    public static final Vector2d vecRingPickupEnd = vecRingStack.plus(new Vector2d(-2, 0));
+    //* TODO Figure out how much more distance needs to be traveled. Placeholder 6 inches for now to remove errors
+    public static final Vector2d vecRingPickupEnd2 = vecRingStack.plus(new Vector2d( -7, 0));//same y distance
 
     // Robot positioned next to the Audience wall, ready to drop the wobble over the perimeter wall into the landing zone
     public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));

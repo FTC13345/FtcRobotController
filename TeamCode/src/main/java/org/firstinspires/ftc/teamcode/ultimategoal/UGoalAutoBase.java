@@ -48,12 +48,11 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_1_FROM
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_LENGTH;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.flip4Red;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseHighGoal;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseHighGoal2;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.posePark;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseRingPickupStart;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStart;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseWobblePickup;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.vecRingPickupEnd;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.vecRingPickupEnd2;
 
 
 public abstract class UGoalAutoBase extends LinearOpMode {
@@ -67,7 +66,6 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     Telemetry drvrTelemetry;
     Telemetry dashTelemetry;
     int countRingStack;
-    boolean realtimeTrajectories = true;
 
     //**  image recognition variables **//
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -98,10 +96,13 @@ public abstract class UGoalAutoBase extends LinearOpMode {
     Trajectory deliverWobble1;
     Trajectory deliverWobble2;
     Trajectory pickupStack;
+    Trajectory pickupStack2; //if there are 4 rings, we need to pickup stack in two parts
     Trajectory shootRings2;
+    Trajectory shootRings3;
     Trajectory goToPark;
-    Pose2d     poseWobble1deliver;
-    Pose2d     poseWobble2deliver;
+    Pose2d     poseWobble1deliver = new Pose2d(TARGET_ZONE_C_X - 8, TARGET_ZONE_C_Y, ANGLE_POS_X_AXIS);
+    Pose2d     poseWobble2deliver = new Pose2d(TARGET_ZONE_C_X - 6, TARGET_ZONE_C_Y - 12, ANGLE_POS_X_AXIS);
+
 
     // limit velocity constraint when we want precise positioning at end of trajectory
     TrajectoryVelocityConstraint veloc = new MinVelocityConstraint(Arrays.asList(
@@ -433,9 +434,9 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         TRAJ_LIST_START,
         SHOOT_RINGS_PRELOADED,
         RINGS_STACK_PICKUP,
+        RINGS_STACK_PICKUP2,
         SHOOT_RINGS_STACK,
-        STACK_PICKUP_2,
-        SHOOT_RINGS_STACK_2,
+        SHOOT_RINGS_STACK2,
         WOBBLE_1_DELIVER,
         WOBBLE_2_PICKUP,
         WOBBLE_2_DELIVER,
@@ -445,9 +446,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     private void buildTrajectories() {
         shootRings1 = buildTrajectory(TRAJ.SHOOT_RINGS_PRELOADED, poseStart);
-        pickupStack = buildTrajectory(TRAJ.RINGS_STACK_PICKUP, poseRingPickupStart);
+        pickupStack = buildTrajectory(TRAJ.RINGS_STACK_PICKUP, shootRings1.end());
         shootRings2 = buildTrajectory(TRAJ.SHOOT_RINGS_STACK, pickupStack.end());
-        deliverWobble1 = buildTrajectory(TRAJ.WOBBLE_1_DELIVER, shootRings2.end());
+        pickupStack2 = buildTrajectory(TRAJ.RINGS_STACK_PICKUP2, shootRings2.end());
+        shootRings3 = buildTrajectory(TRAJ.SHOOT_RINGS_STACK2, pickupStack2.end());
+        deliverWobble1 = buildTrajectory(TRAJ.WOBBLE_1_DELIVER, shootRings3.end());
         pickupWobble2 = buildTrajectory(TRAJ.WOBBLE_2_PICKUP, deliverWobble1.end());
         deliverWobble2 = buildTrajectory(TRAJ.WOBBLE_2_DELIVER, pickupWobble2.end());
         goToPark = buildTrajectory(TRAJ.GO_PARK, deliverWobble2.end());
@@ -482,8 +485,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .build();
                 break;
             case SHOOT_RINGS_STACK:
+            case SHOOT_RINGS_STACK2:
                 trajectory = rrmdrive.trajectoryBuilder(beginPose)
-                        .splineTo(poseHighGoal2.vec(), poseHighGoal2.getHeading())
+                        .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())
+                        .build();
+                break;
+            case RINGS_STACK_PICKUP2:
+                trajectory = rrmdrive.trajectoryBuilder(beginPose, Math.toRadians(90))//robot facing forward but we want trajectory to start at a 90 angle to give enough
+                        .splineToConstantHeading(vecRingPickupEnd2, Math.toRadians(180))//We want the trajectory to be facing 180 degrees, which faces the stack rings
                         .build();
                 break;
             case WOBBLE_1_DELIVER:
@@ -574,7 +583,26 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                     robot.stopIntake();
                     break;
                 // case 7, 8, 9 placeholder for 2nd round of starter stack pickup
-
+                //pickup the last ring in stack
+                case 7:
+                    robot.runIntake(MecabotDrive.DRIVE_SPEED_MAX);
+                    pickupStack2 = buildTrajectory(TRAJ.RINGS_STACK_PICKUP2);
+                    rrmdrive.followTrajectory(pickupStack2);
+                    robot.setLED4RingsCount();
+                    break;
+                //drive to launch line to shoot rings into high goal
+                case 8:
+                    shootRings3 = buildTrajectory(TRAJ.SHOOT_RINGS_STACK2);
+                    rrmdrive.followTrajectory(shootRings3);
+                    robot.setLED4RingsCount();
+                    break;
+                    //aim and shoot the rings into high goal
+                case 9:
+                    // and tilt the platform at suitable angle for current pose
+                    robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, rrmdrive.getPoseEstimate().vec());
+                    robot.shootRingsIntoHighGoal(countRingStack == 1 ? 2 : 3);
+                    robot.stopIntake();
+                    break;
                 case 10:
                     robot.stopShooterFlywheel();
                     break;
