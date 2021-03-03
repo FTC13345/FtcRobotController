@@ -46,7 +46,7 @@ public class OdometryCalibration extends LinearOpMode {
 
     // THIS WILL CHANGE FOR EACH ROBOT AND NEED TO BE UPDATED HERE (change the ticks per rotation and the wheel diameter
     // The amount of encoder ticks for each inch the robot moves.
-    final double ENCODER_COUNT_PER_INCH = (8192.0f * 25.4f) / (Math.PI * 38.0f);  // FTC Team 13345 Mecabot odometry encoder (Rev magnetic encoder) has 8192 ticks per rotation, odometry wheel has 38mm diameter
+    final double ENCODER_COUNT_PER_INCH = (8192.0f * 25.4f) / (Math.PI * 38.0f);  // 1742.97 FTC Team 13345 Mecabot odometry encoder (Rev magnetic encoder) has 8192 ticks per rotation, odometry wheel has 38mm diameter
 
     //Text files to write the values to. The files are stored in the robot controller under Internal Storage\FIRST\settings
     File wheelBaseSeparationFile = AppUtil.getInstance().getSettingsFile("wheelBaseSeparation.txt");
@@ -137,7 +137,7 @@ public class OdometryCalibration extends LinearOpMode {
         double verticalEncoderTicksPerRadian = (180*verticalEncoderTicks)/(Math.PI*headingCumulative);
         double wheelBaseSeparationInches = verticalEncoderTicksPerRadian/ ENCODER_COUNT_PER_INCH;
 
-        double horizontalCountPerRadian = Math.abs(horizontalCount)/Math.toRadians(angle);
+        double horizontalCountPerRadian = Math.abs(horizontalCount)/Math.toRadians(headingCumulative);
 
         //Write the constants to text files
         ReadWriteFile.writeFile(wheelBaseSeparationFile, String.valueOf(wheelBaseSeparationInches));
@@ -146,16 +146,17 @@ public class OdometryCalibration extends LinearOpMode {
         while(opModeIsActive()){
             telemetry.addData("Odometry System Calibration ", "Complete");
             //Display calculated constants
-            telemetry.addData("Wheel Base Separation (inches)", wheelBaseSeparationInches);
-            telemetry.addData("Horizontal Encoder Ticks per Radian", horizontalCountPerRadian);
+            telemetry.addData("Wheel Base Separation (inches)", "%.2f", wheelBaseSeparationInches);
+            telemetry.addData("Horizontal Encoder Ticks per Radian", "%.0f", horizontalCountPerRadian);
+            telemetry.addData("Calculations", "");
 
             //Display raw values
-            telemetry.addData("IMU Angle (degrees)", angle);
-            telemetry.addData("Vertical Left Position", verticalLeftCount);
-            telemetry.addData("Vertical Right Position", verticalRightCount);
-            telemetry.addData("Horizontal Position", horizontalCount);
-            telemetry.addData("Vertical Encoder Ticks per Degree", verticalEncoderTicksPerDegree);
-            telemetry.addData("Vertical Encoder Ticks per Radian", verticalEncoderTicksPerRadian);
+            telemetry.addData("Total Rotation (IMU degrees)", "%.2f°", headingCumulative);
+            telemetry.addData("Vertical Left Encoder Ticks", "%.0f", verticalLeftCount);
+            telemetry.addData("Vertical Right Encoder Ticks", "%.0f", verticalRightCount);
+            telemetry.addData("Vertical Encoder Ticks per Degree", "%.2f", verticalEncoderTicksPerDegree);
+            telemetry.addData("Vertical Encoder Ticks per Radian", "%.2f", verticalEncoderTicksPerRadian);
+            telemetry.addData("Horizontal Encoder Ticks", "%.0f", horizontalCount);
 
             //Update values
             telemetry.update();
