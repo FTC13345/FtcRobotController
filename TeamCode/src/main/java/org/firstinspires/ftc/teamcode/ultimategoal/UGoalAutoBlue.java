@@ -23,8 +23,7 @@ public class UGoalAutoBlue extends UGoalAutoBase {
         // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
         // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
         // Robot back is touching the perimeter wall.
-        globalPosition.setGlobalPosition(poseStart.getX(), poseStart.getY(), poseStart.getHeading());
-        rrmdrive.setPoseEstimate(poseStart);
+        robot.setPose(poseStart);
     }
 
     @Override

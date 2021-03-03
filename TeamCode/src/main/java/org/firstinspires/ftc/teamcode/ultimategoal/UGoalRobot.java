@@ -16,9 +16,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Func;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
+import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
@@ -57,7 +61,10 @@ public class UGoalRobot {
     // mecanum drive train
     private RRMecanumDrive rrmdrive;
     private MecabotDrive mcdrive;
+    private OdometryGlobalPosition globalPosition;
     private LinearOpMode myOpMode;       // Access to the OpMode object
+    private Telemetry telemetry;
+    private Orientation angles;
 
     // Motors and/or enccoders
     public DcMotor leftODwheel = null;
@@ -84,9 +91,11 @@ public class UGoalRobot {
 
     // constructor
     public UGoalRobot(HardwareMap hardwareMap, LinearOpMode opMode) {
+        myOpMode = opMode;
+        telemetry = opMode.telemetry;
         mcdrive = new MecabotDrive(hardwareMap, opMode);
         rrmdrive = new RRMecanumDrive(hardwareMap, opMode);
-        myOpMode = opMode;
+        globalPosition = mcdrive.getOdometry();
         this.init(hardwareMap);
     }
     // mecanum drivetrain used by the Robot
@@ -139,6 +148,14 @@ public class UGoalRobot {
 
 //        wobbleLowLimit = ahwMap.get(DigitalChannel.class, "wobbleLowLimit");
 //        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
+    }
+
+    /*
+     * Drive related method. Most of these should be in the Drive class(es)
+     */
+    public void setPose(Pose2d pose) {
+        globalPosition.setGlobalPosition(pose.getX(), pose.getY(), pose.getHeading());
+        rrmdrive.setPoseEstimate(pose);
     }
 
     /*
@@ -496,6 +513,22 @@ public class UGoalRobot {
         angleServo.setPosition(SHOOTER_PLATFORM_POS_MAX);
     }
 
+    //aim and shoot three rings into the high goal
+    public void shootRingsIntoHighGoal(int n){
+        // assumption that flywheel is already running so it can gain full speed
+        // assumption that platform is already tilted for shooting at HIGH GOAL by the caller.
+        // This is to allow tilting to be done while the robot is driving.
+
+        // the pusher seems to miss once in a while so we take an extra shot to ensure 3 rings are shot
+        for (int i = 0; i<n && myOpMode.opModeIsActive(); i++) {
+            if (i>0) {
+                myOpMode.sleep(RING_SHOOTING_INTERVAL); // allow some time for the flywheel to gain full speed after each shot
+            }
+            shootRing();
+            setLED4RingsCount();
+        }
+    }
+
     /*****************************
      * Autonomous Program Methods using RoadRunner MecanumDrive
      ****************************/
@@ -577,22 +610,6 @@ public class UGoalRobot {
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
 
-    //aim and shoot three rings into the high goal
-    public void shootRingsIntoHighGoal(int n){
-        // assumption that flywheel is already running so it can gain full speed
-        // assumption that platform is already tilted for shooting at HIGH GOAL by the caller.
-        // This is to allow tilting to be done while the robot is driving.
-
-        // the pusher seems to miss once in a while so we take an extra shot to ensure 3 rings are shot
-        for (int i = 0; i<n && myOpMode.opModeIsActive(); i++) {
-            if (i>0) {
-                myOpMode.sleep(RING_SHOOTING_INTERVAL); // allow some time for the flywheel to gain full speed after each shot
-            }
-            shootRing();
-            setLED4RingsCount();
-        }
-    }
-
     //Power shot 1 is furthest power shot from center
     public void shootPowerShot1(){
         tiltShooterPlatform(POWERSHOTX, flip4Red(POWERSHOT_1_Y), POWER_SHOT_HEIGHT);
@@ -623,6 +640,93 @@ public class UGoalRobot {
         // third powershot
         mcdriveToNextPowerShot();
         shootPowerShot3();
+    }
+    
+    /*****************************
+     * Telemetry setup
+     ****************************/
+    protected void composeTelemetry() {
+        telemetry.addAction(new Runnable() { @Override public void run()
+        {
+            // Acquiring the angles is relatively expensive, about 5ms to 10ms; we want to do it once
+            //angles   = mcdrive.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+            angles   = mcdrive.imu.getAngularOrientation();
+        }
+        });
+        telemetry.addLine("RR Pos ")
+                .addData("X", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {return rrmdrive.getPoseEstimate().getX();}
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {return rrmdrive.getPoseEstimate().getY();}
+                })
+                .addData("Head", "%3.2f°", new Func<Double>() {
+                    @Override
+                    public Double value() { return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading()); }
+                })
+                .addData("Gyro", "%.2f°", new Func<Float>() {
+                    @Override
+                    public Float value() { return angles.angleUnit.toDegrees(angles.firstAngle); }
+                });
+        telemetry.addLine("OD Pos ")
+                .addData("X", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() { return globalPosition.getXinches();}
+                })
+                .addData("Y", "%2.2f", new Func<Double>() {
+                    @Override
+                    public Double value() {return globalPosition.getYinches();}
+                })
+                .addData("Head", "%3.2f°", new Func<Double>() {
+                    @Override
+                    public Double value() { return globalPosition.getOrientationDegrees(); }
+                });
+        telemetry.addLine("OD Count ")
+                .addData("L", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() {return globalPosition.getVerticalLeftCount();}
+                })
+                .addData("R", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() { return globalPosition.getVerticalRightCount(); }
+                })
+                .addData("X", "%5.0f", new Func<Double>() {
+                    @Override
+                    public Double value() { return globalPosition.getHorizontalCount(); }
+                });
+        telemetry.addLine("Drive ")
+                .addData("LF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return mcdrive.leftFrontDrive.getCurrentPosition(); }
+                })
+                .addData("LB", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return mcdrive.leftBackDrive.getCurrentPosition(); }
+                })
+                .addData("RF", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return mcdrive.rightFrontDrive.getCurrentPosition(); }
+                })
+                .addData("RB", "%5d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return mcdrive.rightBackDrive.getCurrentPosition(); }
+                });
+        telemetry.addLine("Tilt ")
+                .addData("Angle", "%.1f", new Func<Double>() {
+                    @Override
+                    public Double value() { return shooterPlatformTiltAngle; }
+                })
+                .addData("Pos", "%.2f",  new Func<Double>() {
+                    @Override
+                    public Double value() { return angleServo.getPosition(); }
+                })
+                .addData("Wobble Arm", "%3d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return wobblePickupArm.getCurrentPosition(); }
+                });
+        telemetry.update();
     }
 
 }

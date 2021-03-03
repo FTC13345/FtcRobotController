@@ -2,23 +2,18 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import android.annotation.SuppressLint;
 
-import com.acmerobotics.dashboard.FtcDashboard;
+import java.util.Arrays;
+import java.util.List;
+
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.MecanumVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.*;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.Func;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
@@ -26,46 +21,16 @@ import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
-import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_NEG_X_AXIS;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_NEG_Y_AXIS;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_POS_X_AXIS;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.ANGLE_POS_Y_AXIS;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.GOALX;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.GOALY;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.HIGH_GOAL_HEIGHT;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_A_X;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_A_Y;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_B_X;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_B_Y;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_C_X;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TARGET_ZONE_C_Y;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_1_FROM_ORIGIN;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.TILE_LENGTH;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.flip4Red;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseHighGoal;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.posePark;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseStart;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.poseWobblePickup;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.vecRingPickupEnd;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.vecRingPickupEnd2;
-import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.vecRingPickupStart;
+import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 
 public abstract class UGoalAutoBase extends LinearOpMode {
 
     // OpMode members here
-    /* Declare OpMode members. */
     RRMecanumDrive rrmdrive;
     UGoalRobot robot;
     MecabotDrive mcdrive;
-    OdometryGlobalPosition globalPosition;
-    Telemetry drvrTelemetry;
-    Telemetry dashTelemetry;
     int countRingStack;
 
     //**  image recognition variables **//
@@ -132,45 +97,29 @@ public abstract class UGoalAutoBase extends LinearOpMode {
      * Initialize all hardware and software data structures
      */
     public void initializeOpMode() {
-        // Redirect telemetry printouts to both Driver Station and FTC Dashboard
-        dashTelemetry = FtcDashboard.getInstance().getTelemetry();
-        drvrTelemetry = telemetry;
-        //telemetry = new MultipleTelemetry(drvrTelemetry, dashTelemetry);
 
         // Initialize the robot hardware and drive system variables.
         robot = new UGoalRobot(hardwareMap, this);
         rrmdrive = robot.getRRMdrive();
         mcdrive = robot.getMCBdrive();
 
+        // IMPORTANT: IMU must be initialized otherwise gyro heading will be always zero
+        // During Tele-Op program if we want to retain the gyro heading from Autonomous program,
+        // then DO NOT initialize IMU again as that resets the gyro heading to 0.0
+        mcdrive.initIMU();
+
         // Motor and Servo position initializations
         robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
-//        if (robot.wobbleLowLimit.getState() == false) {     // switch is pressed, wobble arm is at bottom
-//            robot.resetWobblePickupArmEncoder();
-//            telemetry.addData(">", "Wobble Arm encoder reset to ZERO");
-//        }
-//
-//        telemetry.addData(">", "Hardware initialized");
-//
-//        do {
-//            telemetry.addData("ANGLE_RINGSTACK_PICKUP (Deg)", "%3.3f", Math.toDegrees(ANGLE_RINGSTACK_PICKUP));
-//            telemetry.addData("Input", "Trajectory Calculation, (A)Pre-computed or (B)Realtime?");
-//            telemetry.addData("Input", "Press A or B on gamepad 1 (driver)");
-//            telemetry.update();
-//        } while ((!gamepad1.a) && (!gamepad1.b));
-//
-//        realtimeTrajectories = (gamepad1.b) ? true : false;
 
-        // Send telemetry message to signify robot waitidng;
-        telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
-        telemetry.update();
-
-        // odometry is initialize inside drive system MecabotDrive class
-        globalPosition = mcdrive.getOdometry();
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
         setPoseStart();
 
         // start printing messages to driver station asap but only after hardware is initialized and odometry is running
-        setupTelemetry();
+        robot.composeTelemetry();
+
+        // Send telemetry message to signify robot waitidng;
+        telemetry.addData(">", "WAIT for Tensorflow Ring Detection before pressing START");    //
+        telemetry.update();
 
         // trajectory building can take some time, pre-build what is possible, but for some trajectories we need to do wait until ring detection
         if (!isStopRequested()) {
@@ -788,115 +737,4 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         }
     }
 */
-
-    /*****************************
-     * Telemetry debug printous setup
-     ****************************/
-    protected void setupTelemetry() {
-        drvrTelemetry.addLine("Runner Position ")
-                .addData("X", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return rrmdrive.getPoseEstimate().getX();
-                    }
-                })
-                .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return rrmdrive.getPoseEstimate().getY();
-                    }
-                })
-                .addData("Head", "%3.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading());
-                    }
-                });
-        /*
-        drvrTelemetry.addLine("Global Position ")
-                .addData("X", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getXinches();
-                    }
-                })
-                .addData("Y", "%2.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getYinches();
-                    }
-                })
-                .addData("Head", "%3.2f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getOrientationDegrees();
-                    }
-                });
-         */
-        drvrTelemetry.addLine("Odometry ")
-                .addData("L", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getVerticalLeftCount();
-                    }
-                })
-                .addData("R", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getVerticalRightCount();
-                    }
-                })
-                .addData("X", "%5.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return globalPosition.getHorizontalCount();
-                    }
-                });
-        drvrTelemetry.addLine("Drivetrain ")
-                .addData("LF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return mcdrive.leftFrontDrive.getCurrentPosition();
-                    }
-                })
-                .addData("LB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return mcdrive.leftBackDrive.getCurrentPosition();
-                    }
-                })
-                .addData("RF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return mcdrive.rightFrontDrive.getCurrentPosition();
-                    }
-                })
-                .addData("RB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return mcdrive.rightBackDrive.getCurrentPosition();
-                    }
-                });
-        drvrTelemetry.addLine("Tilt ")
-                .addData("Angle", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return robot.shooterPlatformTiltAngle;
-                    }
-                })
-                .addData("Pos", "%.2f",  new Func<Double>() {
-                    @Override
-                    public Double value() {
-                        return robot.angleServo.getPosition();
-                    }
-                })
-                .addData("Wobble Arm", "%3d", new Func<Integer>() {
-                    @Override
-                    public Integer value() {
-                        return robot.wobblePickupArm.getCurrentPosition();
-                    }
-                });
-        message = "Done";
-        drvrTelemetry.update();
-    }
 }

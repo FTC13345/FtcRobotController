@@ -72,7 +72,7 @@ public class Mecabot {
     HardwareMap hwMap;
 
     // The IMU sensor object
-    BNO055IMU imu;
+    public BNO055IMU imu;
 
     /*
      * Robot front facing direction toggle methods. Robot FRONT direction can be flipped.
@@ -135,7 +135,14 @@ public class Mecabot {
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // Intake motors and servos
 
-        initIMU();
+        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        imu = hwMap.get(BNO055IMU.class, "imu");
+        // imu.initialize(BNO055IMU.Parameters) must be called otherwise gyro readings will be zero
+        // we do not initialize in this class because side effect is to reset gyro heading to zero
+        // the op-mode main applicable code should decided when we want to initialize or not
+        // for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
 
         // Set all motors to zero power
         stopDriving();
@@ -150,21 +157,9 @@ public class Mecabot {
     }
 
     public void initIMU() {
-        // Set up the parameters with which we will use our IMU. Note that integration
-        // algorithm here just reports accelerations to the logcat log; it doesn't actually
-        // provide positional information.
+        // Set up the parameters with which we will use our IMU.
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
-        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
-
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "imu".
-        imu = hwMap.get(BNO055IMU.class, "imu");
+        parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
     }
 
