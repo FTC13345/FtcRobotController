@@ -266,8 +266,9 @@ public class UGoalRobot {
 
     public void shootRing() {
         ringPusher.setPosition(RING_PUSHER_SHOOT_POSITION);
-        myOpMode.sleep(150);
+        myOpMode.sleep(100);
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
+        myOpMode.sleep(150);
     }
 
     public void loadRing() {

@@ -143,7 +143,7 @@ public class UGoalTeleOp extends LinearOpMode {
         // Shoot when B is pressed
         if (gamepad2.b) {
             //check if flywheel is running
-            if (robot.isShooterFlywheelRunning()) {
+            if (robot.isShooterFlywheelRunning() && robot.ringPusher.getPosition() > 0.975) {
                 robot.shootRing();
             }
         }

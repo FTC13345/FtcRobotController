@@ -66,7 +66,7 @@ public class FieldUGoal {
     public static final double DISTANCE_BETWEEN_POWERSHOT  = -7.5;
 
     // Robot function or game play specific values, maybe these need to do into a different file
-    public static final long        RING_SHOOTING_INTERVAL      = 400; // milliseconds
+    public static final long        RING_SHOOTING_INTERVAL      = 150; // milliseconds
     public static final double      ROBOT_ROTATE_POWERSHOT        = 3.6; // degrees by empirical measurement
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
