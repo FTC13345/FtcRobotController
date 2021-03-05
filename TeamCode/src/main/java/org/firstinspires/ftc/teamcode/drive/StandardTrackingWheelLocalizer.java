@@ -42,7 +42,7 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
         super(Arrays.asList(
                 new Pose2d(-0.63, 7.28, 0), // left
                 new Pose2d(-0.63, -6.92, 0), // right
-                new Pose2d(FORWARD_OFFSET, -0.47, Math.toRadians(90)) // front
+                new Pose2d(FORWARD_OFFSET, -0.47, Math.toRadians(-90)) // front
         ));
 
         leftEncoder = left;
@@ -52,9 +52,9 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
         // DONE 13345 | reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE)
         // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
         // Here we override the Encoder direction (software setting) ONLY if needed, without changing motor direction
-        leftEncoder.setDirection(Encoder.Direction.FORWARD);
-        rightEncoder.setDirection(Encoder.Direction.FORWARD);
-        frontEncoder.setDirection(Encoder.Direction.REVERSE);
+        leftEncoder.setDirection(Encoder.Direction.FORWARD);  // IMPORTANT: robot forward movement should produce positive encoder count
+        rightEncoder.setDirection(Encoder.Direction.FORWARD); // IMPORTANT: robot forward movement should produce positive encoder count
+        frontEncoder.setDirection(Encoder.Direction.FORWARD); // IMPORTANT: robot right sideways movement should produce positive encoder count
     }
 
     public static double encoderTicksToInches(double ticks) {

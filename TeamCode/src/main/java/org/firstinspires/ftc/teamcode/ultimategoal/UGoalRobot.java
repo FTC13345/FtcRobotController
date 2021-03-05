@@ -536,7 +536,7 @@ public class UGoalRobot {
         Pose2d poseStart = rrmdrive.getPoseEstimate();
         Pose2d poseEnd = poseHighGoal;
         switch(target) {
-            case HIGHGOAL: poseEnd = poseHighGoal;
+            case HIGHGOAL: poseEnd = poseHighGoal2;
                 break;
             case POWERSHOT_1: poseEnd = posePowerShot1;
                 break;

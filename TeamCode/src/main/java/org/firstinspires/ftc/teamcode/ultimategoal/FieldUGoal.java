@@ -66,7 +66,7 @@ public class FieldUGoal {
     public static final double DISTANCE_BETWEEN_POWERSHOT  = -7.5;
 
     // Robot function or game play specific values, maybe these need to do into a different file
-    public static final long        RING_SHOOTING_INTERVAL      = 600; // milliseconds
+    public static final long        RING_SHOOTING_INTERVAL      = 400; // milliseconds
     public static final double      ROBOT_ROTATE_POWERSHOT        = 3.6; // degrees by empirical measurement
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
@@ -81,8 +81,7 @@ public class FieldUGoal {
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d poseHighGoal2 = new Pose2d(poseHighGoal.vec(), Angle.norm(ANGLE_POS_X_AXIS - Math.toRadians(4)));
-    public static Pose2d poseHighGoal3 = new Pose2d(poseHighGoal.vec(), Angle.norm(ANGLE_POS_X_AXIS - Math.toRadians(8)));
+    public static Pose2d poseHighGoal2 = new Pose2d(ORIGIN - 6.0, flip4Red(+17.0), Math.toRadians(2.86));
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);

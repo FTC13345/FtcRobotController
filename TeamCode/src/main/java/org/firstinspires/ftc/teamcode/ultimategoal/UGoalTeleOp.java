@@ -121,6 +121,7 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.raiseIntakeAssembly();
             robot.resetWobblePickupArmEncoder();
             mcdrive.resetDriveEncoder();
+            mcdrive.initIMU();
             globalPosition.resetOdometryEncoder();
             setPoseStart();
         }

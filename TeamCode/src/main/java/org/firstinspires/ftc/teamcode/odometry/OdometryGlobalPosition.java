@@ -78,7 +78,7 @@ public class OdometryGlobalPosition implements Runnable {
         // Right encoder value, IMPORTANT: robot forward movement should produce positive encoder count
         //reverseRightEncoder();
         // Perpendicular encoder value, IMPORTANT: robot right sideways movement should produce positive encoder count
-        reverseHorizontalEncoder();
+        //reverseHorizontalEncoder();
 
     }
 
