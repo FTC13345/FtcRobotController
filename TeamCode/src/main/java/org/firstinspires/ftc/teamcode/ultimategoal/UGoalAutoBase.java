@@ -103,15 +103,17 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         rrmdrive = robot.getRRMdrive();
         mcdrive = robot.getMCBdrive();
 
-        // IMPORTANT: IMU must be initialized otherwise gyro heading will be always zero
+        // IMPORTANT: IMU must be initialized otherwise gyro reading will be always zero
         // During Tele-Op program if we want to retain the gyro heading from Autonomous program,
         // then DO NOT initialize IMU again as that resets the gyro heading to 0.0
         mcdrive.initIMU();
+        rrmdrive.initIMU(); // both initIMU() do the same thing, but in future we may keep only 1 drive instance
 
         // Motor and Servo position initializations
         robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
 
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
+        // Ensure to set Pose after IMU initialization has been done
         setPoseStart();
 
         // start printing messages to driver station asap but only after hardware is initialized and odometry is running

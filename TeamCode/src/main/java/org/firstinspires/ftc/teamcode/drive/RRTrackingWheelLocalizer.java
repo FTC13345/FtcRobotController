@@ -25,7 +25,7 @@ import java.util.List;
  *
  */
 @Config
-public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer {
+public class RRTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer {
     public static double TICKS_PER_REV = 8192;   // FTC Team 13345 Mecabot odometry encoder (Rev magnetic encoder) has 8192 ticks per rotation
     public static double WHEEL_RADIUS = 19/25.4; // in | odometry wheel has 38mm diameter = 19mm radius = 0.748 in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder) speed
@@ -38,7 +38,7 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
 
     private Encoder leftEncoder, rightEncoder, frontEncoder;
 
-    public StandardTrackingWheelLocalizer(Encoder left, Encoder right, Encoder front) {
+    public RRTrackingWheelLocalizer(Encoder left, Encoder right, Encoder front) {
         super(Arrays.asList(
                 new Pose2d(-0.63, 7.28, 0), // left
                 new Pose2d(-0.63, -6.92, 0), // right

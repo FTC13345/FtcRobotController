@@ -122,7 +122,9 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.resetWobblePickupArmEncoder();
             mcdrive.resetDriveEncoder();
             mcdrive.initIMU();
+            rrmdrive.initIMU(); // both initIMU() do the same thing, but in future we may keep only 1 drive instance
             globalPosition.resetOdometryEncoder();
+            // Ensure to set Pose after IMU initialization has been done
             setPoseStart();
         }
     }

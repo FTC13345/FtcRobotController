@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.drive;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -8,8 +9,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
@@ -40,7 +39,7 @@ public class MecabotDrive extends Mecabot {
     public static final double ROTATE_SPEED_MIN    = 0.15;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
-    public static final double ROTATE_SPEED_FAST   = 0.5;
+    public static final double ROTATE_SPEED_FAST   = 0.6;
     public static final double MOTOR_STOP_SPEED     = 0.0;
 
 
@@ -59,13 +58,39 @@ public class MecabotDrive extends Mecabot {
     protected LinearOpMode        myOpMode;       // Access to the OpMode object
     protected OdometryGlobalPosition odoPosition; // Robot global position tracker
     protected String              movementStatus          = "";
+    // The IMU sensor object
+    protected BNO055IMU imu;
 
     /* Constructor */
     public MecabotDrive(HardwareMap ahwMap, LinearOpMode opMode) {
         super(ahwMap);
         myOpMode = opMode;
         robot = this;
+        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        imu = hwMap.get(BNO055IMU.class, "imu");
+        // imu.initialize(BNO055IMU.Parameters) must be called otherwise gyro readings will be zero
+        // we do not initialize in this class because side effect is to reset gyro heading to zero
+        // the op-mode main applicable code should decided when we want to initialize or not
+        // for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
+
         initOdometry(ahwMap);
+    }
+
+    public void initIMU() {
+        // Set up the parameters with which we will use our IMU.
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
+        imu.initialize(parameters);
+    }
+
+    public double getZAngle() {
+        return imu.getAngularOrientation().firstAngle;
+    }
+
+    public Orientation getAngularOrientation() {
+        return imu.getAngularOrientation();
     }
 
     private void initOdometry(HardwareMap hwMap) {
@@ -94,12 +119,12 @@ public class MecabotDrive extends Mecabot {
     /**
      * Rotate the robot by the specified change in angle, using gyroscope as reference.
      *
-     * @param deltaAngle    The desired angle change in Robot heading in degrees
+     * @param deltaAngle    The desired angle change in Robot heading in radians
      * @param turnSpeed     Speed of rotation
      * @param timeout       Max time allowed for the operation to complete
      */
     public void gyroRotate(double deltaAngle, double turnSpeed, double timeout) {
-        double robotAngle = robot.imu.getAngularOrientation().firstAngle;
+        double robotAngle = getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
         double targetAngle = robotAngle + deltaAngle;
         gyroRotateToHeading(targetAngle, turnSpeed, timeout);
     }
@@ -107,53 +132,61 @@ public class MecabotDrive extends Mecabot {
     /**
      * Rotate the robot by the specified change in angle, using gyroscope as reference.
      *
-     * @param deltaAngle    The desired angle change in Robot heading in degrees
+     * @param deltaAngle    The desired angle change in Robot heading in radians
      */
     public void gyroRotate(double deltaAngle) {
-        gyroRotate(deltaAngle, ROTATE_SPEED_SLOW, TIMEOUT_SHORT);
+        gyroRotate(deltaAngle, ROTATE_SPEED_FAST, TIMEOUT_ROTATE);
+    }
+
+    /**
+     * Rotate the robot to desired angle position using the built in gyro in IMU sensor onboard the REV expansion hub
+     *
+     * @param targetAngle    The desired target angle position in radians.
+     */
+    public void gyroRotateToHeading(double targetAngle) {
+        gyroRotate(targetAngle, ROTATE_SPEED_FAST, TIMEOUT_ROTATE);
     }
 
     /**
      * Rotate the robot to desired angle position using the built in gyro in IMU sensor onboard the REV expansion hub
      * The angle is specified relative to the start position of the robot when the IMU is initialized
-     * and gyro angle is intialized to zero degrees.
+     * and gyro angle is initialized to zero radians.
      *
-     * @param targetAngle   The desired target angle position in degrees. Positive value is counter clockwise from initial zero position
+     * @param targetAngle   The desired target angle position in radians. Positive value is counter clockwise from initial zero position
      *                      Negative value is clock wise from initial zero. Angle value wraps around at 180 and -180 degrees.
      * @param turnSpeed     The speed at which to drive the motors for the rotation. 0.0 < turnSpeed <= 1.0
      * @param timeout       Max time allowed for the operation to complete
      */
     public void gyroRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
-        // determine current angle of the robot
-        Orientation angles = robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        double robotAngle = angles.firstAngle;
-        double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
+        double robotAngle = getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
+        double delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
-        turnSpeed = Math.abs(turnSpeed);
+        double speed = Math.abs(turnSpeed);
 
         movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
         // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin
         // Margin is used because the overshoot for even small gyro rotation is 0.15 degrees and higher for larger rotations
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.3) && (runtime.seconds() < timeout)) {
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.0052) && (runtime.seconds() < timeout)) {  // 0.0052 radians = 0.3 degrees
 
             // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_SLOW is required to overcome inertia
-            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_SLOW, turnSpeed);
+            if ((direction * delta) < 0.175) {  // 0.175 Radians = 10 degrees
+                speed = ROTATE_SPEED_SLOW;
+            }
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, direction * speed);
-            myOpMode.sleep(30); // allow some time for the motors to actuate
-            robotAngle = robot.imu.getAngularOrientation().firstAngle;
-            delta = MathFunctions.angleWrap(targetAngle - robotAngle);
-
-            myOpMode.telemetry.addLine("Gyro Rot ")
-                    .addData("Tgt", "%.2f", targetAngle)
-                    .addData("Act", "%.2f", robotAngle)
-                    .addData("Dlt", "%.2f", delta)
-                    .addData("Spd", "%.2f", speed);
-            myOpMode.telemetry.update();
+            myOpMode.idle(); // allow some time for the motors to actuate
+            robotAngle = getZAngle();
+            delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         }
         robot.stopDriving();
+        myOpMode.telemetry.addLine("Rot ")
+                .addData("Tgt", "%.2f", targetAngle)
+                .addData("Act", "%.2f", robotAngle)
+                .addData("sp", "%.1f", turnSpeed)
+                .addData("t", "%.1f", runtime.seconds());
+        myOpMode.telemetry.update();
         movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Act=%.2f | Spd=%1.2f | t=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
     }
 

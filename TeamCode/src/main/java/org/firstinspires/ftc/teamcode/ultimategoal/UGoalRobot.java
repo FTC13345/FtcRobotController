@@ -18,6 +18,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
@@ -64,7 +65,7 @@ public class UGoalRobot {
     private OdometryGlobalPosition globalPosition;
     private LinearOpMode myOpMode;       // Access to the OpMode object
     private Telemetry telemetry;
-    private Orientation angles;
+//    private Orientation angles;
 
     // Motors and/or enccoders
     public DcMotor leftODwheel = null;
@@ -651,7 +652,7 @@ public class UGoalRobot {
         {
             // Acquiring the angles is relatively expensive, about 5ms to 10ms; we want to do it once
             //angles   = mcdrive.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-            angles   = mcdrive.imu.getAngularOrientation();
+            //angles   = mcdrive.getAngularOrientation();
         }
         });
         telemetry.addLine("RR Pos ")
@@ -667,9 +668,9 @@ public class UGoalRobot {
                     @Override
                     public Double value() { return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading()); }
                 })
-                .addData("Gyro", "%.2f°", new Func<Float>() {
+                .addData("Gyro", "%.2f°", new Func<Double>() {
                     @Override
-                    public Float value() { return angles.angleUnit.toDegrees(angles.firstAngle); }
+                    public Double value() { return Math.toDegrees(mcdrive.getZAngle()); }
                 });
         telemetry.addLine("OD Pos ")
                 .addData("X", "%2.2f", new Func<Double>() {

@@ -105,7 +105,7 @@ public class RRMecanumDrive extends MecanumDrive {
 
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
-//    private BNO055IMU imu;
+    private BNO055IMU imu;
 
     private VoltageSensor batteryVoltageSensor;
 
@@ -143,16 +143,7 @@ public class RRMecanumDrive extends MecanumDrive {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        // We are using Three-Wheel odometry localizer, therefore IMU is not used for heading.
-        // Thus the following code is disabled.
-        // imu = hardwareMap.get(BNO055IMU.class, "imu");
-        // BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        // parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
-        // imu.initialize(parameters);
-
-        // DONE: if your hub is mounted vertically, remap the IMU axes so that the z-axis points
-        // upward (normal to the floor) using a command like the following:
-        // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
 
         // DONE: adjust the names of the following hardware devices to match your configuration
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFrontDrive");
@@ -187,11 +178,25 @@ public class RRMecanumDrive extends MecanumDrive {
         // 13345 is using three wheel odometry
         // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
         // The Encoder direction (software setting) should be manipulated by localizer AS NEEDED, without changing motor direction
-        setLocalizer(new StandardTrackingWheelLocalizer(
+        setLocalizer(new MecabotLocalizer(
                 new Encoder(hardwareMap.get(DcMotorEx.class, "leftODwheel")),
                 new Encoder(hardwareMap.get(DcMotorEx.class, "rightODwheel")),
-                new Encoder(hardwareMap.get(DcMotorEx.class, "intakeMotor"))
-                ));
+                new Encoder(hardwareMap.get(DcMotorEx.class, "intakeMotor")),
+                imu
+        ));
+    }
+
+    public void initIMU() {
+        // The IMU initialization has a side effect to reset gyro heading to zero, therefore this is not called by constructor
+        // the op-mode main applicable code should decide when we want to initialize or not
+        // for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
+         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+         imu.initialize(parameters);
+
+        // DONE: if your hub is mounted vertically, remap the IMU axes so that the z-axis points
+        // upward (normal to the floor) using a command like the following:
+        // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
