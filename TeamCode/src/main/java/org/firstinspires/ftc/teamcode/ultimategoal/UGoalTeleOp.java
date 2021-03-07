@@ -20,6 +20,30 @@ import org.firstinspires.ftc.teamcode.drive.TeleOpDriver;
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 import static org.firstinspires.ftc.teamcode.drive.RRMecanumDrive.savedPose;
 
+/* Button Controls (programmers please keep this list up to date)
+ * All buttons coded in this file are on GamePad2 unless specified otherwise
+ * START + X = Reset Position, odometry, IMU, Lift intake, wobble arm encoder
+ *
+ * A = Toggle flywheel
+ * B = Shoot Ring
+ * X = Tilt Shooting Platform for High Goal
+ * Y = Tilt Shooting Platform for PowerShot
+ *
+ * RIGHT_TRIGGER    = Run Intake forward (such in rings)
+ * LEFT_TRIGGER     = Run Intake in reverse (eject rings)
+ *
+ * RIGHT_JOYSTICK_Y = Wobble Arm Manual position control
+ * RIGHT_BUMPER     = Wobble Finger Close
+ * LEFT_BUMPER      = Wobble Finger Open
+ *
+ * DPAD_UP          = Wobble Arm UP to Next Position
+ * DPAD_DOWN        = Wobble Arm DOWN to Next Position
+ * DPAD_RIGHT       = Rotate Shooter towards Goal
+ * DPAD_LEFT        = Rotate Intake towards Goal
+ *
+ * START + RIGHT_BUMPER = Ignore motor stops (wobble arm)
+ * START + LEFT_BUMPER = Restore motor stops (wobble arm)
+ */
 
 @TeleOp(name = "UGoal TeleOp", group="QT")
 public class UGoalTeleOp extends LinearOpMode {
