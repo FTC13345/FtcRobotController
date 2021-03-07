@@ -170,9 +170,9 @@ public class UGoalRobot {
         double distance = 0;
         if (ringSensor instanceof DistanceSensor) {
             distance = ((DistanceSensor) ringSensor).getDistance(DistanceUnit.CM);
-            if (distance > 3.25) {
+            if (distance > 3.29) {
                 count = 0;
-            } else if (distance > 2.95) {
+            } else if (distance > 3.00) {
                 count = 1;
             } else if (distance > 2.60) {
                 count = 2;
@@ -194,13 +194,13 @@ public class UGoalRobot {
                 mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
                 break;
             case 1:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.YELLOW);
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_PARTY_PALETTE);
                 break;
             case 2:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.GOLD);
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_OCEAN_PALETTE);
                 break;
             case 3:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.ORANGE);
+                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE);
                 break;
             default:
                 mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.STROBE_RED);
