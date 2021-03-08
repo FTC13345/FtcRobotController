@@ -433,8 +433,6 @@ public class RRMecanumDrive extends MecanumDrive {
 
     @Override
     public double getRawExternalHeading() {
-        // We are using Three-Wheel odometry localizer, therefore IMU is not used for heading.
-        // return imu.getAngularOrientation().firstAngle;
-        return 0;
+        return imu.getAngularOrientation().firstAngle;
     }
 }

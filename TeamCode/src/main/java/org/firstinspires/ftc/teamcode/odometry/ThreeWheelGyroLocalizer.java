@@ -65,6 +65,7 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
         //Get Current Positions
         List<Integer> wheelPositions = getWheelPositions();
         if (lastWheelPositions.isEmpty()) {
+            lastWheelPositions = wheelPositions;
             return;
         }
 
@@ -111,6 +112,7 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
 
     /**
      * Returns the positions of the tracking wheels in encoder counts! (not distance units)
+d     * IMPORTANT: The order of elements is assumed to be 0: LEFT, 1:RIGHT, 2:FRONT odometry wheel
      */
     @NotNull
     protected abstract List<Integer> getWheelPositions();

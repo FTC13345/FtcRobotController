@@ -44,6 +44,7 @@ public class MecabotLocalizer extends ThreeWheelGyroLocalizer {
 
     /**
      * Returns the positions of the tracking wheels in encoder counts! (not distance units)
+     * IMPORTANT: The order of elements is assumed to be 0: LEFT, 1:RIGHT, 2:FRONT odometry wheel
      */
     @NotNull
     @Override
