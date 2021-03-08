@@ -418,15 +418,15 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         switch (traj) {
             case SHOOT_RINGS_PRELOADED:
                 trajectory = rrmdrive.trajectoryBuilder(beginPose)
-                        .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, 22), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
-                        .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())  // arrive at high goal shooting position
+                        .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, poseHighGoalAuto.getY()), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
+                        .splineTo(poseHighGoalAuto.vec(), poseHighGoalAuto.getHeading())  // arrive at high goal shooting position
                         .addTemporalMarker(1.0, new MarkerCallback() {
                             @Override
                             public void onMarkerReached() {
                                 // on the way driving to high goal, turn on the flywheel
                                 robot.runShooterFlywheel();
                                 //  and tilt the platform at suitable angle, taking into account that the robot overshoots destination coordinate
-                                robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoal.vec().plus(new Vector2d(+1.4, 0)));
+                                robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalAuto.vec().plus(new Vector2d(+1.4, 0)));
                             }
                         })
                         .build();
@@ -440,7 +440,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             case SHOOT_RINGS_STACK:
             case SHOOT_RINGS_STACK2:
                 trajectory = rrmdrive.trajectoryBuilder(beginPose)
-                        .splineTo(poseHighGoal.vec(), poseHighGoal.getHeading())
+                        .splineTo(poseHighGoalAuto.vec(), poseHighGoalAuto.getHeading())
                         .build();
                 break;
             case RINGS_STACK_PICKUP2:
@@ -602,14 +602,14 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
         shootRings1 = rrmdrive.trajectoryBuilder(pickupWobble2.end())
                 .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, 20), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
-                .splineTo(poseHighGoal.vec(), ANGLE_POS_X_AXIS)  // arrive at high goal shooting position
+                .splineTo(poseHighGoalAuto.vec(), ANGLE_POS_X_AXIS)  // arrive at high goal shooting position
                 .addTemporalMarker(1.0, new MarkerCallback() {
                     @Override
                     public void onMarkerReached() {
                         // on the way driving to high goal, turn on the flywheel
                         robot.runShooterFlywheel();
                         //  and tilt the platform at suitable angle
-                        robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoal.vec());
+                        robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalAuto.vec());
                     }
                 })
                 .build();
@@ -667,7 +667,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 .build();
 
         shootRings2 = rrmdrive.trajectoryBuilder(pickupStack.end())
-                .splineTo(poseHighGoal.vec(), ANGLE_POS_X_AXIS, veloc, accelc)
+                .splineTo(poseHighGoalAuto.vec(), ANGLE_POS_X_AXIS, veloc, accelc)
                 .addTemporalMarker(0.1, new MarkerCallback() {
                     @Override
                     public void onMarkerReached() {

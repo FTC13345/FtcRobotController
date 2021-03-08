@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -18,9 +19,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
@@ -465,7 +464,7 @@ public class UGoalRobot {
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 2.0;    // record value before clipping for telemetry printout, do not delete this line
+        shooterPlatformTiltAngle = tiltAngle + 2.7;    // record value before clipping for telemetry printout, do not delete this line
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
@@ -536,9 +535,9 @@ public class UGoalRobot {
      ****************************/
     public void rrdriveToTarget(Target target) {
         Pose2d poseStart = rrmdrive.getPoseEstimate();
-        Pose2d poseEnd = poseHighGoal;
+        Pose2d poseEnd = poseHighGoalTeleOp;
         switch(target) {
-            case HIGHGOAL: poseEnd = poseHighGoal2;
+            case HIGHGOAL: poseEnd = poseHighGoalTeleOp;
                 break;
             case POWERSHOT_1: poseEnd = posePowerShot1;
                 break;
@@ -548,11 +547,18 @@ public class UGoalRobot {
                 break;
         }
         Trajectory goToTarget = rrmdrive.trajectoryBuilder(poseStart)
-                    .lineToLinearHeading(poseEnd)
-                    .build();
-            rrmdrive.followTrajectory(goToTarget);
-            // tilt shooter platform corresponding to both robot current Pose and the target
-            tiltShooterPlatform(target);
+                .lineToLinearHeading(poseEnd)
+                .addTemporalMarker(1.0, new MarkerCallback() {
+                    @Override
+                    public void onMarkerReached() {
+                        // on the way driving to high goal, turn on the flywheel
+                        runShooterFlywheel();
+                    }
+                })
+                .build();
+        rrmdrive.followTrajectory(goToTarget);
+        // tilt shooter platform corresponding to both robot current Pose and the target
+        tiltShooterPlatform(target);
     }
 
     public void rrdriveToDropZone(Target target) {
@@ -578,7 +584,7 @@ public class UGoalRobot {
     public void mcdriveToShootHighGoal() {
         // drive to desired location
         //if red reverse the y
-        mcdrive.goToPosition(poseHighGoal.getX(), poseHighGoal.getY());
+        mcdrive.goToPosition(poseHighGoalAuto.getX(), poseHighGoalAuto.getY());
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
@@ -670,7 +676,7 @@ public class UGoalRobot {
                 })
                 .addData("Gyro", "%.2f°", new Func<Double>() {
                     @Override
-                    public Double value() { return Math.toDegrees(mcdrive.getZAngle()); }
+                    public Double value() { return Math.toDegrees(rrmdrive.getRawExternalHeading()); }
                 });
         telemetry.addLine("OD Pos ")
                 .addData("X", "%2.2f", new Func<Double>() {
@@ -684,6 +690,19 @@ public class UGoalRobot {
                 .addData("Head", "%3.2f°", new Func<Double>() {
                     @Override
                     public Double value() { return globalPosition.getOrientationDegrees(); }
+                });
+        telemetry.addLine("Tilt ")
+                .addData("Angle", "%.1f", new Func<Double>() {
+                    @Override
+                    public Double value() { return shooterPlatformTiltAngle; }
+                })
+                .addData("Pos", "%.2f",  new Func<Double>() {
+                    @Override
+                    public Double value() { return angleServo.getPosition(); }
+                })
+                .addData("Wobble Arm", "%3d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return wobblePickupArm.getCurrentPosition(); }
                 });
         telemetry.addLine("OD Count ")
                 .addData("L", "%5.0f", new Func<Double>() {
@@ -714,19 +733,6 @@ public class UGoalRobot {
                 .addData("RB", "%5d", new Func<Integer>() {
                     @Override
                     public Integer value() { return mcdrive.rightBackDrive.getCurrentPosition(); }
-                });
-        telemetry.addLine("Tilt ")
-                .addData("Angle", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() { return shooterPlatformTiltAngle; }
-                })
-                .addData("Pos", "%.2f",  new Func<Double>() {
-                    @Override
-                    public Double value() { return angleServo.getPosition(); }
-                })
-                .addData("Wobble Arm", "%3d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return wobblePickupArm.getCurrentPosition(); }
                 });
         telemetry.update();
     }

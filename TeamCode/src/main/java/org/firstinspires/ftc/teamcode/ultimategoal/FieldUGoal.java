@@ -72,7 +72,7 @@ public class FieldUGoal {
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
-    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 8.0; // inches
+    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 14.0; // inches
 
     enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3, WOBBLE_LANDING_1, WOBBLE_LANDING_2}
 
@@ -80,8 +80,8 @@ public class FieldUGoal {
     // Robot starting position is at the audience wall farthest from the Goals, on the start line
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
-    public static Pose2d poseHighGoal = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d poseHighGoal2 = new Pose2d(ORIGIN - 6.0, flip4Red(+17.0), Math.toRadians(2.86));
+    public static Pose2d poseHighGoalAuto = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
+    public static Pose2d poseHighGoalTeleOp = new Pose2d(ORIGIN - 6.0, flip4Red(+18), Math.toRadians(3.1)); // High Goal shooting position for TeleOp
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
