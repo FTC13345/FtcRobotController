@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.util.Angle;
 
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 
@@ -73,6 +72,9 @@ public class FieldUGoal {
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
     public static final double      ROBOT_SHOOTING_Y_OFFSET     = 14.0; // inches
+    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 8.0; // inches
+    //*TODO determine through trial and error the heading angle
+    public static final double      ROBOT_SHOOTING_HEADING_OFFSET = Math.atan(ROBOT_SHOOTING_Y_OFFSET/TILE_3_FROM_ORIGIN);
 
     enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3, WOBBLE_LANDING_1, WOBBLE_LANDING_2}
 
@@ -82,11 +84,13 @@ public class FieldUGoal {
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoalAuto = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d poseHighGoalTeleOp = new Pose2d(ORIGIN - 6.0, flip4Red(+18), Math.toRadians(3.1)); // High Goal shooting position for TeleOp
+    public static Pose2d poseHighGoalStack = new Pose2d(-(TILE_1_FROM_ORIGIN+4), flip4Red(TILE_2_CENTER-3), -ROBOT_SHOOTING_HEADING_OFFSET);
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_CENTER), ANGLE_NEG_X_AXIS);
-    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_FROM_ORIGIN + 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
+    public static Pose2d poseStraightPark = new Pose2d(TILE_1_CENTER, flip4Red(TARGET_ZONE_C_Y - 12), ANGLE_NEG_X_AXIS);
+    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_CENTER - 2.0, TILE_2_FROM_ORIGIN - 2.0, ANGLE_POS_Y_AXIS);//original: Pose2d(-TILE_2_FROM_ORIGIN + 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
 
     public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN), TILE_2_CENTER + 1.0);
     public static final Vector2d vecRingPickupStart = vecRingStack.plus(new Vector2d(+14.0, 0));
