@@ -24,6 +24,8 @@ public class FieldUGoal {
     // FTC Team alliance color, BLUE or RED, the field is mirror images for each side
     // therefore lot of robot movement calculations are affected by which color you are on
     enum AllianceColor { BLUE, RED}
+    public static AllianceColor aColor = AllianceColor.BLUE;
+
     public static final double  ANGLE_POS_X_AXIS = 0.0;
     public static final double  ANGLE_POS_Y_AXIS = Math.PI / 2;
     public static final double  ANGLE_NEG_X_AXIS = Math.PI;
@@ -66,15 +68,12 @@ public class FieldUGoal {
 
     // Robot function or game play specific values, maybe these need to do into a different file
     public static final long        RING_SHOOTING_INTERVAL      = 150; // milliseconds
-    public static final double      ROBOT_ROTATE_POWERSHOT        = 3.6; // degrees by empirical measurement
+    public static final double      ROBOT_ROTATE_POWERSHOT        = Math.toRadians(3.6); // degrees by empirical measurement
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
     // actually position on the field to the right of the intended Target Y coordinate
     public static final double      ROBOT_SHOOTING_Y_OFFSET     = 14.0; // inches
-    public static final double      ROBOT_SHOOTING_Y_OFFSET     = 8.0; // inches
-    //*TODO determine through trial and error the heading angle
-    public static final double      ROBOT_SHOOTING_HEADING_OFFSET = Math.atan(ROBOT_SHOOTING_Y_OFFSET/TILE_3_FROM_ORIGIN);
 
     enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3, WOBBLE_LANDING_1, WOBBLE_LANDING_2}
 
@@ -84,18 +83,19 @@ public class FieldUGoal {
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoalAuto = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d poseHighGoalTeleOp = new Pose2d(ORIGIN - 6.0, flip4Red(+18), Math.toRadians(3.1)); // High Goal shooting position for TeleOp
-    public static Pose2d poseHighGoalStack = new Pose2d(-(TILE_1_FROM_ORIGIN+4), flip4Red(TILE_2_CENTER-3), -ROBOT_SHOOTING_HEADING_OFFSET);
+    public static Pose2d poseHighGoalStack = new Pose2d(-TILE_1_FROM_ORIGIN+6, flip4Red(TILE_2_CENTER), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_CENTER), ANGLE_NEG_X_AXIS);
-    public static Pose2d poseStraightPark = new Pose2d(TILE_1_CENTER, flip4Red(TARGET_ZONE_C_Y - 12), ANGLE_NEG_X_AXIS);
-    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_CENTER - 2.0, TILE_2_FROM_ORIGIN - 2.0, ANGLE_POS_Y_AXIS);//original: Pose2d(-TILE_2_FROM_ORIGIN + 2.0, TILE_2_CENTER + 2.0, ANGLE_POS_X_AXIS);
+    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_CENTER + 1.0, TILE_2_FROM_ORIGIN - 1.0, ANGLE_POS_Y_AXIS);
 
-    public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN), TILE_2_CENTER + 1.0);
-    public static final Vector2d vecRingPickupStart = vecRingStack.plus(new Vector2d(+14.0, 0));
-    public static final Vector2d vecRingPickupEnd = vecRingStack;
-    public static final Vector2d vecRingPickupEnd2 = vecRingStack.plus(new Vector2d( -7, 2));//same y distance
+    public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN), TILE_2_CENTER);
+    public static Vector2d vecRingPickupStart = vecRingStack.plus(new Vector2d(+14.0, 0));
+    public static Pose2d poseRingPickupEnd1 = new Pose2d(vecRingStack, ANGLE_POS_X_AXIS);
+    public static Pose2d poseRingPickupEnd2 = poseRingPickupEnd1.plus(new Pose2d( -7, 0, 0));
+    public static Pose2d poseWobble1deliver;
+    public static Pose2d poseWobble2deliver;
 
     // Robot positioned next to the Audience wall, ready to drop the wobble over the perimeter wall into the landing zone
     public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));
@@ -105,7 +105,7 @@ public class FieldUGoal {
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
     public static Pose2d poseOdoRight = new Pose2d(TILE_1_CENTER - ROBOT_RADIUS - 1, -TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
 
-    public static AllianceColor aColor = AllianceColor.BLUE;
+    public static final double ROBOT_SHOOTING_HEADING_ANGLE = -Math.atan(ROBOT_SHOOTING_Y_OFFSET/(TILE_3_FROM_ORIGIN - poseHighGoalStack.getX()));
 
     public static double flip4Red(double value) {
         if (aColor == AllianceColor.RED) {
