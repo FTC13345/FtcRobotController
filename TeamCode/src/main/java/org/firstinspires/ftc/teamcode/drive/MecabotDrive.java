@@ -144,7 +144,7 @@ public class MecabotDrive extends Mecabot {
      * @param targetAngle    The desired target angle position in radians.
      */
     public void gyroRotateToHeading(double targetAngle) {
-        gyroRotate(targetAngle, ROTATE_SPEED_FAST, TIMEOUT_ROTATE);
+        gyroRotateToHeading(targetAngle, ROTATE_SPEED_FAST, TIMEOUT_ROTATE);
     }
 
     /**
@@ -182,8 +182,8 @@ public class MecabotDrive extends Mecabot {
         }
         robot.stopDriving();
         myOpMode.telemetry.addLine("Rot ")
-                .addData("Tgt", "%.2f", targetAngle)
-                .addData("Act", "%.2f", robotAngle)
+                .addData("Tgt", "%.2f", Math.toDegrees(targetAngle))
+                .addData("Act", "%.2f", Math.toDegrees(robotAngle))
                 .addData("sp", "%.1f", turnSpeed)
                 .addData("t", "%.1f", runtime.seconds());
         myOpMode.telemetry.update();
@@ -631,14 +631,12 @@ public class MecabotDrive extends Mecabot {
 
         int ticks = (int) (ENCODER_TICKS_PER_INCH * inches);
 
-        int leftFront = counterClockwise ? -ticks : +ticks;
-        int leftBack = leftFront;
-        int rightFront = counterClockwise ? +ticks : -ticks;
-        int rightBack = rightFront;
+        int leftPos = counterClockwise ? -ticks : +ticks;
+        int rightPos = counterClockwise ? +ticks : -ticks;
 
         // set target position for encoder Drive
         robot.resetDriveEncoder();
-        robot.setTargetPosition(leftFront, leftBack, rightFront, rightBack);
+        robot.setTargetPosition(leftPos, leftPos, rightPos, rightPos);
 
         // Set the motors to run to the necessary target position
         robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -649,7 +647,7 @@ public class MecabotDrive extends Mecabot {
 
         // loop until motors are busy driving, update current position on driver station using telemetry
         waitToReachTargetPosition(counterClockwise ? WheelPosition.RIGHT_FRONT : WheelPosition.LEFT_FRONT,
-                leftFront, leftBack, rightFront, rightBack);
+                leftPos, leftPos, rightPos, rightPos);
     }
 
     public void encoderRotate(double inches, boolean counterClockwise) {
@@ -670,14 +668,12 @@ public class MecabotDrive extends Mecabot {
         int outerWheelTicks = (int) (ENCODER_TICKS_PER_INCH * outerWheelInches);
         int innerWheelTicks = (int) (ENCODER_TICKS_PER_INCH * innerWheelInches);
 
-        int leftFront = counterClockwise ? innerWheelTicks : outerWheelTicks;
-        int leftBack = leftFront;
-        int rightFront = counterClockwise ? outerWheelTicks : innerWheelTicks;
-        int rightBack = rightFront;
+        int leftPos = counterClockwise ? innerWheelTicks : outerWheelTicks;
+        int rightPos = counterClockwise ? outerWheelTicks : innerWheelTicks;
 
         // set target position for encoder Drive
         robot.resetDriveEncoder();
-        robot.setTargetPosition(leftFront, leftBack, rightFront, rightBack);
+        robot.setTargetPosition(leftPos, leftPos, rightPos, rightPos);
 
         // Set the motors to run to the necessary target position
         robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -694,7 +690,7 @@ public class MecabotDrive extends Mecabot {
 
         // loop until motors are busy driving, update current position on driver station using telemetry
         waitToReachTargetPosition(counterClockwise ? WheelPosition.RIGHT_FRONT : WheelPosition.LEFT_FRONT,
-                leftFront, leftBack, rightFront, rightBack);
+                leftPos, leftPos, rightPos, rightPos);
     }
 
     public void encoderTurn(double inches, boolean counterClockwise) {
