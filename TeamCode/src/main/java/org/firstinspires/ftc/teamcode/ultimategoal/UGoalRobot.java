@@ -57,6 +57,7 @@ public class UGoalRobot {
 
     // status variables
     double shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
+    int countRingsInHopper;
 
     // mecanum drive train
     private RRMecanumDrive rrmdrive;
@@ -165,25 +166,23 @@ public class UGoalRobot {
         /* If this color sensor also has a distance sensor, use that to count rings in the hopper
          * Note that the reported distance is only useful at very close range, and is impacted by
          * ambient light and surface reflectivity. */
-        int count = 0;
-        double distance = 0;
         if (ringSensor instanceof DistanceSensor) {
-            distance = ((DistanceSensor) ringSensor).getDistance(DistanceUnit.CM);
+            double distance = ((DistanceSensor) ringSensor).getDistance(DistanceUnit.CM);
             if (distance > 3.29) {
-                count = 0;
+                countRingsInHopper = 0;
             } else if (distance > 3.00) {
-                count = 1;
+                countRingsInHopper = 1;
             } else if (distance > 2.60) {
-                count = 2;
-            } else if (distance > 2.20) {
-                count = 3;
+                countRingsInHopper = 2;
+            } else if (distance > 1.80) {
+                countRingsInHopper = 3;
             } else {
-                count = 4;
+                countRingsInHopper = 4;
             }
         }
-        myOpMode.telemetry.addData("Rings in Hopper ", "Dist (cm) %.3f, Count %d", distance, count);
-        myOpMode.telemetry.update();
-        return count;
+//        myOpMode.telemetry.addData("Rings in Hopper ", "Dist (cm) %.3f, Count %d", distance, count);
+//        myOpMode.telemetry.update();
+        return countRingsInHopper;
     }
 
     public void setLED4RingsCount() {
@@ -656,64 +655,65 @@ public class UGoalRobot {
     protected void composeTelemetry() {
         telemetry.addAction(new Runnable() { @Override public void run()
         {
-            // Acquiring the angles is relatively expensive, about 5ms to 10ms; we want to do it once
+            // Add here any expensive work that should be done only once just before telemetry update push
             //angles   = mcdrive.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
             //angles   = mcdrive.getAngularOrientation();
         }
         });
-        telemetry.addLine("RR Pos ")
-                .addData("X", "%2.2f", new Func<Double>() {
+        telemetry.addLine("RR ")
+                .addData("X", "%.1f", new Func<Double>() {
                     @Override
                     public Double value() {return rrmdrive.getPoseEstimate().getX();}
                 })
-                .addData("Y", "%2.2f", new Func<Double>() {
+                .addData("Y", "%.1f", new Func<Double>() {
                     @Override
                     public Double value() {return rrmdrive.getPoseEstimate().getY();}
                 })
-                .addData("Head", "%3.2f°", new Func<Double>() {
+                .addData("Head", "%.2f°", new Func<Double>() {
                     @Override
                     public Double value() { return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading()); }
                 })
-                .addData("Gyro", "%.2f°", new Func<Double>() {
+                .addData("IMU", "%.2f°", new Func<Double>() {
                     @Override
                     public Double value() { return Math.toDegrees(rrmdrive.getRawExternalHeading()); }
                 });
-        telemetry.addLine("OD Pos ")
-                .addData("X", "%2.2f", new Func<Double>() {
+        telemetry.addLine("OD ")
+                .addData("X", "%.1f", new Func<Double>() {
                     @Override
                     public Double value() { return globalPosition.getXinches();}
                 })
-                .addData("Y", "%2.2f", new Func<Double>() {
+                .addData("Y", "%.1f", new Func<Double>() {
                     @Override
                     public Double value() {return globalPosition.getYinches();}
                 })
-                .addData("Head", "%3.2f°", new Func<Double>() {
+                .addData("Head", "%.2f°", new Func<Double>() {
                     @Override
                     public Double value() { return globalPosition.getOrientationDegrees(); }
                 });
         telemetry.addLine("Tilt ")
-                .addData("Angle", "%.1f", new Func<Double>() {
+                .addData("Angle", "%.1f°", new Func<Double>() {
                     @Override
                     public Double value() { return shooterPlatformTiltAngle; }
-                })
-                .addData("Pos", "%.2f",  new Func<Double>() {
-                    @Override
-                    public Double value() { return angleServo.getPosition(); }
                 })
                 .addData("Wobble Arm", "%3d", new Func<Integer>() {
                     @Override
                     public Integer value() { return wobblePickupArm.getCurrentPosition(); }
+                })
+                .addData("Rings", "%d", new Func<Integer>() {
+                    @Override
+                    public Integer value() { return countRingsInHopper; }
                 });
+        /*
         telemetry.addLine("OD Count ")
-                .addData("L", "%5.0f", new Func<Double>() {
+                .addData("L", "%6.0f", new Func<Double>() {
                     @Override
                     public Double value() {return globalPosition.getVerticalLeftCount();}
                 })
-                .addData("R", "%5.0f", new Func<Double>() {
+                .addData("R", "%6.0f", new Func<Double>() {
                     @Override
                     public Double value() { return globalPosition.getVerticalRightCount(); }
                 })
-                .addData("X", "%5.0f", new Func<Double>() {
+                .addData("X", "%6.0f", new Func<Double>() {
                     @Override
                     public Double value() { return globalPosition.getHorizontalCount(); }
                 });
@@ -734,6 +734,7 @@ public class UGoalRobot {
                     @Override
                     public Integer value() { return mcdrive.rightBackDrive.getCurrentPosition(); }
                 });
+         */
         telemetry.update();
     }
 
