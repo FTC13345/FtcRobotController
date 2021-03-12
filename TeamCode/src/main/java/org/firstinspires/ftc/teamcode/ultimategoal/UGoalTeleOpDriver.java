@@ -54,10 +54,12 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
             mcdrive.gyroRotateToHeading(ANGLE_NEG_X_AXIS);
         }
         else if (gamepad1.x) {      // Reset odometry values aligned against left perimeter wall
+            rrmdrive.initIMU();
             rrmdrive.setPoseEstimate(poseOdoLeft);
             mcdrive.getOdometry().setGlobalPosition(poseOdoLeft.getX(), poseOdoLeft.getY(), poseOdoLeft.getHeading());
         }
         else if (gamepad1.y) {      // Reset odometry values aligned against right perimeter wall
+            rrmdrive.initIMU();
             rrmdrive.setPoseEstimate(poseOdoRight);
             mcdrive.getOdometry().setGlobalPosition(poseOdoRight.getX(), poseOdoRight.getY(), poseOdoRight.getHeading());
         }

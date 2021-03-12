@@ -103,6 +103,8 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // start the thread which handles driver controls on gamepad1
         driver.start();
+        telemetry.addData("", "TeleOp prograrm in PLAY");    //
+        telemetry.update();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
