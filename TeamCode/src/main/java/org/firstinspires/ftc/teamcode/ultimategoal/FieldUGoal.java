@@ -67,8 +67,8 @@ public class FieldUGoal {
     public static final double DISTANCE_BETWEEN_POWERSHOT  = -7.5;
 
     // Robot function or game play specific values, maybe these need to do into a different file
-    public static final long        RING_SHOOTING_INTERVAL      = 150; // milliseconds
-    public static final double      ROBOT_ROTATE_POWERSHOT        = Math.toRadians(3.6); // degrees by empirical measurement
+    public static final long        RING_SHOOTING_INTERVAL      = 250; // milliseconds
+    public static final double      ROBOT_ROTATE_POWERSHOT      = Math.toRadians(3.6); // degrees by empirical measurement
     // Tuning Tuning: Compensation for robot behavior, it shoots curved to the left, by few inches
     // Perform calculations as if the Robot center was to the left by few inches and shooting hits target straight ahead
     // Given that the Robot is directly facing the goal line (Heading = 0 (+ve X-axis)), we will also
@@ -88,7 +88,7 @@ public class FieldUGoal {
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot3 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_3_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePark = new Pose2d(TILE_1_CENTER, flip4Red(TILE_1_CENTER), ANGLE_NEG_X_AXIS);
-    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_CENTER + 1.0, TILE_2_FROM_ORIGIN - 1.0, ANGLE_POS_Y_AXIS);
+    public static Pose2d poseWobblePickup = new Pose2d(-TILE_2_CENTER + 2.0, TILE_2_FROM_ORIGIN + 1.0, ANGLE_POS_Y_AXIS);
 
     public static Vector2d vecRingStack = new Vector2d(-(TILE_1_FROM_ORIGIN), TILE_2_CENTER);
     public static Vector2d vecRingPickupStart = vecRingStack.plus(new Vector2d(+14.0, 0));
@@ -105,7 +105,7 @@ public class FieldUGoal {
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
     public static Pose2d poseOdoRight = new Pose2d(TILE_1_CENTER - ROBOT_RADIUS - 1, -TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
 
-    public static final double ROBOT_SHOOTING_HEADING_ANGLE = -Math.atan(ROBOT_SHOOTING_Y_OFFSET/(TILE_3_FROM_ORIGIN - poseHighGoalStack.getX()));
+    public static final double ROBOT_SHOOTING_HEADING_ANGLE = -Math.atan((ROBOT_SHOOTING_Y_OFFSET+1.5)/(TILE_3_FROM_ORIGIN - poseHighGoalStack.getX()));
 
     public static double flip4Red(double value) {
         if (aColor == AllianceColor.RED) {

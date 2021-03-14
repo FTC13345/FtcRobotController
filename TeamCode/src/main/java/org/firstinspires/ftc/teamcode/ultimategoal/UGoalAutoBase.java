@@ -444,7 +444,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                         .addTemporalMarker(1.0, new MarkerCallback() {
                             @Override
                             public void onMarkerReached() {
-                                robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalAuto.vec().plus(new Vector2d(-2,0)));
+                                robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalStack.vec().plus(new Vector2d(+8,0)));
                             }
                         })
                         .build();

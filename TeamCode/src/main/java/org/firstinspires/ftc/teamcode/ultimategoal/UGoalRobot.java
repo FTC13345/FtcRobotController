@@ -265,9 +265,9 @@ public class UGoalRobot {
 
     public void shootRing() {
         ringPusher.setPosition(RING_PUSHER_SHOOT_POSITION);
-        myOpMode.sleep(100);
-        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
         myOpMode.sleep(150);
+        ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
+        myOpMode.sleep(250);
     }
 
     public void loadRing() {
@@ -440,7 +440,7 @@ public class UGoalRobot {
     public void tiltShooterPlatform(double targetX, double targetY, double targetHeight, Vector2d robotPosition) {
 
         double xDiff = targetX - robotPosition.getX();
-        double yDiff = targetY - (robotPosition.getY() + ROBOT_SHOOTING_Y_OFFSET);  // offset is compensation for robot shooting curved path
+        double yDiff = targetY - (robotPosition.getY());
         double distance = Math.hypot(xDiff, yDiff); //Distance on the ground
 
         // OPTION: Enable the code line below if/when Odometry is not working reliably and we want to ingore robot position in calculation of tilt angle.
