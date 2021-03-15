@@ -162,7 +162,7 @@ public class MecabotDrive extends Mecabot {
         double robotAngle = getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
         double delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
-        double speed = Math.abs(turnSpeed);
+        double speed = direction * Math.abs(turnSpeed);
 
         movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
@@ -172,10 +172,10 @@ public class MecabotDrive extends Mecabot {
 
             // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_SLOW is required to overcome inertia
             if ((direction * delta) < 0.175) {  // 0.175 Radians = 10 degrees
-                speed = ROTATE_SPEED_SLOW;
+                speed = direction * ROTATE_SPEED_SLOW;
             }
             // the sign of delta determines the direction of rotation of robot
-            robot.driveTank(0, direction * speed);
+            robot.driveTank(0, speed);
             myOpMode.idle(); // allow some time for the motors to actuate
             robotAngle = getZAngle();
             delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);

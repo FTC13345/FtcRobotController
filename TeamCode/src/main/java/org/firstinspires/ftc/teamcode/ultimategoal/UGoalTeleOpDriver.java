@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
@@ -78,13 +79,21 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
         }
         if (gamepad1.dpad_down) {
             setAutoDriving();
-            robot.rrdriveToTarget(Target.POWERSHOT_3);
+            robot.rrdriveToTarget(Target.POWERSHOT_1);
         }
         if (gamepad1.dpad_left) {
-            mcdrive.gyroRotate(ROBOT_ROTATE_POWERSHOT);
+            //mcdrive.gyroRotate(ROBOT_ROTATE_POWERSHOT);
+            Trajectory goToTarget = rrmdrive.trajectoryBuilder(rrmdrive.getPoseEstimate())
+                    .strafeLeft(7.5)
+                    .build();
+            rrmdrive.followTrajectory(goToTarget);
         }
         if (gamepad1.dpad_right) {
-            mcdrive.gyroRotate(-ROBOT_ROTATE_POWERSHOT);
+            //mcdrive.gyroRotate(-ROBOT_ROTATE_POWERSHOT);
+            Trajectory goToTarget = rrmdrive.trajectoryBuilder(rrmdrive.getPoseEstimate())
+                    .strafeRight(7.5)
+                    .build();
+            rrmdrive.followTrajectory(goToTarget);
         }
         if (gamepad1.left_bumper && gamepad1.right_bumper) {
             toggle = !toggle;

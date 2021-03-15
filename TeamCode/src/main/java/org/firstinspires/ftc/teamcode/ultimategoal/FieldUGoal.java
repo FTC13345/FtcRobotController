@@ -55,7 +55,7 @@ public class FieldUGoal {
     public static final double HIGH_GOAL_HEIGHT = 35.5;
     public static final double MED_GOAL_HEIGHT = 27;
     public static final double LOW_GOAL_HEIGHT = 17;
-    public static final double POWER_SHOT_HEIGHT = 31.5;    // this value is tuned by field experimentation, to get correct tilt angle of shooting platform
+    public static final double POWER_SHOT_HEIGHT = 32.5;    // this value is tuned by field experimentation, to get correct tilt angle of shooting platform
 
     public static final double GOALX                    = TILE_3_FROM_ORIGIN;
     public static final double GOALY                    = TILE_2_CENTER;
