@@ -290,12 +290,12 @@ public class UGoalRobot {
 
     public void setWobbleFingerOpen(){
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-        myOpMode.sleep(150);
+        myOpMode.sleep(400);    // goBilda high torque servo is slow it needs 400ms
     }
 
     public void setWobbleFingerClosed(){
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
-        myOpMode.sleep(150);
+        myOpMode.sleep(400);    // goBilda high torque servo is slow it needs 400ms vs 150ms for high speed servo
     }
 
     public void moveWobbleArm(double speed) {
