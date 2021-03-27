@@ -138,8 +138,8 @@ public class UGoalRobot {
         ringPusher = ahwMap.get(Servo.class, "ringPusherServo");
         intakeCRServo = ahwMap.get(CRServo.class, "intakeCRServo");
 
-        intakeAssembly.setPosition(INTAKE_ASMBLY_UP);
-        angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
+//        intakeAssembly.setPosition(INTAKE_ASMBLY_UP);     // disabled we dont want to reset between Auto and TeleOp
+//        angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN); // disabled we dont want to reset between Auto and TeleOp
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
         wobblePreload.setPosition(WOBBLE_PRELOAD_CLOSED);         // Clamp the preloaded wobble securely
         ringPusher.setPosition(RING_PUSHER_IDLE_POSITION);
@@ -290,12 +290,12 @@ public class UGoalRobot {
 
     public void setWobbleFingerOpen(){
         wobbleFinger.setPosition(WOBBLE_FINGER_OPEN);
-        myOpMode.sleep(400);    // goBilda high torque servo is slow it needs 400ms
+        myOpMode.sleep(200);    // goBilda high torque servo is slow it needs more time
     }
 
     public void setWobbleFingerClosed(){
         wobbleFinger.setPosition(WOBBLE_FINGER_CLOSED);
-        myOpMode.sleep(400);    // goBilda high torque servo is slow it needs 400ms vs 150ms for high speed servo
+        myOpMode.sleep(300);    // goBilda high torque servo is slow it needs more time vs 150ms for high speed servo
     }
 
     public void moveWobbleArm(double speed) {
@@ -598,8 +598,8 @@ public class UGoalRobot {
     //instead of using go to position, use mecanum wheels to move a short distance sideways
     public void mcdriveToNextPowerShot(){
         //move using mecanum sideways to next powershot
-        //if blue, moving toward center is negative, constant is already negative
-        mcdrive.odometryMoveRightLeft(flip4Red(DISTANCE_BETWEEN_POWERSHOT));
+        //if blue, moving toward center is negative
+        mcdrive.odometryMoveRightLeft(flip4Red(-DISTANCE_BETWEEN_POWERSHOT));
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }

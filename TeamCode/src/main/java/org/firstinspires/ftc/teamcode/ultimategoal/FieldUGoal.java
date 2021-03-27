@@ -61,10 +61,10 @@ public class FieldUGoal {
     public static final double GOALY                    = TILE_2_CENTER;
     public static final double POWERSHOTX               = TILE_3_FROM_ORIGIN;
     //power shot 1 is furthest from center
+    public static final double DISTANCE_BETWEEN_POWERSHOT  = 8.5;
     public static final double POWERSHOT_1_Y            = 19;
-    public static final double POWERSHOT_2_Y            = POWERSHOT_1_Y-7.5;
-    public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-7.5;
-    public static final double DISTANCE_BETWEEN_POWERSHOT  = -7.5;
+    public static final double POWERSHOT_2_Y            = POWERSHOT_1_Y-DISTANCE_BETWEEN_POWERSHOT;
+    public static final double POWERSHOT_3_Y            = POWERSHOT_2_Y-DISTANCE_BETWEEN_POWERSHOT;
 
     // Robot function or game play specific values, maybe these need to do into a different file
     public static final long        RING_SHOOTING_INTERVAL      = 250; // milliseconds
@@ -82,7 +82,7 @@ public class FieldUGoal {
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoalAuto = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
-    public static Pose2d poseHighGoalTeleOp = new Pose2d(ORIGIN - 6.0, flip4Red(+18), Math.toRadians(3.1)); // High Goal shooting position for TeleOp
+    public static Pose2d poseHighGoalTeleOp = new Pose2d(ORIGIN - 6.0, flip4Red(+18), Math.toRadians(2.0)); // High Goal shooting position for TeleOp
     public static Pose2d poseHighGoalStack = new Pose2d(-TILE_1_FROM_ORIGIN+6, flip4Red(TILE_2_CENTER), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot1 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_1_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d posePowerShot2 = new Pose2d(ORIGIN - 6.0, flip4Red(POWERSHOT_2_Y - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
@@ -101,9 +101,9 @@ public class FieldUGoal {
     public static Vector2d poseWobbleLanding1 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_2_CENTER));
     public static Vector2d poseWobbleLanding2 = new Vector2d(-TILE_3_CENTER, flip4Red(TILE_1_CENTER));
     // Robot positioned touching side wall (left side on BLUE field) with front of robot touching Y-Axis line
-    public static Pose2d poseOdoLeft = new Pose2d(ORIGIN - ROBOT_RADIUS, TILE_3_FROM_ORIGIN - ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+    public static Pose2d poseOdoLeft = new Pose2d(-9.0, 60.5, ANGLE_POS_X_AXIS);
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
-    public static Pose2d poseOdoRight = new Pose2d(TILE_1_CENTER - ROBOT_RADIUS - 1, -TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
+    public static Pose2d poseOdoRight = new Pose2d(-8.5, -15.0, ANGLE_POS_X_AXIS);
 
     public static final double ROBOT_SHOOTING_HEADING_ANGLE = -Math.atan((ROBOT_SHOOTING_Y_OFFSET+1.5)/(TILE_3_FROM_ORIGIN - poseHighGoalStack.getX()));
 

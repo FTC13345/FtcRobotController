@@ -49,7 +49,9 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
     @Override
     public void  driveGameTeleOp() {
         if (gamepad1.a) {      // Turn shooter towards Goals
-            mcdrive.gyroRotateToHeading(ANGLE_POS_X_AXIS);
+            mcdrive.getOdometry().setGlobalPosition(poseHighGoalTeleOp.getX(), poseHighGoalTeleOp.getY(), poseHighGoalTeleOp.getHeading());
+            rrmdrive.initIMU();
+            rrmdrive.setPoseEstimate(poseHighGoalTeleOp);
         }
         else if (gamepad1.b) {      // Turn Intake towards Goals
             mcdrive.gyroRotateToHeading(ANGLE_NEG_X_AXIS);
@@ -79,19 +81,19 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
         }
         if (gamepad1.dpad_down) {
             setAutoDriving();
-            robot.rrdriveToTarget(Target.POWERSHOT_1);
+            robot.rrdriveToTarget(Target.POWERSHOT_3);
         }
         if (gamepad1.dpad_left) {
             //mcdrive.gyroRotate(ROBOT_ROTATE_POWERSHOT);
             Trajectory goToTarget = rrmdrive.trajectoryBuilder(rrmdrive.getPoseEstimate())
-                    .strafeLeft(7.5)
+                    .strafeLeft(DISTANCE_BETWEEN_POWERSHOT)
                     .build();
             rrmdrive.followTrajectory(goToTarget);
         }
         if (gamepad1.dpad_right) {
             //mcdrive.gyroRotate(-ROBOT_ROTATE_POWERSHOT);
             Trajectory goToTarget = rrmdrive.trajectoryBuilder(rrmdrive.getPoseEstimate())
-                    .strafeRight(7.5)
+                    .strafeRight(DISTANCE_BETWEEN_POWERSHOT)
                     .build();
             rrmdrive.followTrajectory(goToTarget);
         }
