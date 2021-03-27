@@ -514,7 +514,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 return;
             }
             // If countRingStack is ZERO, then skip steps 3 to 8 related to starter stack of rings
-            if ((countRingStack == 0) && (TASK.RUN_INTAKE.compareTo(task) <= 0) && (TASK.STOP_INTAKE.compareTo(task) >= 0)) {
+            if ((countRingStack == 0) && (TASK.RUN_INTAKE.compareTo(task) <= 0) && (TASK.SHOOT_RINGS_STACK.compareTo(task) >= 0)) {
                 continue;
             }
             if ((countRingStack == 1) && (TASK.DRIVE_RINGS_STACK_4RINGS.compareTo(task) <= 0) && (TASK.PICKUP_RINGS_STACK_4RINGS.compareTo(task) >= 0)) {
