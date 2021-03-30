@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
@@ -8,12 +9,15 @@ import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -50,12 +54,16 @@ public class UGoalRobot {
     static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
-    static final double SHOOTER_FLYWHEEL_RUN = 0.7;
+    static final double SHOOTER_FLYWHEEL_VELO_MAX = 6000f * 28f / 60f;
+    static final double SHOOTER_FLYWHEEL_VELO_MIN = 0.3 * SHOOTER_FLYWHEEL_VELO_MAX;
+    static final double SHOOTER_FLYWHEEL_SPEED = 0.7 * SHOOTER_FLYWHEEL_VELO_MAX;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
     static final double SHOOTER_PLATFORM_ANGLE_MIN = 20.0f;
     static final double SHOOTER_PLATFORM_ANGLE_MAX = 35.0f;
+    static final double SHOOTER_PLATFORM_ANGLE_OFFSET = 2.7f;
 
     // status variables
+    double shooterFlywheelVelocity = SHOOTER_FLYWHEEL_SPEED;
     double shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
     int countRingsInHopper;
 
@@ -65,7 +73,7 @@ public class UGoalRobot {
     private OdometryGlobalPosition globalPosition;
     private LinearOpMode myOpMode;       // Access to the OpMode object
     private Telemetry telemetry;
-//    private Orientation angles;
+    private Telemetry dashTelemetry;
 
     // Motors and/or enccoders
     public DcMotor leftODwheel = null;
@@ -74,7 +82,8 @@ public class UGoalRobot {
     public DcMotor wobblePickupArm = null;
     // THis is a motor driven by Spark Mini controller which takes Servo PWM input
     // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
-    public DcMotorSimple flywheelMotor = null;
+    //public DcMotorSimple flywheelMotor = null;
+    public DcMotorEx flywheelMotor = null;
 
     //Servos
     public Servo angleServo = null;
@@ -94,6 +103,7 @@ public class UGoalRobot {
     public UGoalRobot(HardwareMap hardwareMap, LinearOpMode opMode) {
         myOpMode = opMode;
         telemetry = opMode.telemetry;
+        dashTelemetry = FtcDashboard.getInstance().getTelemetry();
         mcdrive = new MecabotDrive(hardwareMap, opMode);
         rrmdrive = new RRMecanumDrive(hardwareMap, opMode);
         globalPosition = mcdrive.getOdometry();
@@ -111,20 +121,28 @@ public class UGoalRobot {
         leftODwheel = ahwMap.get(DcMotor.class, "leftODwheel");
         rightODwheel = ahwMap.get(DcMotor.class, "rightODwheel");
         intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");         // we are using intake motor port for cross encoder
-        wobblePickupArm = ahwMap.get(DcMotor.class, "wobblePickupArm");
-        flywheelMotor = ahwMap.get(DcMotorSimple.class, "flywheelMotorSparkMini");
+        wobblePickupArm = ahwMap.get(DcMotor.class, "wobblePickupArm");         // Wobble arm is temporarily disabled while flywheel is using its motor
+        //flywheelMotor = ahwMap.get(DcMotorSimple.class, "flywheelMotorSparkMini");
+        flywheelMotor = ahwMap.get(DcMotorEx.class, "wobblePickupArm");         // Temporary for VeloPID testing only
 
         // direction depends on hardware installation
         leftODwheel.setDirection(DcMotor.Direction.FORWARD);
         rightODwheel.setDirection(DcMotor.Direction.FORWARD);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
-        flywheelMotor.setDirection(DcMotor.Direction.REVERSE);
+        //flywheelMotor.setDirection(DcMotor.Direction.REVERSE);         // Temporary for VeloPID testing using wobbleArm motor
+        flywheelMotor.setDirection(DcMotor.Direction.FORWARD);         // Temporary for VeloPID testing using wobbleArm motor
 
         leftODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        VoltageSensor batteryVoltageSensor = ahwMap.voltageSensor.iterator().next();
+        flywheelMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
+                80, 0, 15, 12.3 * 12 / batteryVoltageSensor.getVoltage())
+        );
 
         leftODwheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightODwheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -157,6 +175,15 @@ public class UGoalRobot {
     public void setPose(Pose2d pose) {
         globalPosition.setGlobalPosition(pose.getX(), pose.getY(), pose.getHeading());
         rrmdrive.setPoseEstimate(pose);
+    }
+
+    public void update() {
+        double velocity = flywheelMotor.getVelocity();
+        telemetry.addData("Flywheel Velocity", velocity);
+        dashTelemetry.addData("upperBound", 2800);
+        dashTelemetry.addData("Flywheel Velocity", velocity);
+        dashTelemetry.addData("lowerBound", 0);
+        dashTelemetry.update();
     }
 
     /*
@@ -252,7 +279,7 @@ public class UGoalRobot {
      * Ring Shooter Flywheel and Ring Pusher Arm methods
      */
     public void runShooterFlywheel() {
-        flywheelMotor.setPower(SHOOTER_FLYWHEEL_RUN);
+        flywheelMotor.setVelocity(shooterFlywheelVelocity);
     }
 
     public void stopShooterFlywheel() {
@@ -261,6 +288,19 @@ public class UGoalRobot {
 
     public boolean isShooterFlywheelRunning() {
         return (flywheelMotor.getPower() != SHOOTER_FLYWHEEL_STOP);
+    }
+
+    public void shooterFlywheelStepUP() {
+        if (shooterFlywheelVelocity < 0.9 * SHOOTER_FLYWHEEL_VELO_MAX ) {
+            shooterFlywheelVelocity += 50;
+            flywheelMotor.setVelocity(shooterFlywheelVelocity);
+        }
+    }
+    public void shooterFlywheelStepDOWN() {
+        if (shooterFlywheelVelocity > 0.1 * SHOOTER_FLYWHEEL_VELO_MAX ) {
+            shooterFlywheelVelocity -= 50;
+            flywheelMotor.setVelocity(shooterFlywheelVelocity);
+        }
     }
 
     public void shootRing() {
@@ -463,7 +503,8 @@ public class UGoalRobot {
         // Tuning Tuning: Compensation for robot behavior, the tilt calculations need few degrees uplift
         // It may be due to gravity or physical platform tilt does not match mechanical design assumption
         // add a constant offset based on field tuning
-        shooterPlatformTiltAngle = tiltAngle + 2.7;    // record value before clipping for telemetry printout, do not delete this line
+        // also record value before clipping for telemetry printout, do not add OFFSET in the Range.clip() call
+        shooterPlatformTiltAngle = tiltAngle + SHOOTER_PLATFORM_ANGLE_OFFSET;
 
         tiltAngle = Range.clip(shooterPlatformTiltAngle, SHOOTER_PLATFORM_ANGLE_MIN, SHOOTER_PLATFORM_ANGLE_MAX);
 
@@ -503,6 +544,12 @@ public class UGoalRobot {
 */
     }
 
+    public void tiltShooterPlatformUP() {
+        tiltShooterPlatform(shooterPlatformTiltAngle - SHOOTER_PLATFORM_ANGLE_OFFSET + 0.5);
+    }
+    public void tiltShooterPlatformDOWN() {
+        tiltShooterPlatform(shooterPlatformTiltAngle - SHOOTER_PLATFORM_ANGLE_OFFSET - 0.5);
+    }
     public void tiltShooterPlatformMin() {
         shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
         angleServo.setPosition(SHOOTER_PLATFORM_POS_MIN);
@@ -656,8 +703,6 @@ public class UGoalRobot {
         telemetry.addAction(new Runnable() { @Override public void run()
         {
             // Add here any expensive work that should be done only once just before telemetry update push
-            //angles   = mcdrive.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-            //angles   = mcdrive.getAngularOrientation();
         }
         });
         telemetry.addLine("RR ")

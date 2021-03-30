@@ -1,17 +1,8 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcore.external.Func;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
@@ -115,7 +106,9 @@ public class UGoalTeleOp extends LinearOpMode {
             intake();
             shootRings();
             wobblePickup();
+            shooterFlywheelVeloPIDTuning();
             telemetry.update();
+            robot.update();
             idle();
         }
 
@@ -157,7 +150,8 @@ public class UGoalTeleOp extends LinearOpMode {
 
     public void shootRings() {
         // Toggle the ring shooter flywheel motor when A is pressed
-        if (gamepad2.a) {                               if (!gamepad2ADebounce) {
+        if (gamepad2.a) {
+            if (!gamepad2ADebounce) {
                 if (robot.isShooterFlywheelRunning()) {
                     robot.stopShooterFlywheel();
                 } else {
@@ -184,12 +178,16 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.tiltShooterPlatform(Target.POWERSHOT_1);
         }
 
+        /*
+         * Temporarily disabled for shooterFlywheelVeloPIDTuning()
+         *
         if (gamepad2.dpad_right) {
             robot.tiltShooterPlatformMin();
         }
         if (gamepad2.dpad_left) {
             robot.tiltShooterPlatformMax();
         }
+         */
     }
 
     public void intake() {
@@ -220,7 +218,9 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.dropIntakeAssembly();
         }
 
-        //error margin is to prevent the wobble arm from being unable to go to a certain spot
+        /*
+         * Temporarily disabled for shooterFlywheelVeloPIDTuning()
+         *
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
              if (!gamepad2DpadDebounce){
                  waMode = WOBBLE_ARM_MODE.BUTTONS;
@@ -236,6 +236,7 @@ public class UGoalTeleOp extends LinearOpMode {
         } else {
             gamepad2DpadDebounce = false;
         }
+         */
 
         if (gamepad2.right_stick_y != 0) {
 
@@ -274,6 +275,32 @@ public class UGoalTeleOp extends LinearOpMode {
         // DO NOT remove the following line, we need to call stopWobbleArm() when user releases the joystick
         else if (waMode == WOBBLE_ARM_MODE.JOYSTICK) {
             robot.stopWobbleArm();
+        }
+    }
+
+    public void shooterFlywheelVeloPIDTuning() {
+        if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
+            if (!gamepad2DpadDebounce){
+                robot.tiltShooterPlatformUP();
+            }
+            gamepad2DpadDebounce = true;
+        } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
+            if (!gamepad2DpadDebounce){
+                robot.tiltShooterPlatformDOWN();
+            }
+            gamepad2DpadDebounce = true;
+        } else if (gamepad2.dpad_right) { // operator trying to move wobble arm DOWN
+            if (!gamepad2DpadDebounce){
+                robot.shooterFlywheelStepUP();
+            }
+            gamepad2DpadDebounce = true;
+        } else if (gamepad2.dpad_left) { // operator trying to move wobble arm DOWN
+            if (!gamepad2DpadDebounce){
+                robot.shooterFlywheelStepDOWN();
+            }
+            gamepad2DpadDebounce = true;
+        } else {
+            gamepad2DpadDebounce = false;
         }
     }
 }
