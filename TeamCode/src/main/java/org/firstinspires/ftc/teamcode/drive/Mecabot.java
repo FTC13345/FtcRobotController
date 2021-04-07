@@ -34,9 +34,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
-
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /**
  * This is NOT an opmode.
@@ -49,6 +46,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  *
  */
 public class Mecabot {
+    //constants here
+    public static final double LENGTH = 17.0;   // exact length 17.2 in see https://www.gobilda.com/strafer-chassis-kit-3209-0001-0002/
+    public static final double WIDTH = 17.0;    // exact length 17.4 in see https://www.gobilda.com/strafer-chassis-kit-3209-0001-0002/
+    public static final double HALF_WIDTH = WIDTH / 2;
+
+    /* local OpMode members. */
+    // The hardware map obtained from OpMode
+    HardwareMap hwMap;
+    // The IMU sensor object
+    protected BNO055IMU imu;
     // drive train motors
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
@@ -63,15 +70,6 @@ public class Mecabot {
     // Define enum constant for whether robot is in NORMAL forward mode or in REVERSE mode
     enum DIRECTION {FORWARD, REVERSE}
     DIRECTION direction;
-
-    //constants here
-    public static final double LENGTH = 17.0;   // exact length 17.2 in see https://www.gobilda.com/strafer-chassis-kit-3209-0001-0002/
-    public static final double WIDTH = 17.0;    // exact length 17.4 in see https://www.gobilda.com/strafer-chassis-kit-3209-0001-0002/
-    public static final double HALF_WIDTH = WIDTH / 2;
-
-    /* local OpMode members. */
-    // The hardware map obtained from OpMode
-    HardwareMap hwMap;
 
     /*
      * Robot front facing direction toggle methods. Robot FRONT direction can be flipped.
@@ -115,6 +113,15 @@ public class Mecabot {
         // Save reference to Hardware map
         hwMap = ahwMap;
 
+        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        imu = hwMap.get(BNO055IMU.class, "imu");
+        // imu.initialize(BNO055IMU.Parameters) must be called otherwise gyro readings will be zero
+        // we do not initialize in this class because side effect is to reset gyro heading to zero
+        // the op-mode main application code should decided when we want to initialize or not
+        // for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
+
         /* Define and Initialize Motors and Servos */
 
         // Drivetrain motors
@@ -143,6 +150,25 @@ public class Mecabot {
         pattern = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE;
         lights.setPattern(pattern);
 
+    }
+
+    /*
+     * Initialize the IMU for AngleUnit RADIANS and with default parameter values
+     * This method is mandatory to be called once after power up, otherwise the angle values returned == 0
+     */
+    public void initIMU() {
+        // Set up the parameters with which we will use our IMU.
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
+        imu.initialize(parameters);
+    }
+
+    /**
+     * Gets the orientation of the robot using the REV IMU
+     * @return the angle of the robot
+     */
+    public double getZAngle() {
+        return imu.getAngularOrientation().firstAngle;
     }
 
     /*

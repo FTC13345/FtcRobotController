@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 import org.firstinspires.ftc.teamcode.util.Encoder;
@@ -58,39 +57,14 @@ public class MecabotDrive extends Mecabot {
     protected LinearOpMode        myOpMode;       // Access to the OpMode object
     protected OdometryGlobalPosition odoPosition; // Robot global position tracker
     protected String              movementStatus          = "";
-    // The IMU sensor object
-    protected BNO055IMU imu;
 
     /* Constructor */
     public MecabotDrive(HardwareMap ahwMap, LinearOpMode opMode) {
         super(ahwMap);
         myOpMode = opMode;
         robot = this;
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "imu".
-        imu = hwMap.get(BNO055IMU.class, "imu");
-        // imu.initialize(BNO055IMU.Parameters) must be called otherwise gyro readings will be zero
-        // we do not initialize in this class because side effect is to reset gyro heading to zero
-        // the op-mode main applicable code should decided when we want to initialize or not
-        // for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
 
         initOdometry(ahwMap);
-    }
-
-    public void initIMU() {
-        // Set up the parameters with which we will use our IMU.
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
-        imu.initialize(parameters);
-    }
-
-    public double getZAngle() {
-        return imu.getAngularOrientation().firstAngle;
-    }
-
-    public Orientation getAngularOrientation() {
-        return imu.getAngularOrientation();
     }
 
     private void initOdometry(HardwareMap hwMap) {
