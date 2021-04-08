@@ -110,10 +110,8 @@ public class UGoalRobot {
         this.init(hardwareMap);
     }
     // mecanum drivetrain used by the Robot
-    MecabotDrive getMCBdrive() {
-        return mcdrive;
-    }
-    RRMecanumDrive getRRMdrive() { return rrmdrive; }
+    public MecabotDrive getMCBdrive() { return mcdrive; }
+    public RRMecanumDrive getRRMdrive() { return rrmdrive; }
 
     // Initialization
     public void init(HardwareMap ahwMap) {
