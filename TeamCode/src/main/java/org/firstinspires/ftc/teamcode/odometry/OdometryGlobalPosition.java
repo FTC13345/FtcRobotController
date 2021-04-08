@@ -4,6 +4,7 @@ import com.qualcomm.hardware.lynx.commands.core.LynxGetMotorEncoderPositionRespo
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 
@@ -118,7 +119,7 @@ public class OdometryGlobalPosition implements Runnable {
         // These formulas assume that robotAngleRad is positive when Robot is turning counter-clockwise
         // All local variables are a signed value, representing change or angle direction
         double changeInRobotAngle = (rightChange - leftChange) / (WHEELBASE_SEPARATION_COUNT);
-        robotAngleRad = MathFunctions.angleWrapRad(robotAngleRad + changeInRobotAngle);
+        robotAngleRad = AngleUnit.normalizeRadians(robotAngleRad + changeInRobotAngle);
 
         // calculate the positional displacment only in horizontal direction
         double rawHorizontalChange = horizontalCount - prevHorizontalCount;

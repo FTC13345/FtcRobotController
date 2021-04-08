@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.drive;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -10,7 +9,6 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 
 import java.util.Locale;
@@ -35,7 +33,7 @@ public class MecabotDrive extends Mecabot {
     public static final double DRIVE_SPEED_DEFAULT = 0.6;
     public static final double DRIVE_SPEED_FAST    = 0.8;
     public static final double DRIVE_SPEED_MAX     = 1.0;
-    public static final double ROTATE_SPEED_MIN    = 0.15;
+    public static final double ROTATE_SPEED_MIN    = 0.05;
     public static final double ROTATE_SPEED_SLOW   = 0.2;
     public static final double ROTATE_SPEED_DEFAULT= 0.4;
     public static final double ROTATE_SPEED_FAST   = 0.6;
@@ -133,10 +131,11 @@ public class MecabotDrive extends Mecabot {
      */
     public void gyroRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
+        turnSpeed = Math.abs(turnSpeed);
         double robotAngle = getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
         double delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
-        double speed = direction * Math.abs(turnSpeed);
+        double speed = direction * turnSpeed;
 
         movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
@@ -144,10 +143,8 @@ public class MecabotDrive extends Mecabot {
         // Margin is used because the overshoot for even small gyro rotation is 0.15 degrees and higher for larger rotations
         while (myOpMode.opModeIsActive() && ((direction * delta) > 0.0052) && (runtime.seconds() < timeout)) {  // 0.0052 radians = 0.3 degrees
 
-            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_SLOW is required to overcome inertia
-            if ((direction * delta) < 0.175) {  // 0.175 Radians = 10 degrees
-                speed = direction * ROTATE_SPEED_SLOW;
-            }
+            // slow down proportional to the rotation remaining, delta value in Radians is convenient to use, ROTATE_SPEED_MIN is required to overcome inertia
+            speed = direction * Range.clip(Math.abs(delta), ROTATE_SPEED_MIN, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
             robot.driveTank(0, speed);
             myOpMode.idle(); // allow some time for the motors to actuate
@@ -155,52 +152,56 @@ public class MecabotDrive extends Mecabot {
             delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         }
         robot.stopDriving();
+        double targetDeg = Math.toDegrees(targetAngle);
+        double robotDeg = Math.toDegrees(robotAngle);
         myOpMode.telemetry.addLine("Rot ")
-                .addData("Tgt", "%.2f", Math.toDegrees(targetAngle))
-                .addData("Act", "%.2f", Math.toDegrees(robotAngle))
-                .addData("sp", "%.1f", turnSpeed)
-                .addData("t", "%.1f", runtime.seconds());
+                .addData("Tgt", "%.2f°", targetDeg)
+                .addData("Act", "%.2f°", robotDeg)
+                .addData("Spd", "%1.2f", speed)
+                .addData("t", "%1.2f", runtime.seconds());
         myOpMode.telemetry.update();
-        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Act=%.2f | Spd=%1.2f | t=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
+        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f° | Act=%.2f° | Spd=%1.2f | t=%1.2f", targetDeg, robotDeg, turnSpeed, runtime.seconds());
     }
 
     /**
      * Rotate the robot to desired angle position using the odometry position feedback
      *
-     * @param targetAngle   The desired target angle position in degrees
+     * @param targetAngle   The desired target angle position in radians
      * @param turnSpeed     The speed at which to drive the motors for the rotation. 0.0 < turnSpeed <= 1.0
      */
     public void odometryRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
-        // determine current angle of the robot
-        double robotAngle = odoPosition.getOrientationDegrees();
-        double delta = MathFunctions.angleWrap(targetAngle - robotAngle);
-        double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
         turnSpeed = Math.abs(turnSpeed);
+        // determine current angle of the robot
+        double robotAngle = odoPosition.getOrientationRadians();
+        double delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
+        double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
+        double speed = direction * turnSpeed;
 
-        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", targetAngle, turnSpeed, timeout);
         ElapsedTime runtime = new ElapsedTime();
         // while the robot heading has not reached the targetAngle (delta sign flips), and consider reached within a margin of 0.2 degrees
         // Margin is used because the overshoot for even small gyro rotation is 0.05 to 0.15 degrees
-        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.6) && (runtime.seconds() < timeout)) {
+        while (myOpMode.opModeIsActive() && ((direction * delta) > 0.0052) && (runtime.seconds() < timeout)) { // 0.0052 radians = 0.3 degrees
 
-            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_MIN is required to overcome inertia
-            double speed = Range.clip(turnSpeed*Math.abs(delta)/30, ROTATE_SPEED_SLOW, turnSpeed);
+            // slow down proportional to the rotation remaining, delta value in Radians is convenient to use, ROTATE_SPEED_MIN is required to overcome inertia
+            speed = direction * Range.clip(Math.abs(delta), ROTATE_SPEED_MIN, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
-            robot.driveTank(0, direction * speed);
+            robot.driveTank(0, speed);
             myOpMode.sleep(30); // allow some time for the motors to actuate
-            robotAngle = odoPosition.getOrientationDegrees();
-            delta = MathFunctions.angleWrap(targetAngle - robotAngle);
-
-            myOpMode.telemetry.addLine("Odom Rot ")
-                    .addData("Tgt", "%.2f", targetAngle)
-                    .addData("Act", "%.2f", robotAngle)
-                    .addData("Dlt", "%.2f", delta)
-                    .addData("Spd", "%.2f", speed);
-            myOpMode.telemetry.update();
+            robotAngle = odoPosition.getOrientationRadians();
+            delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         }
         robot.stopDriving();
-        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Act=%.2f | Spd=%1.2f | t=%1.2f", targetAngle, robotAngle, turnSpeed, runtime.seconds());
+        double targetDeg = Math.toDegrees(targetAngle);
+        double robotDeg = Math.toDegrees(robotAngle);
+        myOpMode.telemetry.addLine("Odom Rot ")
+                .addData("Tgt", "%.2f°", targetDeg)
+                .addData("Act", "%.2f°", robotDeg)
+                .addData("Spd", "%1.2f", speed)
+                .addData("t", "%1.2f", runtime.seconds()
+                );
+        myOpMode.telemetry.update();
+        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f° | Act=%.2f° | Spd=%1.2f | t=%1.2f", targetDeg, robotDeg, turnSpeed, runtime.seconds());
     }
 
     public void rotateToHeading(double targetAngle, double turnSpeed, double timeout) {
@@ -285,13 +286,13 @@ public class MecabotDrive extends Mecabot {
         double relativeAngleToPosition;
 
         if (robot.isDirectionForward()) {
-            relativeAngleToPosition = MathFunctions.angleWrapRad(absoluteAngleToPosition - odoPosition.getOrientationRadians());
+            relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getOrientationRadians());
         }
         else { // (robot.isFrontLiftarm())
         // override in case of Robot front face has been REVERSED. The motors will run swapped (left front runs as right back)
         // The only control we need to change is to calculate the turn power for driving in reverse direction
         // This is done by adding 180 degrees (or PI radians) to the relative Angle (or to the robot orientation angle)
-            relativeAngleToPosition = MathFunctions.angleWrapRad(absoluteAngleToPosition - odoPosition.getOrientationRadians() + Math.PI);
+            relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getOrientationRadians() + Math.PI);
         }
 
         double drivePower = speed;

@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 
-import org.firstinspires.ftc.teamcode.odometry.MathFunctions;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 /* Main Configuration for Ultimate Goal Challenge game field
  *  The coordinate origin is as per FTC standard in the center of the field
@@ -116,7 +116,7 @@ public class FieldUGoal {
 
     public static double flipAngle4Red(double value) {
         if (aColor == AllianceColor.RED) {
-            value = MathFunctions.angleWrap(180 - value);
+            value = AngleUnit.normalizeDegrees(180 - value);
         }
         return value;
     }

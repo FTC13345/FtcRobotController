@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.File;
@@ -94,7 +95,7 @@ public class OdometryCalibration extends LinearOpMode {
         do {
 
             headingCurrent = getZAngle();
-            headingDelta = MathFunctions.angleWrap(headingCurrent - headingLast);
+            headingDelta = AngleUnit.normalizeDegrees(headingCurrent - headingLast);
             headingCumulative += headingDelta;
             headingLast = headingCurrent;
 
