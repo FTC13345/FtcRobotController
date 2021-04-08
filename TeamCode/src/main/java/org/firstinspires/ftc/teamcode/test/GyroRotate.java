@@ -1,12 +1,13 @@
 package org.firstinspires.ftc.teamcode.test;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -16,16 +17,18 @@ import java.util.Locale;
 
 /**
  * Rotate the robot using heading value from the Gyroscope included in the IMU inside REV Control Hub or Expansion Hub.
- * This OpMode uses PIDF feedback controller for increasing the accuracy and minimize overshoot
- * The PIDF coefficients need to be determined using a separate tuner program.
+ * This OpMode maintains the Robot Heading to a specified target (default 0.0 => Positive X-Axis)
+ * If the robot moves to any other heading for any reason, this program will immediately restore the robot heading
  *
  */
-@TeleOp(name = "Gyro Rotate Demo", group = "Test")
+@TeleOp(name = "GyroRotate To Heading", group = "Test")
 //@Disabled                            // Comment this out to add to the opmode list
+@Config
 public class GyroRotate extends LinearOpMode {
 
-    public static PIDFCoefficients GYRO_ROTATE_PID = new PIDFCoefficients(0, 0, 0, 0);
-    public static double TARGET_HEADING = 0.0;
+    public static double TARGET_HEADING = 0.0;  // Positive X-Axis = 0.0 Heading
+    public static double DEST_MARGIN = 0.0052;  // 0.0052 radians = 0.3 degrees
+    public static double ROTATE_SPEED_MIN    = 0.05;
     public static double ROTATE_SPEED_SLOW   = 0.2;
     public static double ROTATE_SPEED_DEFAULT= 0.4;
     public static double ROTATE_SPEED_FAST   = 0.6;
@@ -33,9 +36,12 @@ public class GyroRotate extends LinearOpMode {
 
     // member variables
     private Mecabot robot;
-    private double robotHeading;
-    private String movementStatus;
     private final FtcDashboard dashboard = FtcDashboard.getInstance();
+
+    // status variables
+    private double robotHeading;
+    private String movementStatus = "";
+    private int moves, loopsInLastMove, loops;
 
     @Override
     public void runOpMode() {
@@ -57,10 +63,12 @@ public class GyroRotate extends LinearOpMode {
 
         if (isStopRequested()) return;
 
-        // Begin calibration, by pivoting the robot in place, to maintain TARGET_HEADING
+        telemetry.addData("Started: ", "Maintain Heading to %3.2f°", Math.toDegrees(TARGET_HEADING));
+        // Start to maintain TARGET_HEADING by pivoting the robot in place
         // if robot is unable to pivot at these speeds, please adjust the constant at the top of the code
         while(!(gamepad1.x) && opModeIsActive()) {
             gyroRotateToHeading(TARGET_HEADING);
+            sleep(50);
         }
 
         //Stop the robot
@@ -95,36 +103,43 @@ public class GyroRotate extends LinearOpMode {
      */
     public void gyroRotateToHeading(double target, double turnSpeed, double timeout) {
 
+        turnSpeed = Math.abs(turnSpeed);    // just in case
+
         double heading = robot.getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
         double delta = AngleUnit.normalizeRadians(target - heading);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
-        double speed = direction * Math.abs(turnSpeed);
+        double speed;
         double targetDeg, headingDeg;
 
-        movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Spd=%1.2f | TO=%1.2f", target, turnSpeed, timeout);
+        ++moves;
+        loopsInLastMove = 0;
         ElapsedTime runtime = new ElapsedTime();
         // while the robot heading has not reached the target (delta sign flips), and consider reached within a margin
-        // Margin is used because the overshoot for even small gyro rotation is 0.15 degrees and higher for larger rotations
-        while (opModeIsActive() && ((direction * delta) > 0.0052) && (runtime.seconds() < timeout)) {  // 0.0052 radians = 0.3 degrees
+        // Margin is used because the overshoot exists for even small gyro rotations
+        while (opModeIsActive() && ((direction * delta) > DEST_MARGIN) && (runtime.seconds() < timeout)) {
+            ++loops;
+            ++loopsInLastMove;
+            // slow down proportional to the rotation remaining, delta value in Radians is convenient to use, ROTATE_SPEED_MIN is required to overcome inertia
+            speed = direction * Range.clip(Math.abs(delta), ROTATE_SPEED_MIN, turnSpeed);
 
-            // slow down linearly for the last N degrees rotation remaining, ROTATE_SPEED_SLOW is required to overcome inertia
-            if ((direction * delta) < 0.175) {  // 0.175 Radians = 10 degrees
-                speed = direction * ROTATE_SPEED_SLOW;
-            }
+            targetDeg = Math.toDegrees(target);
+            headingDeg = Math.toDegrees(heading);
+            movementStatus = String.format(Locale.US,"Rot Tgt=%.2f° | Act=%.2f° | Spd=%1.2f | t=%1.2f",
+                    targetDeg, headingDeg, speed, runtime.seconds());
+            // print statistics
+            telemetry.addData("Target", targetDeg);
+            telemetry.addData("Heading", headingDeg);
+            telemetry.addData("Delta", targetDeg - headingDeg);
+            telemetry.update();
+
             // the sign of delta determines the direction of rotation of robot
-            robot.setDrivePower(-speed, +speed);
+            robot.driveTank(0, speed);
             idle(); // allow some time for the motors to actuate
             heading = robot.getZAngle();
             delta = AngleUnit.normalizeRadians(target - heading);
-
-            // print statistics
-            targetDeg = Math.toDegrees(target);
-            headingDeg = Math.toDegrees(heading);
-            movementStatus = String.format(Locale.US,"Rot Tgt=%.2f | Act=%.2f | Spd=%1.2f | t=%1.2f",
-                    targetDeg, headingDeg, turnSpeed, runtime.seconds());
-            telemetry.addData("Target", targetDeg);
-            telemetry.addData("Heading", headingDeg);
-            telemetry.addData("Error", targetDeg - headingDeg);
+        }
+        // update the permanent lines on telemetry at least once per move
+        if (loopsInLastMove == 0) {
             telemetry.update();
         }
         robot.stopDriving();
@@ -134,29 +149,18 @@ public class GyroRotate extends LinearOpMode {
      * Telemetry setup
      ****************************/
     protected void composeTelemetry() {
-        telemetry.addAction(new Runnable() {
-            @Override
-            public void run() {
-                // Add here any expensive work that should be done only once just before telemetry update push
-                robotHeading = robot.getZAngle();
-            }
+        telemetry.addAction(() -> {
+            // Add here any expensive work that should be done only once just before telemetry update push
+            robotHeading = robot.getZAngle();
         });
+        telemetry.addLine("Counts ")
+                .addData("Moves", () -> moves)
+                .addData("LinLastM", () -> loopsInLastMove)
+                .addData("Loops", () -> loops);
         telemetry.addLine("IMU ")
-                .addData("Rad", "%1.4f", new Func<Double>() {
-                    @Override
-                    public Double value() { return Math.toDegrees(robotHeading); }
-                })
-                .addData("Deg", "%3.2f°", new Func<Double>() {
-                @Override
-                public Double value() { return robotHeading; }
-                });
-        telemetry.addLine("M ")
-                .addData("", new Func<String>() {
-                    @Override
-                    public String value() {
-                        return movementStatus;
-                    }
-                });
-
+                .addData("Rad", "%1.4f", () -> robotHeading)
+                .addData("Deg", "%3.2f°", () -> Math.toDegrees(robotHeading));
+        telemetry.addLine("")
+                .addData("Move", () -> movementStatus);
     }
 }
