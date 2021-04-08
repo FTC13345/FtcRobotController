@@ -215,7 +215,7 @@ public class Mecabot {
     }
 
     public void setDrivePower(double speed) {
-        speed = Range.clip( speed, 0.0, 1.0);
+        speed = Range.clip( speed, -1.0, 1.0);
         leftFrontDrive.setPower(speed);
         leftBackDrive.setPower(speed);
         rightFrontDrive.setPower(speed);
@@ -223,8 +223,8 @@ public class Mecabot {
     }
 
     public void setDrivePower(double leftSpeed, double rightSpeed) {
-        leftSpeed = Range.clip( leftSpeed, 0.0, 1.0);
-        rightSpeed = Range.clip( rightSpeed, 0.0, 1.0);
+        leftSpeed = Range.clip( leftSpeed, -1.0, 1.0);
+        rightSpeed = Range.clip( rightSpeed, -1.0, 1.0);
         leftFrontDrive.setPower(leftSpeed);
         leftBackDrive.setPower(leftSpeed);
         rightFrontDrive.setPower(rightSpeed);
