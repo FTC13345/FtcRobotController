@@ -13,6 +13,7 @@ import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.followers.HolonomicPIDVAFollower;
 import com.acmerobotics.roadrunner.followers.TrajectoryFollower;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.localization.Localizer;
 import com.acmerobotics.roadrunner.profile.MotionProfile;
 import com.acmerobotics.roadrunner.profile.MotionProfileGenerator;
 import com.acmerobotics.roadrunner.profile.MotionState;
@@ -36,6 +37,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.odometry.MecabotLocalizer;
+import org.firstinspires.ftc.teamcode.odometry.RealsenseT265CameraLocalizer;
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 import org.firstinspires.ftc.teamcode.util.LynxModuleUtil;
@@ -179,12 +181,14 @@ public class RRMecanumDrive extends MecanumDrive {
         // 13345 is using three wheel odometry
         // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
         // The Encoder direction (software setting) should be manipulated by localizer AS NEEDED, without changing motor direction
-        setLocalizer(new MecabotLocalizer(
-                new Encoder(hardwareMap.get(DcMotorEx.class, "leftODwheel")),
-                new Encoder(hardwareMap.get(DcMotorEx.class, "rightODwheel")),
-                new Encoder(hardwareMap.get(DcMotorEx.class, "intakeMotor")),
-                imu
-        ));
+//        setLocalizer(new MecabotLocalizer(
+//                new Encoder(hardwareMap.get(DcMotorEx.class, "leftODwheel")),
+//                new Encoder(hardwareMap.get(DcMotorEx.class, "rightODwheel")),
+//                new Encoder(hardwareMap.get(DcMotorEx.class, "intakeMotor")),
+//                imu
+//        ));
+
+        setLocalizer(new RealsenseT265CameraLocalizer(hardwareMap));
     }
 
     public void initIMU() {

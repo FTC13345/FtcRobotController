@@ -83,6 +83,9 @@ public class UGoalTeleOp extends LinearOpMode {
         // set the starting Pose same as last saved Pose from the AUTO Opmode
         rrmdrive.setPoseEstimate(savedPose);
         globalPosition.setGlobalPosition(savedPose.getX(), savedPose.getY(), savedPose.getHeading());
+        // Temporary: start TeleOp with startPose instead of savedPose to run indepedently
+//        rrmdrive.setPoseEstimate(poseStart);
+//        globalPosition.setGlobalPosition(poseStart.getX(), poseStart.getY(), poseStart.getHeading());
 
         robot.composeTelemetry();
         // Send telemetry message to signify robot waiting;
@@ -107,8 +110,8 @@ public class UGoalTeleOp extends LinearOpMode {
             shootRings();
             wobblePickup();
             shooterFlywheelVeloPIDTuning();
-            telemetry.update();
             robot.update();
+            telemetry.update();
             idle();
         }
 

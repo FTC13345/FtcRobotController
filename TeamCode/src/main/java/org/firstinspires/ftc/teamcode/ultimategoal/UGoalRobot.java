@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.localization.Localizer;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
@@ -27,11 +28,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
+import org.firstinspires.ftc.teamcode.odometry.RealsenseT265CameraLocalizer;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 public class UGoalRobot {
 
+    static final String[] label = {"FAILED", "LOW", "MEDIUM", "HIGH"};
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
     static final double     INTAKE_ASMBLY_DOWN          = Servo.MAX_POSITION; //max is 135 degrees, all the way down
@@ -177,11 +180,18 @@ public class UGoalRobot {
 
     public void update() {
         double velocity = flywheelMotor.getVelocity();
-        telemetry.addData("Flywheel Velocity", velocity);
         dashTelemetry.addData("upperBound", 2800);
         dashTelemetry.addData("Flywheel Velocity", velocity);
         dashTelemetry.addData("lowerBound", 0);
         dashTelemetry.update();
+
+        RealsenseT265CameraLocalizer t265;
+        Localizer localizer = rrmdrive.getLocalizer();
+        if (localizer instanceof RealsenseT265CameraLocalizer) {
+            t265 = (RealsenseT265CameraLocalizer)localizer;
+            telemetry.addData("Slamra Confidence", label[t265.getPoseConfidence().ordinal()]);
+        }
+        telemetry.addData("Flywheel Velocity", velocity);
     }
 
     /*
