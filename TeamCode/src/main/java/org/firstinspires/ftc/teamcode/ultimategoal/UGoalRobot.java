@@ -546,13 +546,7 @@ public class UGoalRobot extends FtcRobotDAL {
         }
         Trajectory goToTarget = rrmdrive.trajectoryBuilder(poseStart)
                 .lineToLinearHeading(poseEnd)
-                .addTemporalMarker(1.0, new MarkerCallback() {
-                    @Override
-                    public void onMarkerReached() {
-                        // on the way driving to high goal, turn on the flywheel
-                        runShooterFlywheel();
-                    }
-                })
+                .addTemporalMarker(1.0, this::runShooterFlywheel)
                 .build();
         rrmdrive.followTrajectory(goToTarget);
         // tilt shooter platform corresponding to both robot current Pose and the target
@@ -655,18 +649,9 @@ public class UGoalRobot extends FtcRobotDAL {
     protected void composeTelemetry() {
         super.composeTelemetry();
         telemetry.addLine("Tilt ")
-                .addData("Angle", "%.1f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return shooterPlatformTiltAngle; }
-                })
-                .addData("Wobble Arm", "%3d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return wobblePickupArm.getCurrentPosition(); }
-                })
-                .addData("Rings", "%d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return countRingsInHopper; }
-                });
+                .addData("Angle", "%.1f°", () -> shooterPlatformTiltAngle)
+                .addData("Wobble Arm", "%3d", () -> wobblePickupArm.getCurrentPosition())
+                .addData("Rings", "%d", () -> countRingsInHopper);
     }
 }
 

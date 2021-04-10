@@ -428,14 +428,11 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 trajectory = rrmdrive.trajectoryBuilder(poseStart)
                         .splineTo(new Vector2d(-TILE_1_FROM_ORIGIN, poseHighGoalAuto.getY()), ANGLE_POS_X_AXIS)  // swing around and avoid the ring stack
                         .splineTo(poseHighGoalAuto.vec(), poseHighGoalAuto.getHeading())  // arrive at high goal shooting position
-                        .addTemporalMarker(1.0, new MarkerCallback() {
-                            @Override
-                            public void onMarkerReached() {
-                                // on the way driving to high goal, turn on the flywheel
-                                robot.runShooterFlywheel();
-                                //  and tilt the platform at suitable angle, taking into account that the robot overshoots destination coordinate
-                                robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalAuto.vec().plus(new Vector2d(+1.4, 0)));
-                            }
+                        .addTemporalMarker(1.0, () -> {
+                            // on the way driving to high goal, turn on the flywheel
+                            robot.runShooterFlywheel();
+                            //  and tilt the platform at suitable angle, taking into account that the robot overshoots destination coordinate
+                            robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalAuto.vec().plus(new Vector2d(+1.4, 0)));
                         })
                         .build();
                 break;
@@ -443,12 +440,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
                 trajectory = rrmdrive.trajectoryBuilder(poseHighGoalAuto, ANGLE_POS_Y_AXIS)//robot facing forward but we want trajectory to start at a 90 angle to give enough room to turn and drive straight backward
                         .splineToConstantHeading(vecRingPickupStart, ANGLE_NEG_X_AXIS)//We want the trajectory to be facing 180 degrees, which faces the stack rings
                         .lineTo(poseRingPickupEnd1.vec(), veloc, accelc)
-                        .addTemporalMarker(1.0, new MarkerCallback() {
-                            @Override
-                            public void onMarkerReached() {
-                                robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalStack.vec().plus(new Vector2d(+8,0)));
-                            }
-                        })
+                        .addTemporalMarker(1.0, () -> robot.tiltShooterPlatform(GOALX, GOALY, HIGH_GOAL_HEIGHT, poseHighGoalStack.vec().plus(new Vector2d(+8,0))))
                         .build();
                 break;
             // If four rings, go short distance only to shoot 3 rings, since we have to come back for 4th ring.
@@ -479,12 +471,7 @@ public abstract class UGoalAutoBase extends LinearOpMode {
             case PICKUP_WOBBLE_2:
                 trajectory = rrmdrive.trajectoryBuilder(poseWobble1deliver)
                         .lineToLinearHeading(poseWobblePickup)
-                        .addTemporalMarker(1.0, new MarkerCallback() {
-                            @Override
-                            public void onMarkerReached() {
-                                robot.setWobbleArmPickup();
-                            }
-                        })
+                        .addTemporalMarker(1.0, () -> robot.setWobbleArmPickup())
                         .build();
                 break;
             case DRIVE_WOBBLE_2:

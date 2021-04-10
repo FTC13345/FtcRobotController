@@ -131,70 +131,34 @@ public class FtcRobotDAL extends Mecabot {
      * Telemetry setup
      ****************************/
     protected void composeTelemetry() {
-        telemetry.addAction(new Runnable() { @Override public void run()
-        {
+        telemetry.addAction(() -> {
             // Add here any expensive work that should be done only once just before telemetry update push
-        }
         });
-        telemetry.addLine("RR ")
-                .addData("X", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {return rrmdrive.getPoseEstimate().getX();}
-                })
-                .addData("Y", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {return rrmdrive.getPoseEstimate().getY();}
-                })
-                .addData("Head", "%.2f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading()); }
-                })
-                .addData("IMU", "%.2f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return Math.toDegrees(getZAngle()); }
-                });
-        telemetry.addLine("OD ")
-                .addData("X", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getXinches();}
-                })
-                .addData("Y", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {return globalPosition.getYinches();}
-                })
-                .addData("Head", "%.2f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getOrientationDegrees(); }
-                });
+        telemetry.addLine("CAM ")
+                .addData("X", "%.1f", () -> cameraLocalizer.getPoseEstimate().getX())
+                .addData("Y", "%.1f", () -> cameraLocalizer.getPoseEstimate().getY())
+                .addData("Head", "%.2f°", () -> Math.toDegrees(cameraLocalizer.getPoseEstimate().getHeading()));
+        telemetry.addLine("GYR ")
+                .addData("X", "%.1f", () -> triWheelGyroLocalizer.getPoseEstimate().getX())
+                .addData("Y", "%.1f", () -> triWheelGyroLocalizer.getPoseEstimate().getY())
+                .addData("Head", "%.2f°", () -> Math.toDegrees(triWheelGyroLocalizer.getPoseEstimate().getHeading()))
+                .addData("IMU", "%.2f°", () -> Math.toDegrees(triWheelGyroLocalizer.getExternalHeading()));
+        telemetry.addLine("RRN ")
+                .addData("X", "%.1f", () -> roadrunnerLocalizer.getPoseEstimate().getX())
+                .addData("Y", "%.1f", () -> roadrunnerLocalizer.getPoseEstimate().getY())
+                .addData("Head", "%.2f°", () -> Math.toDegrees(roadrunnerLocalizer.getPoseEstimate().getHeading()));
+        telemetry.addLine("ODO ")
+                .addData("X", "%.1f", () -> globalPosition.getXinches())
+                .addData("Y", "%.1f", () -> globalPosition.getYinches())
+                .addData("Head", "%.2f°", () -> globalPosition.getOrientationDegrees());
         telemetry.addLine("OD Count ")
-                .addData("L", "%6.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {return globalPosition.getVerticalLeftCount();}
-                })
-                .addData("R", "%6.0f", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getVerticalRightCount(); }
-                })
-                .addData("X", "%6.0f", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getHorizontalCount(); }
-                });
+                .addData("L", "%6.0f", () -> globalPosition.getVerticalLeftCount())
+                .addData("R", "%6.0f", () -> globalPosition.getVerticalRightCount())
+                .addData("X", "%6.0f", () -> globalPosition.getHorizontalCount());
         telemetry.addLine("Drive ")
-                .addData("LF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return leftFrontDrive.getCurrentPosition(); }
-                })
-                .addData("LB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return leftBackDrive.getCurrentPosition(); }
-                })
-                .addData("RF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return rightFrontDrive.getCurrentPosition(); }
-                })
-                .addData("RB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return rightBackDrive.getCurrentPosition(); }
-                });
+                .addData("LF", "%5d", () -> leftFrontDrive.getCurrentPosition())
+                .addData("LB", "%5d", () -> leftBackDrive.getCurrentPosition())
+                .addData("RF", "%5d", () -> rightFrontDrive.getCurrentPosition())
+                .addData("RB", "%5d", () -> rightBackDrive.getCurrentPosition());
     }
 }
