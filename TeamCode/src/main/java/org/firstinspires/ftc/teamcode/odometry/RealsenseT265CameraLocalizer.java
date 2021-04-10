@@ -25,8 +25,8 @@ public class RealsenseT265CameraLocalizer implements Localizer {
 
     // We treat this like a singleton because there should only ever be one object per camera
     private static T265Camera slamra = null;
-    private Transform2d robotOffset = new Transform2d(new Translation2d(SLAMRA_TO_ROBOT_OFFSET_X,SLAMRA_TO_ROBOT_OFFSET_Y), new Rotation2d());
-    private T265Camera.CameraUpdate lastReceivedUpdate = null;
+    private Transform2d robotOffset = new Transform2d(new Translation2d(SLAMRA_TO_ROBOT_OFFSET_X, SLAMRA_TO_ROBOT_OFFSET_Y), new Rotation2d());
+    private T265Camera.CameraUpdate lastReceivedUpdate = new T265Camera.CameraUpdate(new com.arcrobotics.ftclib.geometry.Pose2d(), new ChassisSpeeds(), T265Camera.PoseConfidence.Failed );
     private Pose2d poseEstimate = new Pose2d();
     private Pose2d poseSetByUser = null;
     private boolean updateReceived = false;
@@ -38,6 +38,9 @@ public class RealsenseT265CameraLocalizer implements Localizer {
     }
 
     public void start() {
+        if (slamra.isStarted()) {
+            throw new RuntimeException("Tracking Camera start attempt when it is already started");
+        }
         slamra.start((update) -> {
             lastReceivedUpdate = update;
             synchronized (lock) {
@@ -91,7 +94,7 @@ public class RealsenseT265CameraLocalizer implements Localizer {
 
     public T265Camera.PoseConfidence getPoseConfidence() {
 
-        return (lastReceivedUpdate != null) ? lastReceivedUpdate.confidence : T265Camera.PoseConfidence.Failed;
+        return lastReceivedUpdate.confidence;
     }
 
     @Override
