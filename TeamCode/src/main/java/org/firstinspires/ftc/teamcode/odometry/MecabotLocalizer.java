@@ -31,6 +31,13 @@ public class MecabotLocalizer extends ThreeWheelGyroLocalizer {
         leftEncoder = left;
         rightEncoder = right;
         frontEncoder = front;
+        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ODOMETRY HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
+        // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
+        // Here we override the Encoder direction (software setting) ONLY if needed, without changing motor direction
+        //leftEncoder.setDirection(Encoder.Direction.REVERSE);  // IMPORTANT: robot forward movement should produce positive encoder count
+        //rightEncoder.setDirection(Encoder.Direction.REVERSE); // IMPORTANT: robot forward movement should produce positive encoder count
+        //frontEncoder.setDirection(Encoder.Direction.REVERSE); // IMPORTANT: robot right sideways movement should produce positive encoder count
+
         imu = bno055IMU;
     }
 

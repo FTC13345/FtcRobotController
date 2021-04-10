@@ -49,12 +49,12 @@ public class RRTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer {
         rightEncoder = right;
         frontEncoder = front;
 
-        // DONE 13345 | reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE)
+        // PLEASE UPDATE THESE VALUES TO MATCH YOUR ODOMETRY HARDWARE *AND* the DCMOTOR DIRECTION (FORWARD/REVERSE) CONFIGURATION
         // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
         // Here we override the Encoder direction (software setting) ONLY if needed, without changing motor direction
-        leftEncoder.setDirection(Encoder.Direction.FORWARD);  // IMPORTANT: robot forward movement should produce positive encoder count
-        rightEncoder.setDirection(Encoder.Direction.FORWARD); // IMPORTANT: robot forward movement should produce positive encoder count
-        frontEncoder.setDirection(Encoder.Direction.FORWARD); // IMPORTANT: robot right sideways movement should produce positive encoder count
+        //leftEncoder.setDirection(Encoder.Direction.REVERSE);  // IMPORTANT: robot forward movement should produce positive encoder count
+        //rightEncoder.setDirection(Encoder.Direction.REVERSE); // IMPORTANT: robot forward movement should produce positive encoder count
+        //frontEncoder.setDirection(Encoder.Direction.REVERSE); // IMPORTANT: robot right sideways movement should produce positive encoder count
     }
 
     public static double encoderTicksToInches(double ticks) {

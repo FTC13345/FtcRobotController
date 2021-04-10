@@ -12,7 +12,7 @@ import java.util.List;
 
 public abstract class ThreeWheelGyroLocalizer implements Localizer {
 
-    protected boolean useExternalHeading = true;
+    protected boolean useGyro4Heading = true;
 
     private Pose2d poseEstimate;
     private double robotXcount = 0, robotYcount = 0, robotHeading = 0;
@@ -28,7 +28,7 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
         HORIZONTAL_COUNT_PER_RADIAN = frontEncoderTicksPerRadian;
     }
 
-    protected double getExternalHeading() {
+    public double getExternalHeading() {
         return AngleUnit.normalizeRadians(getRawExternalHeading() + headingOffset);
     }
     protected void setExternalHeading(double value) {
@@ -47,7 +47,7 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
         robotXcount = pose.getX() * ENCODER_TICKS_PER_INCH;
         robotYcount = pose.getY() * ENCODER_TICKS_PER_INCH;
         robotHeading = pose.getHeading();
-        if (useExternalHeading) {
+        if (useGyro4Heading) {
             setExternalHeading(robotHeading);
         }
         lastWheelPositions = new ArrayList<>();
@@ -79,7 +79,7 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
         // These formulas assume that robotHeading is positive when Robot is turning counter-clockwise
         // All local variables are a signed value, representing change or angle direction
         double deltaHeading;
-        if (useExternalHeading) {
+        if (useGyro4Heading) {
             double extHeading = getExternalHeading();
             deltaHeading = AngleUnit.normalizeRadians(extHeading - robotHeading);
             robotHeading = extHeading;
