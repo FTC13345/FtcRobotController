@@ -140,8 +140,9 @@ public abstract class TeleOpDriver implements Runnable {
                 new Pose2d(power, strafe, turn)
         );
 
+        // disabled, not needed for TeleOp, all auto-driving is synchronous which will call update() until idle, localizer update() is being called by Robot class hierarchy
         // Update the drive class
-        rrmdrive.update();
+        // rrmdrive.update();
     }
 
 
@@ -166,7 +167,8 @@ public abstract class TeleOpDriver implements Runnable {
 
         if (autoDriving) {
             if (rrmdrive.isBusy()) {
-                rrmdrive.update();
+                // disabled, all auto-driving is synchronous which will call update() until idle, localizer update() is being called by Robot class heirarchy
+                //rrmdrive.update();
             }
             else {
                 clearAutoDriving();

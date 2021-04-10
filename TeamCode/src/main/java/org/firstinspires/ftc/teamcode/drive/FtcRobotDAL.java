@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.drive;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,22 +10,22 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.odometry.MecabotLocalizer;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.RRTrackingWheelLocalizer;
 import org.firstinspires.ftc.teamcode.odometry.RealsenseT265CameraLocalizer;
+import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 
-public class FtcRobotDAL extends Mecabot {
+public abstract class FtcRobotDAL extends Mecabot {
 
     // mecanum drive train
     protected RRMecanumDrive rrmdrive;
     protected MecabotDrive mcdrive;         // soon to be disabled since we are using RoadRunner exclusively
     protected LinearOpMode myOpMode;       // Access to the OpMode object
+    protected FtcDashboard dashboard;
     protected Telemetry telemetry;
-    protected Telemetry dashTelemetry;
     // a bunch of localizers since we want to experiment which ones will work reliably
     protected RealsenseT265CameraLocalizer cameraLocalizer;
     protected RRTrackingWheelLocalizer roadrunnerLocalizer;
@@ -31,12 +33,14 @@ public class FtcRobotDAL extends Mecabot {
     protected MecabotLocalizer triWheelLocalizer;
     protected OdometryGlobalPosition globalPosition;
 
+    protected abstract void gameUpdate(TelemetryPacket packet);
+
     // constructor
     public FtcRobotDAL(HardwareMap hardwareMap, LinearOpMode opMode) {
         super(hardwareMap);
         myOpMode = opMode;
         telemetry = opMode.telemetry;
-        dashTelemetry = FtcDashboard.getInstance().getTelemetry();
+        dashboard = FtcDashboard.getInstance();
         // odometry Localizers must be created before Mecanum Drive objects
         initOdometry(hardwareMap);
         rrmdrive = new RRMecanumDrive(hardwareMap, roadrunnerLocalizer, opMode);
@@ -100,10 +104,34 @@ public class FtcRobotDAL extends Mecabot {
         globalPosition.stop();
     }
     public void update() {
+        // Update Pose Estimate in the localizers
         // cameraLocalizer does not need update call, it has callback to return Pose
         // globalPosition does not need update call, it runs its own thread
         roadrunnerLocalizer.update();
         triWheelGyroLocalizer.update();
+
+        // FTC Dashboard map display and telemetry
+        TelemetryPacket packet = new TelemetryPacket();
+        Canvas fieldOverlay = packet.fieldOverlay();
+
+        // draw robot position from each localizer
+        fieldOverlay.setStroke("#D2691E");  // CHOCOATE
+        DashboardUtil.drawRobot(fieldOverlay, cameraLocalizer.getPoseEstimate());
+        fieldOverlay.setStroke("#4CAF50");  // GREEN
+        DashboardUtil.drawRobot(fieldOverlay, roadrunnerLocalizer.getPoseEstimate());
+        fieldOverlay.setStroke("#3F51B5");  // BLUE
+        DashboardUtil.drawRobot(fieldOverlay, triWheelGyroLocalizer.getPoseEstimate());
+        fieldOverlay.setStroke("#B800B8");  // MAGENTA
+        DashboardUtil.drawRobot(fieldOverlay, new Pose2d(globalPosition.getX(), globalPosition.getY(), globalPosition.getHeading()));
+
+        // Driver Station Telemetry
+        telemetry.addData("Slamra Confidence", RealsenseT265CameraLocalizer.PoseConfidenceLabel[cameraLocalizer.getPoseConfidence().ordinal()]);
+
+        // Call the sub-classes to collect any dashboard or telemetry updates (also any other periodic processing)
+        gameUpdate(packet);
+        // send all collected data to dashboard
+        dashboard.sendTelemetryPacket(packet);
+        // telemetry update to push to driver station will be called by the main Op Mode
     }
 
     /*
@@ -148,9 +176,9 @@ public class FtcRobotDAL extends Mecabot {
                 .addData("Y", "%.1f", () -> roadrunnerLocalizer.getPoseEstimate().getY())
                 .addData("Head", "%.2f°", () -> Math.toDegrees(roadrunnerLocalizer.getPoseEstimate().getHeading()));
         telemetry.addLine("ODO ")
-                .addData("X", "%.1f", () -> globalPosition.getXinches())
-                .addData("Y", "%.1f", () -> globalPosition.getYinches())
-                .addData("Head", "%.2f°", () -> globalPosition.getOrientationDegrees());
+                .addData("X", "%.1f", () -> globalPosition.getX())
+                .addData("Y", "%.1f", () -> globalPosition.getY())
+                .addData("Head", "%.2f°", () -> Math.toDegrees(globalPosition.getHeading()));
         telemetry.addLine("OD Count ")
                 .addData("L", "%6.0f", () -> globalPosition.getVerticalLeftCount())
                 .addData("R", "%6.0f", () -> globalPosition.getVerticalRightCount())

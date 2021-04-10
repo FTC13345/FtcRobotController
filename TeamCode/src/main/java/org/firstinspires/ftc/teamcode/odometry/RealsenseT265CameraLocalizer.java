@@ -22,6 +22,7 @@ public class RealsenseT265CameraLocalizer implements Localizer {
     public static double SLAMRA_TO_ROBOT_OFFSET_X = -0.23; // meters
     public static double SLAMRA_TO_ROBOT_OFFSET_Y = 0; // meters
     public static final double INCHES_TO_METERS = 0.0254;
+    public static final String[] PoseConfidenceLabel = {"FAILED", "LOW", "MEDIUM", "HIGH"};
 
     // We treat this like a singleton because there should only ever be one object per camera
     private static T265Camera slamra = null;

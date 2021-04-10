@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -19,7 +19,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.drive.FtcRobotDAL;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
@@ -28,7 +27,6 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
 public class UGoalRobot extends FtcRobotDAL {
 
-    static final String[] label = {"FAILED", "LOW", "MEDIUM", "HIGH"};
     //constants
     static final double     INTAKE_ASMBLY_UP            = Servo.MIN_POSITION; //max is 135 degrees, all the way down
     static final double     INTAKE_ASMBLY_DOWN          = Servo.MAX_POSITION; //max is 135 degrees, all the way down
@@ -147,15 +145,13 @@ public class UGoalRobot extends FtcRobotDAL {
 //        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
     }
 
-    public void update() {
-        super.update();
+    public void gameUpdate(TelemetryPacket packet) {
         double velocity = flywheelMotor.getVelocity();
-        dashTelemetry.addData("upperBound", 2800);
-        dashTelemetry.addData("Flywheel Velocity", velocity);
-        dashTelemetry.addData("lowerBound", 0);
-        dashTelemetry.update();
 
-        telemetry.addData("Slamra Confidence", label[cameraLocalizer.getPoseConfidence().ordinal()]);
+        dashboard.getTelemetry().addData("upperBound", 2800);
+        dashboard.getTelemetry().addData("Flywheel Velocity", velocity);
+        dashboard.getTelemetry().addData("lowerBound", 0);
+
         telemetry.addData("Flywheel Velocity", velocity);
     }
 
