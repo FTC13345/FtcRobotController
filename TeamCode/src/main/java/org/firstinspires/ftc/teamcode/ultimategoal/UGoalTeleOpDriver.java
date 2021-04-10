@@ -38,33 +38,31 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 public class UGoalTeleOpDriver extends TeleOpDriver {
 
     UGoalRobot robot;
+    MecabotDrive mcdrive;
     boolean toggle;
 
     /* Constructor */
-    public UGoalTeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, MecabotDrive mcdrive, UGoalRobot aRobot) {
-        super(opMode, rrmdrive, mcdrive);
+    public UGoalTeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, UGoalRobot aRobot) {
+        super(opMode, rrmdrive, aRobot);
         robot = aRobot;
     }
 
     @Override
     public void  driveGameTeleOp() {
-        if (gamepad1.a) {      // Turn shooter towards Goals
-            mcdrive.getOdometry().setGlobalPosition(poseHighGoalTeleOp.getX(), poseHighGoalTeleOp.getY(), poseHighGoalTeleOp.getHeading());
-            rrmdrive.initIMU();
-            rrmdrive.setPoseEstimate(poseHighGoalTeleOp);
+        if (gamepad1.a) {     // Reset odometry values at the High Goal shooting position
+            robot.initIMU();
+            robot.setPose(poseHighGoalTeleOp);
         }
         else if (gamepad1.b) {      // Turn Intake towards Goals
-            mcdrive.gyroRotateToHeading(ANGLE_NEG_X_AXIS);
+            rrmdrive.turnToHeading(ANGLE_NEG_X_AXIS);
         }
         else if (gamepad1.x) {      // Reset odometry values aligned against left perimeter wall
-            rrmdrive.initIMU();
-            rrmdrive.setPoseEstimate(poseOdoLeft);
-            mcdrive.getOdometry().setGlobalPosition(poseOdoLeft.getX(), poseOdoLeft.getY(), poseOdoLeft.getHeading());
+            robot.initIMU();
+            robot.setPose(poseOdoLeft);
         }
         else if (gamepad1.y) {      // Reset odometry values aligned against right perimeter wall
-            rrmdrive.initIMU();
-            rrmdrive.setPoseEstimate(poseOdoRight);
-            mcdrive.getOdometry().setGlobalPosition(poseOdoRight.getX(), poseOdoRight.getY(), poseOdoRight.getHeading());
+            robot.initIMU();
+            robot.setPose(poseOdoRight);
         }
     }
 

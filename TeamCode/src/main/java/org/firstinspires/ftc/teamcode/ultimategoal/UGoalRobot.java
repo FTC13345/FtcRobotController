@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode.ultimategoal;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.localization.Localizer;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
@@ -19,20 +17,16 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Func;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.drive.FtcRobotDAL;
 import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
-import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
-import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-import org.firstinspires.ftc.teamcode.odometry.RealsenseT265CameraLocalizer;
 
 import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 
-public class UGoalRobot {
+public class UGoalRobot extends FtcRobotDAL {
 
     static final String[] label = {"FAILED", "LOW", "MEDIUM", "HIGH"};
     //constants
@@ -70,14 +64,6 @@ public class UGoalRobot {
     double shooterPlatformTiltAngle = SHOOTER_PLATFORM_ANGLE_MIN;
     int countRingsInHopper;
 
-    // mecanum drive train
-    private RRMecanumDrive rrmdrive;
-    private MecabotDrive mcdrive;
-    private OdometryGlobalPosition globalPosition;
-    private LinearOpMode myOpMode;       // Access to the OpMode object
-    private Telemetry telemetry;
-    private Telemetry dashTelemetry;
-
     // Motors and/or enccoders
     public DcMotor leftODwheel = null;
     public DcMotor rightODwheel = null;
@@ -104,18 +90,9 @@ public class UGoalRobot {
 
     // constructor
     public UGoalRobot(HardwareMap hardwareMap, LinearOpMode opMode) {
-        myOpMode = opMode;
-        telemetry = opMode.telemetry;
-        dashTelemetry = FtcDashboard.getInstance().getTelemetry();
-        mcdrive = new MecabotDrive(hardwareMap, opMode);
-        rrmdrive = new RRMecanumDrive(hardwareMap, opMode);
-        globalPosition = mcdrive.getOdometry();
-        this.init(hardwareMap);
+        super(hardwareMap, opMode);
+        init(hardwareMap);
     }
-    // mecanum drivetrain used by the Robot
-    public MecabotDrive getMCBdrive() { return mcdrive; }
-    public RRMecanumDrive getRRMdrive() { return rrmdrive; }
-
     // Initialization
     public void init(HardwareMap ahwMap) {
 
@@ -170,27 +147,15 @@ public class UGoalRobot {
 //        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
     }
 
-    /*
-     * Drive related method. Most of these should be in the Drive class(es)
-     */
-    public void setPose(Pose2d pose) {
-        globalPosition.setGlobalPosition(pose.getX(), pose.getY(), pose.getHeading());
-        rrmdrive.setPoseEstimate(pose);
-    }
-
     public void update() {
+        super.update();
         double velocity = flywheelMotor.getVelocity();
         dashTelemetry.addData("upperBound", 2800);
         dashTelemetry.addData("Flywheel Velocity", velocity);
         dashTelemetry.addData("lowerBound", 0);
         dashTelemetry.update();
 
-        RealsenseT265CameraLocalizer t265;
-        Localizer localizer = rrmdrive.getLocalizer();
-        if (localizer instanceof RealsenseT265CameraLocalizer) {
-            t265 = (RealsenseT265CameraLocalizer)localizer;
-            telemetry.addData("Slamra Confidence", label[t265.getPoseConfidence().ordinal()]);
-        }
+        telemetry.addData("Slamra Confidence", label[cameraLocalizer.getPoseConfidence().ordinal()]);
         telemetry.addData("Flywheel Velocity", velocity);
     }
 
@@ -224,42 +189,21 @@ public class UGoalRobot {
 
         switch (ringsCountInHopper()) {
             case 0:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
+                setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_RAINBOW_PALETTE);
                 break;
             case 1:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_PARTY_PALETTE);
+                setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_PARTY_PALETTE);
                 break;
             case 2:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_OCEAN_PALETTE);
+                setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_OCEAN_PALETTE);
                 break;
             case 3:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE);
+                setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE);
                 break;
             default:
-                mcdrive.setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.STROBE_RED);
+                setBlinkinLedPattern(RevBlinkinLedDriver.BlinkinPattern.STROBE_RED);
                 break;
         }
-    }
-
-    /*
-     * Utility functions useful for subsystem motors other than the drive train
-     */
-    public void waitUntilMotorBusy(DcMotor motor) {
-        ElapsedTime runTime = new ElapsedTime();
-        while (myOpMode.opModeIsActive() && motor.isBusy() && (runTime.seconds() < MecabotDrive.TIMEOUT_DEFAULT)){
-            myOpMode.idle();
-        }
-    }
-    public void motorRunToPosition(DcMotor motor, int position, double speed) {
-        if (!myOpMode.opModeIsActive()) {
-            return;
-        }
-        motor.setTargetPosition(position);
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setPower(speed);
-        // disabled, do not wait for motor to reach target position, this is necessary to not block the thread
-        //waitUntilMotorBusy(motor);
-        // caller must realize that the call is asynchronous and motor will take timee after return from this call
     }
 
     /*
@@ -635,7 +579,7 @@ public class UGoalRobot {
     /*****************************
      * Autonomous Program Methods using MecabotDrive
      ****************************/
-    public void mcdriveToShootHighGoal() {
+    public void driveToShootHighGoal() {
         // drive to desired location
         //if red reverse the y
         mcdrive.goToPosition(poseHighGoalAuto.getX(), poseHighGoalAuto.getY());
@@ -643,7 +587,7 @@ public class UGoalRobot {
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
 
-    public void mcdriveToShootPowerShot1() {
+    public void driveToShootPowerShot1() {
         // drive to desired location
         mcdrive.goToPosition(posePowerShot1.getX(), posePowerShot1.getY());
         // rotate to face the goal squarely
@@ -651,7 +595,7 @@ public class UGoalRobot {
     }
 
     //instead of using go to position, use mecanum wheels to move a short distance sideways
-    public void mcdriveToNextPowerShot(){
+    public void driveToNextPowerShot(){
         //move using mecanum sideways to next powershot
         //if blue, moving toward center is negative
         mcdrive.odometryMoveRightLeft(flip4Red(-DISTANCE_BETWEEN_POWERSHOT));
@@ -659,13 +603,13 @@ public class UGoalRobot {
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
     
-    public void mcdriveToShootPowerShot2() {
+    public void driveToShootPowerShot2() {
         // drive to desired location
         mcdrive.goToPosition(posePowerShot2.getX(), posePowerShot2.getY());
         // rotate to face the goal squarely
         mcdrive.rotateToHeading(ANGLE_POS_X_AXIS);
     }
-    public void mcdriveToShootPowerShot3() {
+    public void driveToShootPowerShot3() {
         // drive to desired location
         mcdrive.goToPosition(posePowerShot3.getX(), posePowerShot3.getY());
         // rotate to face the goal squarely
@@ -694,55 +638,22 @@ public class UGoalRobot {
     public void goShoot3Powershot(){
         //subtract robot radius because we are using the left wheel as a guide, because shooter is a bit biased toward left
         //first powershot
-        mcdriveToShootPowerShot1();
+        driveToShootPowerShot1();
         shootPowerShot1();
         // second powershot
-        mcdriveToNextPowerShot();
+        driveToNextPowerShot();
         shootPowerShot2();
         // third powershot
-        mcdriveToNextPowerShot();
+        driveToNextPowerShot();
         shootPowerShot3();
     }
-    
+
     /*****************************
      * Telemetry setup
      ****************************/
+    @Override
     protected void composeTelemetry() {
-        telemetry.addAction(new Runnable() { @Override public void run()
-        {
-            // Add here any expensive work that should be done only once just before telemetry update push
-        }
-        });
-        telemetry.addLine("RR ")
-                .addData("X", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {return rrmdrive.getPoseEstimate().getX();}
-                })
-                .addData("Y", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {return rrmdrive.getPoseEstimate().getY();}
-                })
-                .addData("Head", "%.2f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return Math.toDegrees(rrmdrive.getPoseEstimate().getHeading()); }
-                })
-                .addData("IMU", "%.2f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return Math.toDegrees(rrmdrive.getRawExternalHeading()); }
-                });
-        telemetry.addLine("OD ")
-                .addData("X", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getXinches();}
-                })
-                .addData("Y", "%.1f", new Func<Double>() {
-                    @Override
-                    public Double value() {return globalPosition.getYinches();}
-                })
-                .addData("Head", "%.2f°", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getOrientationDegrees(); }
-                });
+        super.composeTelemetry();
         telemetry.addLine("Tilt ")
                 .addData("Angle", "%.1f°", new Func<Double>() {
                     @Override
@@ -756,40 +667,6 @@ public class UGoalRobot {
                     @Override
                     public Integer value() { return countRingsInHopper; }
                 });
-        /*
-        telemetry.addLine("OD Count ")
-                .addData("L", "%6.0f", new Func<Double>() {
-                    @Override
-                    public Double value() {return globalPosition.getVerticalLeftCount();}
-                })
-                .addData("R", "%6.0f", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getVerticalRightCount(); }
-                })
-                .addData("X", "%6.0f", new Func<Double>() {
-                    @Override
-                    public Double value() { return globalPosition.getHorizontalCount(); }
-                });
-        telemetry.addLine("Drive ")
-                .addData("LF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return mcdrive.leftFrontDrive.getCurrentPosition(); }
-                })
-                .addData("LB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return mcdrive.leftBackDrive.getCurrentPosition(); }
-                })
-                .addData("RF", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return mcdrive.rightFrontDrive.getCurrentPosition(); }
-                })
-                .addData("RB", "%5d", new Func<Integer>() {
-                    @Override
-                    public Integer value() { return mcdrive.rightBackDrive.getCurrentPosition(); }
-                });
-         */
-        telemetry.update();
     }
-
 }
 

@@ -32,9 +32,9 @@ import static org.firstinspires.ftc.teamcode.ultimategoal.FieldUGoal.*;
 public abstract class UGoalAutoBase extends LinearOpMode {
 
     // OpMode members here
-    RRMecanumDrive rrmdrive;
     UGoalRobot robot;
-    MecabotDrive mcdrive;
+    RRMecanumDrive rrmdrive;
+    MecabotDrive mcdrive;       // not used, not initialized, retained only for compilation of encoder movement methods
     int countRingStack;
 
     //**  image recognition variables **//
@@ -102,20 +102,19 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         // Initialize the robot hardware and drive system variables.
         robot = new UGoalRobot(hardwareMap, this);
         rrmdrive = robot.getRRMdrive();
-        mcdrive = robot.getMCBdrive();
+        robot.start();  // this starts the localizer threads
 
         // IMPORTANT: IMU must be initialized otherwise gyro reading will be always zero
         // During Tele-Op program if we want to retain the gyro heading from Autonomous program,
         // then DO NOT initialize IMU again as that resets the gyro heading to 0.0
-        mcdrive.initIMU();
-        rrmdrive.initIMU(); // both initIMU() do the same thing, but in future we may keep only 1 drive instance
-
-        // Motor and Servo position initializations
-        robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
+        robot.initIMU();
 
         // this method is overridden by sub-classes to set starting coordinates for RED/BLUE side of field
         // Ensure to set Pose after IMU initialization has been done
         setPoseStart();
+
+        // Motor and Servo position initializations
+        robot.wobblePreloadClamp();                         // tighten grip on the pre-loaded wobble
 
         // start printing messages to driver station asap but only after hardware is initialized and odometry is running
         robot.composeTelemetry();
@@ -148,11 +147,12 @@ public abstract class UGoalAutoBase extends LinearOpMode {
         }
     }
 
-    // for testing mainly, at the end wait for driver to press STOP, meanwhile
-    // continue updating odometry position of the manual movement of the robot
+    // at the end wait for driver to press STOP, meanwhile update telemetry display
     public void waitForStop() {
-
+        // perform necessary clean up
         shutdownRingStackDetection();
+        robot.stop();       // this is essential to stop the T265 camera callbacks, otherwise camera doesn't start on next play
+
         while (opModeIsActive()) {
             telemetry.update();
         }
@@ -278,6 +278,8 @@ public abstract class UGoalAutoBase extends LinearOpMode {
 
     /*****************************
      * Encoder Movement Methods - include a mix of Road Runner and Home Brew
+     * Now OBSOLETE since we switched to RoadRunner entirely, code retained for educational purpose only
+     * Be aware the mcdrive may not be initialized and this code will crash
      ****************************/
 
     public void fullAutoEncoderDrive() {

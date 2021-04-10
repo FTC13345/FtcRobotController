@@ -3,8 +3,6 @@ package org.firstinspires.ftc.teamcode.ultimategoal;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import org.firstinspires.ftc.teamcode.drive.MecabotDrive;
-import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.drive.RRMecanumDrive;
 import org.firstinspires.ftc.teamcode.drive.TeleOpDriver;
 
@@ -41,10 +39,8 @@ public class UGoalTeleOp extends LinearOpMode {
 
     /* Declare OpMode members. */
     RRMecanumDrive rrmdrive;
-    MecabotDrive mcdrive;
     UGoalRobot robot;
-    OdometryGlobalPosition globalPosition;
-    TeleOpDriver driver;
+    TeleOpDriver teleOpDriver;
 
     //Button debounce
     private boolean gamepad2ADebounce = false;
@@ -55,19 +51,6 @@ public class UGoalTeleOp extends LinearOpMode {
     private boolean bIgnoreStops = false;
     private int loop = 0;
 
-    void setPoseStart() {
-        // This code assumes Robot starts at a position as follows:
-        // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
-        // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
-        // Robot back is touching the perimeter wall.
-        globalPosition.setGlobalPosition(poseStart.getX(), poseStart.getY(), poseStart.getHeading());
-        rrmdrive.setPoseEstimate(poseStart);
-
-        // Enable this temporarily for Shooter Platform Tilt debugging
-        //globalPosition.initGlobalPosition(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_Y_OFFSET, ANGLE_POS_X_AXIS);
-        //rrmdrive.setPoseEstimate(new Pose2d(ORIGIN, TILE_2_CENTER- UGoalRobot.ROBOT_SHOOTING_Y_OFFSET, ANGLE_POS_X_AXIS));
-    }
-
     @Override
     public void runOpMode() {
 
@@ -75,17 +58,16 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // Create main OpMode member objects initialize the hardware variables.
         robot = new UGoalRobot(hardwareMap,this);
-        mcdrive = robot.getMCBdrive();
         rrmdrive = robot.getRRMdrive();
-        driver = new UGoalTeleOpDriver(this, rrmdrive, mcdrive, robot);
-        globalPosition = mcdrive.getOdometry();
+        teleOpDriver = new UGoalTeleOpDriver(this, rrmdrive, robot);
+        // start any driving or localizer threads
+        robot.start();
 
         // set the starting Pose same as last saved Pose from the AUTO Opmode
-        rrmdrive.setPoseEstimate(savedPose);
-        globalPosition.setGlobalPosition(savedPose.getX(), savedPose.getY(), savedPose.getHeading());
-        // Temporary: start TeleOp with startPose instead of savedPose to run indepedently
-//        rrmdrive.setPoseEstimate(poseStart);
-//        globalPosition.setGlobalPosition(poseStart.getX(), poseStart.getY(), poseStart.getHeading());
+        robot.setPose(savedPose);
+        // Temporary: start TeleOp with startPose instead of savedPose to run independently, init IMU
+//        robot.setPose(poseStart);
+//        robot.initIMU();
 
         robot.composeTelemetry();
         // Send telemetry message to signify robot waiting;
@@ -96,7 +78,7 @@ public class UGoalTeleOp extends LinearOpMode {
         waitForStart();
 
         // start the thread which handles driver controls on gamepad1
-        driver.start();
+        teleOpDriver.start();
         telemetry.addData("", "TeleOp prograrm in PLAY");    //
         telemetry.update();
 
@@ -117,9 +99,9 @@ public class UGoalTeleOp extends LinearOpMode {
 
         // Reset the tilt angle of the shooting platform
         robot.tiltShooterPlatformMin();
-        //Stop the thread
-        globalPosition.stop();
-        driver.stop();
+        // Stop the driving or localizer threads
+        teleOpDriver.stop();
+        robot.stop();
         // all done, please exit
 
     }
@@ -142,12 +124,11 @@ public class UGoalTeleOp extends LinearOpMode {
         if ((gamepad2.start) && (gamepad2.x)) {
             robot.raiseIntakeAssembly();
             robot.resetWobblePickupArmEncoder();
-            mcdrive.resetDriveEncoder();
-            mcdrive.initIMU();
-            rrmdrive.initIMU(); // both initIMU() do the same thing, but in future we may keep only 1 drive instance
-            globalPosition.resetOdometryEncoder();
-            // Ensure to set Pose after IMU initialization has been done
-            setPoseStart();
+            robot.resetDriveEncoder();
+            robot.initIMU();
+            robot.resetOdometryEncoder();
+            // Ensure to set Pose only after IMU initialization has been done
+            robot.setPose(poseStart);
         }
     }
 

@@ -117,6 +117,7 @@ public class Mecabot {
         // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
         // and named "imu".
         imu = hwMap.get(BNO055IMU.class, "imu");
+
         // imu.initialize(BNO055IMU.Parameters) must be called otherwise gyro readings will be zero
         // we do not initialize in this class because side effect is to reset gyro heading to zero
         // the op-mode main application code should decided when we want to initialize or not
@@ -155,12 +156,20 @@ public class Mecabot {
     /*
      * Initialize the IMU for AngleUnit RADIANS and with default parameter values
      * This method is mandatory to be called once after power up, otherwise the angle values returned == 0
+     *
+     * The IMU initialization has a side effect to reset gyro heading to zero, therefore this is not called by constructor
+     * the op-mode main applicable code should decide when we want to initialize or not
+     * for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
      */
     public void initIMU() {
         // Set up the parameters with which we will use our IMU.
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
+
+        // if your hub is mounted vertically, remap the IMU axes so that the z-axis points
+        // upward (normal to the floor) using a command like the following:
+        // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
     }
 
     /**

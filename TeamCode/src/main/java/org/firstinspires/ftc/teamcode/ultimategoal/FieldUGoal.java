@@ -77,8 +77,10 @@ public class FieldUGoal {
 
     enum Target { HIGHGOAL, POWERSHOT_1, POWERSHOT_2, POWERSHOT_3, WOBBLE_LANDING_1, WOBBLE_LANDING_2}
 
-    // record position that we need to return to repeatedly
     // Robot starting position is at the audience wall farthest from the Goals, on the start line
+    // Align the left side of the robot with the INSIDE start line (TILE_1_FROM_ORIGIN in Y axis)
+    // Robot Heading is pointing to +ve X-axis  (Ring Shooter Platform is facing the goals)
+    // Robot back is touching the perimeter wall.
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
     public static Pose2d poseHighGoalAuto = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);

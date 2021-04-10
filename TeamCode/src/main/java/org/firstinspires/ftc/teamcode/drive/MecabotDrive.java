@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.util.Encoder;
 import java.util.Locale;
 
 
-public class MecabotDrive extends Mecabot {
+public class MecabotDrive {
 
     enum WheelPosition { LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK }
     public enum DriveType {TANK, MECANUM, DIAGONAL}
@@ -51,37 +51,16 @@ public class MecabotDrive extends Mecabot {
     public static final double TIMEOUT_QUICK        = 1.0; // seconds
 
     // member variables for state
-    protected Mecabot             robot;          // Access to the Robot hardware
+    protected Mecabot mecabot;          // Access to the Robot hardware
     protected LinearOpMode        myOpMode;       // Access to the OpMode object
     protected OdometryGlobalPosition odoPosition; // Robot global position tracker
     protected String              movementStatus          = "";
 
     /* Constructor */
-    public MecabotDrive(HardwareMap ahwMap, LinearOpMode opMode) {
-        super(ahwMap);
+    public MecabotDrive(Mecabot mecabot, OdometryGlobalPosition globalPosition, LinearOpMode opMode) {
+        this.mecabot = mecabot;
+        odoPosition = globalPosition;
         myOpMode = opMode;
-        robot = this;
-
-        initOdometry(ahwMap);
-    }
-
-    private void initOdometry(HardwareMap hwMap) {
-
-        //Create and start GlobalPosition thread to constantly update the global position coordinates.
-        odoPosition = new OdometryGlobalPosition(
-                new Encoder(hwMap.get(DcMotorEx.class, "leftODwheel")),
-                new Encoder(hwMap.get(DcMotorEx.class, "rightODwheel")),
-                new Encoder(hwMap.get(DcMotorEx.class, "intakeMotor"))
-        );
-        odoPosition.start();
-
-        myOpMode.telemetry.addData("Wheelbase Separation", odoPosition.getWheelbaseSeparationCount());
-        myOpMode.telemetry.addData("Horizontal Count Per Radian", odoPosition.getHorizonalCountPerRadian());
-    }
-
-    // Access methods
-    public OdometryGlobalPosition getOdometry() {
-        return odoPosition;
     }
 
     public String getMovementStatus() {
@@ -96,7 +75,7 @@ public class MecabotDrive extends Mecabot {
      * @param timeout       Max time allowed for the operation to complete
      */
     public void gyroRotate(double deltaAngle, double turnSpeed, double timeout) {
-        double robotAngle = getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
+        double robotAngle = mecabot.getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
         double targetAngle = robotAngle + deltaAngle;
         gyroRotateToHeading(targetAngle, turnSpeed, timeout);
     }
@@ -132,7 +111,7 @@ public class MecabotDrive extends Mecabot {
     public void gyroRotateToHeading(double targetAngle, double turnSpeed, double timeout) {
 
         turnSpeed = Math.abs(turnSpeed);
-        double robotAngle = getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
+        double robotAngle = mecabot.getZAngle(); // current heading of the robot from gyro (must be initialized in AngleUnit Radians
         double delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
         double speed = direction * turnSpeed;
@@ -146,12 +125,12 @@ public class MecabotDrive extends Mecabot {
             // slow down proportional to the rotation remaining, delta value in Radians is convenient to use, ROTATE_SPEED_MIN is required to overcome inertia
             speed = direction * Range.clip(Math.abs(delta), ROTATE_SPEED_MIN, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
-            robot.driveTank(0, speed);
+            mecabot.driveTank(0, speed);
             myOpMode.idle(); // allow some time for the motors to actuate
-            robotAngle = getZAngle();
+            robotAngle = mecabot.getZAngle();
             delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         }
-        robot.stopDriving();
+        mecabot.stopDriving();
         double targetDeg = Math.toDegrees(targetAngle);
         double robotDeg = Math.toDegrees(robotAngle);
         myOpMode.telemetry.addLine("Rot ")
@@ -186,12 +165,12 @@ public class MecabotDrive extends Mecabot {
             // slow down proportional to the rotation remaining, delta value in Radians is convenient to use, ROTATE_SPEED_MIN is required to overcome inertia
             speed = direction * Range.clip(Math.abs(delta), ROTATE_SPEED_MIN, turnSpeed);
             // the sign of delta determines the direction of rotation of robot
-            robot.driveTank(0, speed);
+            mecabot.driveTank(0, speed);
             myOpMode.sleep(30); // allow some time for the motors to actuate
             robotAngle = odoPosition.getOrientationRadians();
             delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         }
-        robot.stopDriving();
+        mecabot.stopDriving();
         double targetDeg = Math.toDegrees(targetAngle);
         double robotDeg = Math.toDegrees(robotAngle);
         myOpMode.telemetry.addLine("Odom Rot ")
@@ -247,7 +226,7 @@ public class MecabotDrive extends Mecabot {
                 break;
             }
         }
-        robot.stopDriving();
+        mecabot.stopDriving();
         movementStatus = String.format(Locale.US,"Reached X=%3.2f, Y=%2.2f, Spd=%1.1f in T=%1.1f", x, y, speed, runtime.seconds());
     }
 
@@ -285,7 +264,7 @@ public class MecabotDrive extends Mecabot {
         double absoluteAngleToPosition = Math.atan2(y - odoPosition.getYinches(), x - odoPosition.getXinches());
         double relativeAngleToPosition;
 
-        if (robot.isDirectionForward()) {
+        if (mecabot.isDirectionForward()) {
             relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getOrientationRadians());
         }
         else { // (robot.isFrontLiftarm())
@@ -322,10 +301,10 @@ public class MecabotDrive extends Mecabot {
         // A threshold is necessary to avoid oscillations caused by overshooting of target position.
         // This check could be done early in the method, however it is done towards end deliberately to get telemetry readouts
         if (distanceToPosition < DIST_MARGIN) {
-            robot.stopDriving();
+            mecabot.stopDriving();
         }
         else {
-            robot.driveTank(drivePower, turnPower);
+            mecabot.driveTank(drivePower, turnPower);
         }
 
         return distanceToPosition;
@@ -421,7 +400,7 @@ public class MecabotDrive extends Mecabot {
         if (Math.abs(inches) < DIST_MARGIN) {
             return;
         }
-        robot.setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mecabot.setDriveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // if distance is negative, direction must be reversed, both forwards/backwards or left/right side
         // which is done by negative power to the motors
@@ -441,13 +420,13 @@ public class MecabotDrive extends Mecabot {
         while (myOpMode.opModeIsActive() && (runtime.seconds() < timeout) && (distance < Math.abs(inches))) {
             switch (driveType) {
                 case MECANUM:
-                    robot.driveMecanum(speed);
+                    mecabot.driveMecanum(speed);
                     break;
                 case DIAGONAL:
-                    robot.driveDiagonal(speed);
+                    mecabot.driveDiagonal(speed);
                     break;
                 case TANK:
-                    robot.driveTank(speed, 0.0);
+                    mecabot.driveTank(speed, 0.0);
                     break;
             }
             curX = odoPosition.getXinches();
@@ -458,7 +437,7 @@ public class MecabotDrive extends Mecabot {
             myOpMode.telemetry.update();
         }
         // Reached within threshold of target distance.
-        robot.stopDriving();
+        mecabot.stopDriving();
         movementStatus = String.format(Locale.US,"Done D=%.1f in, from (%.1f, %.1f) S=%1.1f in T=%1.1f", distance, origX, origY, speed, runtime.seconds());
 
     }
@@ -582,14 +561,14 @@ public class MecabotDrive extends Mecabot {
         // same code above works for mecanum move Left also. False value of goForwardOrRight already flipped the sign above
 
         // set target position for encoder Drive
-        robot.resetDriveEncoder();
-        robot.setTargetPosition(leftFront, leftBack, rightFront, rightBack);
+        mecabot.resetDriveEncoder();
+        mecabot.setTargetPosition(leftFront, leftBack, rightFront, rightBack);
 
         // Set the motors to run to the necessary target position
-        robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mecabot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Set the power of the motors to whatever speed is needed
-        robot.setDrivePower(speed);
+        mecabot.setDrivePower(speed);
 
         myOpMode.telemetry.addLine("Driving inches | ").addData("outer", inches).addData("inner", inches);
 
@@ -610,13 +589,13 @@ public class MecabotDrive extends Mecabot {
         int rightPos = counterClockwise ? +ticks : -ticks;
 
         // set target position for encoder Drive
-        robot.resetDriveEncoder();
-        robot.setTargetPosition(leftPos, leftPos, rightPos, rightPos);
+        mecabot.resetDriveEncoder();
+        mecabot.setTargetPosition(leftPos, leftPos, rightPos, rightPos);
 
         // Set the motors to run to the necessary target position
-        robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mecabot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        robot.setDrivePower(speed);
+        mecabot.setDrivePower(speed);
 
         myOpMode.telemetry.addLine("Driving inches | ").addData("outer", inches).addData("inner", inches);
 
@@ -647,18 +626,18 @@ public class MecabotDrive extends Mecabot {
         int rightPos = counterClockwise ? outerWheelTicks : innerWheelTicks;
 
         // set target position for encoder Drive
-        robot.resetDriveEncoder();
-        robot.setTargetPosition(leftPos, leftPos, rightPos, rightPos);
+        mecabot.resetDriveEncoder();
+        mecabot.setTargetPosition(leftPos, leftPos, rightPos, rightPos);
 
         // Set the motors to run to the necessary target position
-        robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mecabot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         double wheelPower = Range.clip(speed, 0.0, 1.0);
         double insideWheelPower = wheelPower / OUTER_TO_INNER_TURN_SPEED_RATIO;
         if (counterClockwise) {
-            robot.setDrivePower(insideWheelPower, wheelPower);
+            mecabot.setDrivePower(insideWheelPower, wheelPower);
         } else {
-            robot.setDrivePower(wheelPower, insideWheelPower);
+            mecabot.setDrivePower(wheelPower, insideWheelPower);
         }
 
         myOpMode.telemetry.addLine("Driving inches | ").addData("outer", outerWheelInches).addData("inner", innerWheelInches);
@@ -676,34 +655,34 @@ public class MecabotDrive extends Mecabot {
 
         // Loop until motors are no longer busy.
         while (myOpMode.opModeIsActive() &&
-                (robot.leftFrontDrive.isBusy() || robot.rightFrontDrive.isBusy() || robot.leftBackDrive.isBusy() || robot.rightBackDrive.isBusy())) {
+                (mecabot.leftFrontDrive.isBusy() || mecabot.rightFrontDrive.isBusy() || mecabot.leftBackDrive.isBusy() || mecabot.rightBackDrive.isBusy())) {
 
             myOpMode.telemetry.addLine("Target position | ").addData("LF", leftFront).addData("RF", rightFront);
             myOpMode.telemetry.addLine("Target position | ").addData("LB", leftBack).addData("RB", rightBack);
-            myOpMode.telemetry.addLine("Current position | ").addData("LF", robot.leftFrontDrive.getCurrentPosition()).addData("RF", robot.rightFrontDrive.getCurrentPosition());
-            myOpMode.telemetry.addLine("Current position | ").addData("LB", robot.leftBackDrive.getCurrentPosition()).addData("RB", robot.rightBackDrive.getCurrentPosition());
+            myOpMode.telemetry.addLine("Current position | ").addData("LF", mecabot.leftFrontDrive.getCurrentPosition()).addData("RF", mecabot.rightFrontDrive.getCurrentPosition());
+            myOpMode.telemetry.addLine("Current position | ").addData("LB", mecabot.leftBackDrive.getCurrentPosition()).addData("RB", mecabot.rightBackDrive.getCurrentPosition());
             myOpMode.telemetry.update();
 
             //encoder reading a bit off target can keep us in this loop forever, so given an error margin here
-            if ((dominantWheel == WheelPosition.LEFT_FRONT) && Math.abs(robot.leftFrontDrive.getCurrentPosition() - leftFront) < ENCODER_TICKS_ERR_MARGIN) {
+            if ((dominantWheel == WheelPosition.LEFT_FRONT) && Math.abs(mecabot.leftFrontDrive.getCurrentPosition() - leftFront) < ENCODER_TICKS_ERR_MARGIN) {
                 break;
             }
-            else if ((dominantWheel == WheelPosition.LEFT_BACK) && Math.abs(robot.leftBackDrive.getCurrentPosition() - leftBack) < ENCODER_TICKS_ERR_MARGIN) {
+            else if ((dominantWheel == WheelPosition.LEFT_BACK) && Math.abs(mecabot.leftBackDrive.getCurrentPosition() - leftBack) < ENCODER_TICKS_ERR_MARGIN) {
                 break;
             }
-            else if ((dominantWheel == WheelPosition.RIGHT_FRONT) && Math.abs(robot.rightFrontDrive.getCurrentPosition() - rightFront) < ENCODER_TICKS_ERR_MARGIN) {
+            else if ((dominantWheel == WheelPosition.RIGHT_FRONT) && Math.abs(mecabot.rightFrontDrive.getCurrentPosition() - rightFront) < ENCODER_TICKS_ERR_MARGIN) {
                 break;
             }
-            else if ((dominantWheel == WheelPosition.RIGHT_BACK) && Math.abs(robot.rightBackDrive.getCurrentPosition() - rightBack) < ENCODER_TICKS_ERR_MARGIN) {
+            else if ((dominantWheel == WheelPosition.RIGHT_BACK) && Math.abs(mecabot.rightBackDrive.getCurrentPosition() - rightBack) < ENCODER_TICKS_ERR_MARGIN) {
                 break;
             }
         }
 
         // Stop powering the motors - robot has moved to intended position
-        robot.stopDriving();
-        myOpMode.telemetry.addData("DONE driving LF position=",robot.leftFrontDrive.getCurrentPosition());
+        mecabot.stopDriving();
+        myOpMode.telemetry.addData("DONE driving LF position=", mecabot.leftFrontDrive.getCurrentPosition());
         // Turn off RUN_TO_POSITION
-        robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        mecabot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         myOpMode.sleep(50);
 

@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode.odometry;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.localization.Localizer;
-import com.acmerobotics.roadrunner.util.Angle;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,10 +29,10 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
     }
 
     protected double getExternalHeading() {
-        return Angle.normDelta(getRawExternalHeading() + headingOffset);
+        return AngleUnit.normalizeRadians(getRawExternalHeading() + headingOffset);
     }
     protected void setExternalHeading(double value) {
-        headingOffset = Angle.normDelta(value - getRawExternalHeading());
+        headingOffset = AngleUnit.normalizeRadians(value - getRawExternalHeading());
     }
 
     @NotNull
@@ -81,11 +81,11 @@ public abstract class ThreeWheelGyroLocalizer implements Localizer {
         double deltaHeading;
         if (useExternalHeading) {
             double extHeading = getExternalHeading();
-            deltaHeading = Angle.normDelta(extHeading - robotHeading);
+            deltaHeading = AngleUnit.normalizeRadians(extHeading - robotHeading);
             robotHeading = extHeading;
         } else {
             deltaHeading = (rightWheelDelta - leftWheelDelta) / (WHEELBASE_SEPARATION_COUNT);
-            robotHeading = Angle.normDelta(robotHeading + deltaHeading);
+            robotHeading = AngleUnit.normalizeRadians(robotHeading + deltaHeading);
         }
 
         // Get the components of the motion

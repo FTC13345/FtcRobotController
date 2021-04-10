@@ -108,13 +108,12 @@ public class RRMecanumDrive extends MecanumDrive {
 
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
-    private BNO055IMU imu;
 
     private VoltageSensor batteryVoltageSensor;
 
     private Pose2d lastPoseOnTurn;
 
-    public RRMecanumDrive(HardwareMap hardwareMap, LinearOpMode opMode) {
+    public RRMecanumDrive(HardwareMap hardwareMap, Localizer localizer, LinearOpMode opMode) {
         super(kV, kA, kStatic, TRACK_WIDTH, WHEEL_BASE, LATERAL_MULTIPLIER);
 
         myOpMode = opMode;
@@ -146,8 +145,6 @@ public class RRMecanumDrive extends MecanumDrive {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-
         // DONE: adjust the names of the following hardware devices to match your configuration
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFrontDrive");
         leftRear = hardwareMap.get(DcMotorEx.class, "leftBackDrive");
@@ -177,31 +174,8 @@ public class RRMecanumDrive extends MecanumDrive {
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         leftRear.setDirection(DcMotor.Direction.REVERSE);
 
-        // DONE: if desired, use setLocalizer() to change the localization method
-        // 13345 is using three wheel odometry
-        // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
-        // The Encoder direction (software setting) should be manipulated by localizer AS NEEDED, without changing motor direction
-//        setLocalizer(new MecabotLocalizer(
-//                new Encoder(hardwareMap.get(DcMotorEx.class, "leftODwheel")),
-//                new Encoder(hardwareMap.get(DcMotorEx.class, "rightODwheel")),
-//                new Encoder(hardwareMap.get(DcMotorEx.class, "intakeMotor")),
-//                imu
-//        ));
-
-        setLocalizer(new RealsenseT265CameraLocalizer(hardwareMap));
-    }
-
-    public void initIMU() {
-        // The IMU initialization has a side effect to reset gyro heading to zero, therefore this is not called by constructor
-        // the op-mode main applicable code should decide when we want to initialize or not
-        // for e.g. after Autonomous op-mode the Tele op-mode may want to continue without reset
-         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
-         imu.initialize(parameters);
-
-        // DONE: if your hub is mounted vertically, remap the IMU axes so that the z-axis points
-        // upward (normal to the floor) using a command like the following:
-        // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
+        // if desired, use setLocalizer() to change the localization method
+        setLocalizer(localizer);
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
@@ -436,8 +410,10 @@ public class RRMecanumDrive extends MecanumDrive {
         rightFront.setPower(v3);
     }
 
+    // This method is called only by the RR built-in MecanumLocalizer which is based on drive wheel encoders only
+    // We are not using it, instead we are using advanced localizers based on dead-wheels, gyroscope or Tracking camera
     @Override
     public double getRawExternalHeading() {
-        return imu.getAngularOrientation().firstAngle;
+        return 0;
     }
 }

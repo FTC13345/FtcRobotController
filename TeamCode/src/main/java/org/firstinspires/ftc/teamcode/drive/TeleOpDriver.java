@@ -13,7 +13,7 @@ public abstract class TeleOpDriver implements Runnable {
     // member variables for state
     protected LinearOpMode  myOpMode;       // Access to the OpMode object
     protected RRMecanumDrive rrmdrive;
-    protected MecabotDrive  mcdrive;          // Access to the Robot hardware
+    protected Mecabot       mecabot;          // Access to the Robot hardware
     protected Gamepad       gamepad1;
     protected Telemetry     telemetry;
 
@@ -27,13 +27,12 @@ public abstract class TeleOpDriver implements Runnable {
     public abstract void  driveGameAuto();
 
     /* Constructor */
-    public TeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, MecabotDrive mcdrive) {
-        // Save reference to OpMode and Hardware map
+    public TeleOpDriver(LinearOpMode opMode, RRMecanumDrive rrmdrive, Mecabot mecabot) {
         myOpMode = opMode;
         gamepad1 = opMode.gamepad1;
         telemetry = opMode.telemetry;
         this.rrmdrive = rrmdrive;
-        this.mcdrive = mcdrive;
+        this.mecabot = mecabot;
     }
 
     public void start() {
@@ -69,21 +68,21 @@ public abstract class TeleOpDriver implements Runnable {
             // Toggle which face of the Robot is front for driving
             if (gamepad1.right_bumper) {
                 speedMultiplier = MecabotDrive.DRIVE_SPEED_MAX;
-                mcdrive.setFastBlue();
+                mecabot.setFastBlue();
             } else if (gamepad1.left_bumper) {
                 speedMultiplier = MecabotDrive.DRIVE_SPEED_DEFAULT;
-                mcdrive.setSlowBlue();
+                mecabot.setSlowBlue();
             }
         }
         else { // !gamepad1.start --> which means bumper buttons pressed alone
             //update speedMultiplier for FAST or SLOW driving
             if (gamepad1.right_bumper) {
-                mcdrive.setDirectionForward();
+                mecabot.setDirectionForward();
                 // as a dual action of this button stop autodriving
                 autoDriving = false;
             }
             else if (gamepad1.left_bumper) {
-                mcdrive.setDirectionReverse();
+                mecabot.setDirectionReverse();
                 // as a dual action of this button stop autodriving
                 autoDriving = false;
             }
@@ -124,7 +123,7 @@ public abstract class TeleOpDriver implements Runnable {
         }
 
         // flip sign of all driving power if we are in REVERSE mode
-        if (mcdrive.isDirectionReverse()) {
+        if (mecabot.isDirectionReverse()) {
             power = -power;
             strafe = -strafe;
         }
@@ -149,7 +148,7 @@ public abstract class TeleOpDriver implements Runnable {
     public void driveMecabot(double power, double strafe, double turn) {
         // when we want to move sideways (MECANUM)
         if (Math.abs(strafe) > 0) {
-            mcdrive.driveMecanum(strafe);
+            mecabot.driveMecanum(strafe);
             telemetry.addData("Mecanum ", "%.2f", power);
         }
         // normal tank movement
@@ -158,7 +157,7 @@ public abstract class TeleOpDriver implements Runnable {
             // right press on joystick is positive value, left press is negative value
             // reverse sign of joystick values to match the expected sign in driveTank() method.
 
-            mcdrive.driveTank(power, turn);
+            mecabot.driveTank(power, turn);
             //telemetry.addData("Tank Power", "Drive=%.2f Turn=%.2f", power, turn);
         }
     }
