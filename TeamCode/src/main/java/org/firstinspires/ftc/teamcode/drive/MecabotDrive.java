@@ -2,14 +2,11 @@ package org.firstinspires.ftc.teamcode.drive;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
-import org.firstinspires.ftc.teamcode.util.Encoder;
 
 import java.util.Locale;
 
@@ -152,7 +149,7 @@ public class MecabotDrive {
 
         turnSpeed = Math.abs(turnSpeed);
         // determine current angle of the robot
-        double robotAngle = odoPosition.getOrientationRadians();
+        double robotAngle = odoPosition.getHeading();
         double delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         double direction = Math.signum(delta); // positive angle requires CCW rotation, negative angle requires CW
         double speed = direction * turnSpeed;
@@ -167,7 +164,7 @@ public class MecabotDrive {
             // the sign of delta determines the direction of rotation of robot
             mecabot.driveTank(0, speed);
             myOpMode.sleep(30); // allow some time for the motors to actuate
-            robotAngle = odoPosition.getOrientationRadians();
+            robotAngle = odoPosition.getHeading();
             delta = AngleUnit.normalizeRadians(targetAngle - robotAngle);
         }
         mecabot.stopDriving();
@@ -260,18 +257,18 @@ public class MecabotDrive {
      */
     public double goTowardsPosition(double x, double y, double speed, boolean slowDownAtEnd) {
 
-        double distanceToPosition = Math.hypot(odoPosition.getXinches() - x,  odoPosition.getYinches() - y);
-        double absoluteAngleToPosition = Math.atan2(y - odoPosition.getYinches(), x - odoPosition.getXinches());
+        double distanceToPosition = Math.hypot(odoPosition.getX() - x,  odoPosition.getY() - y);
+        double absoluteAngleToPosition = Math.atan2(y - odoPosition.getY(), x - odoPosition.getX());
         double relativeAngleToPosition;
 
         if (mecabot.isDirectionForward()) {
-            relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getOrientationRadians());
+            relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getHeading());
         }
         else { // (robot.isFrontLiftarm())
         // override in case of Robot front face has been REVERSED. The motors will run swapped (left front runs as right back)
         // The only control we need to change is to calculate the turn power for driving in reverse direction
         // This is done by adding 180 degrees (or PI radians) to the relative Angle (or to the robot orientation angle)
-            relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getOrientationRadians() + Math.PI);
+            relativeAngleToPosition = AngleUnit.normalizeRadians(absoluteAngleToPosition - odoPosition.getHeading() + Math.PI);
         }
 
         double drivePower = speed;
@@ -318,7 +315,7 @@ public class MecabotDrive {
      */
     public void goToXPosition(double targetX, double speed, double timeout) {
 
-        double curX = odoPosition.getXinches();
+        double curX = odoPosition.getX();
 
         // do not move less than 1 inch, that is our margin threshold for reaching the target coordinate.
         if (Math.abs(targetX - curX) < DIST_MARGIN) {
@@ -336,7 +333,7 @@ public class MecabotDrive {
 
         // the gyro rotation moves the robot X,Y position, we will ignore that small amount
         // get the Y coorindate now (after gyroRotate()) so we drive stright only along X-axis
-        double curY = odoPosition.getYinches();
+        double curY = odoPosition.getY();
 
         // Now lets go to the target destination coordinate
         goToPosition(targetX, curY, speed, timeout);
@@ -354,7 +351,7 @@ public class MecabotDrive {
      */
     public void goToYPosition(double targetY, double speed, double timeout) {
 
-        double curY = odoPosition.getYinches();
+        double curY = odoPosition.getY();
 
         // do not move less than 1 inch, that is our margin threshold for reaching the target coordinate.
         if (Math.abs(targetY - curY) < DIST_MARGIN) {
@@ -372,7 +369,7 @@ public class MecabotDrive {
 
         // the gyro rotation moves the robot X,Y position, we will ignore that small amount
         // get the X coorindate now (after gyroRotate()) so we drive stright only along X-axis
-        double curX = odoPosition.getXinches();
+        double curX = odoPosition.getX();
 
         // Now lets go to the target destination coordinate
         goToPosition(curX, targetY, speed, timeout);
@@ -407,8 +404,8 @@ public class MecabotDrive {
         if (inches < 0) {
             speed = -speed;
         }
-        double origX = odoPosition.getXinches();
-        double origY = odoPosition.getYinches();
+        double origX = odoPosition.getX();
+        double origY = odoPosition.getY();
         double curX;
         double curY;
         double distance = 0;
@@ -429,8 +426,8 @@ public class MecabotDrive {
                     mecabot.driveTank(speed, 0.0);
                     break;
             }
-            curX = odoPosition.getXinches();
-            curY = odoPosition.getYinches();
+            curX = odoPosition.getX();
+            curY = odoPosition.getY();
             distance = Math.hypot((curX - origX), (curY - origY));
 
             myOpMode.telemetry.addLine("MoveDist ").addData("now at", "%.1f of %.1f in", distance, inches);

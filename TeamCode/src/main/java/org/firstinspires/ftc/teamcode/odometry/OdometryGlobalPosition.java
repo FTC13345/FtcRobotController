@@ -167,23 +167,15 @@ public class OdometryGlobalPosition implements Runnable {
      * Returns the robot's global orientation in Radians unit
      * @return global orientation angle
      */
-    public double getOrientationRadians() {
+    public double getHeading() {
         return robotAngleRad;
-    }
-
-    /**
-     * Returns the robot's global orientation in Degrees unit
-     * @return global orientation angle
-     */
-    public double getOrientationDegrees() {
-        return Math.toDegrees(robotAngleRad);
     }
 
     /**
      * Returns the robot's global x coordinate on the field in inches
      * @return global x coordinate
      */
-    public double getXinches() {
+    public double getX() {
         return robotGlobalX / ENCODER_COUNT_PER_INCH;
     }
 
@@ -191,7 +183,7 @@ public class OdometryGlobalPosition implements Runnable {
      * Returns the robot's global y coordinate on the field in inches
      * @return global y coordinate
      */
-    public double getYinches() {
+    public double getY() {
         return robotGlobalY / ENCODER_COUNT_PER_INCH;
     }
 
