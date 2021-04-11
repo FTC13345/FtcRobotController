@@ -30,7 +30,6 @@ public abstract class FtcRobotDAL extends Mecabot {
     protected RealsenseT265CameraLocalizer cameraLocalizer;
     protected RRTrackingWheelLocalizer roadrunnerLocalizer;
     protected MecabotLocalizer triWheelGyroLocalizer;
-    protected MecabotLocalizer triWheelLocalizer;
     protected OdometryGlobalPosition globalPosition;
 
     protected abstract void gameUpdate(TelemetryPacket packet);
@@ -43,7 +42,7 @@ public abstract class FtcRobotDAL extends Mecabot {
         dashboard = FtcDashboard.getInstance();
         // odometry Localizers must be created before Mecanum Drive objects
         initOdometry(hardwareMap);
-        rrmdrive = new RRMecanumDrive(hardwareMap, roadrunnerLocalizer, opMode);
+        rrmdrive = new RRMecanumDrive(hardwareMap, triWheelGyroLocalizer, opMode);
         mcdrive = new MecabotDrive(this, globalPosition, opMode);  // soon to be disabled since we are using RoadRunner exclusively
     }
 
@@ -100,7 +99,7 @@ public abstract class FtcRobotDAL extends Mecabot {
     }
     public void stop() {
         // stop any localizer and driving threads here
-        cameraLocalizer.stop();
+        cameraLocalizer.stop(); // this is really important otherwise next play does not work
         globalPosition.stop();
     }
     public void update() {

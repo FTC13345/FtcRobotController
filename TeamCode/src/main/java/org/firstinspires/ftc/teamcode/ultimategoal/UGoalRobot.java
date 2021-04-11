@@ -148,9 +148,9 @@ public class UGoalRobot extends FtcRobotDAL {
     public void gameUpdate(TelemetryPacket packet) {
         double velocity = flywheelMotor.getVelocity();
 
-        dashboard.getTelemetry().addData("upperBound", 2800);
-        dashboard.getTelemetry().addData("Flywheel Velocity", velocity);
-        dashboard.getTelemetry().addData("lowerBound", 0);
+        packet.put("upperBound", 2800);
+        packet.put("Flywheel Velocity", velocity);
+        packet.put("lowerBound", 0);
 
         telemetry.addData("Flywheel Velocity", velocity);
     }
