@@ -83,6 +83,7 @@ public class FieldUGoal {
     // Robot back is touching the perimeter wall.
     public static Pose2d poseStart = new Pose2d(-TILE_3_FROM_ORIGIN + ROBOT_RADIUS, TILE_1_FROM_ORIGIN + ROBOT_RADIUS, ANGLE_POS_X_AXIS);
     // Ideal heading angle is ANGLE_POS_X_AXIS, but we need to Field Tuning compensation for Robot driving error
+    public static Pose2d poseOrigin = new Pose2d();
     public static Pose2d poseHighGoalAuto = new Pose2d(ORIGIN - 6.0, flip4Red(GOALY - ROBOT_SHOOTING_Y_OFFSET), ANGLE_POS_X_AXIS);
     public static Pose2d poseHighGoalTeleOp = new Pose2d(ORIGIN - 6.0, flip4Red(+18), Math.toRadians(2.0)); // High Goal shooting position for TeleOp
     public static Pose2d poseHighGoalStack = new Pose2d(-TILE_1_FROM_ORIGIN+6, flip4Red(TILE_2_CENTER), ANGLE_POS_X_AXIS);
@@ -105,7 +106,7 @@ public class FieldUGoal {
     // Robot positioned touching side wall (left side on BLUE field) with front of robot touching Y-Axis line
     public static Pose2d poseOdoLeft = new Pose2d(-9.0, 60.5, ANGLE_POS_X_AXIS);
     // Robot positioned touching the side wall (right side on BLUE HALF field) with front of robot touching launch line
-    public static Pose2d poseOdoRight = new Pose2d(-8.5, -15.0, ANGLE_POS_X_AXIS);
+    public static Pose2d poseOdoRight = new Pose2d(+2.4, -14.5, ANGLE_POS_X_AXIS);
 
     public static final double ROBOT_SHOOTING_HEADING_ANGLE = -Math.atan((ROBOT_SHOOTING_Y_OFFSET+1.5)/(TILE_3_FROM_ORIGIN - poseHighGoalStack.getX()));
 

@@ -64,10 +64,10 @@ public class UGoalTeleOp extends LinearOpMode {
         robot.start();
 
         // set the starting Pose same as last saved Pose from the AUTO Opmode
-        robot.setPose(savedPose);
+//        robot.setPose(savedPose);
         // Temporary: start TeleOp with startPose instead of savedPose to run independently, init IMU
-//        robot.setPose(poseStart);
-//        robot.initIMU();
+        robot.setPose(poseOrigin);
+        robot.initIMU();
 
         robot.composeTelemetry();
         // Send telemetry message to signify robot waiting;
@@ -94,7 +94,7 @@ public class UGoalTeleOp extends LinearOpMode {
             shooterFlywheelVeloPIDTuning();
             robot.update();
             telemetry.update();
-            idle();
+            sleep(25);
         }
 
         // Reset the tilt angle of the shooting platform

@@ -53,14 +53,15 @@ public class UGoalTeleOpDriver extends TeleOpDriver {
             robot.initIMU();
             robot.setPose(poseHighGoalTeleOp);
         }
-        else if (gamepad1.b) {      // Turn Intake towards Goals
-            rrmdrive.turnToHeading(ANGLE_NEG_X_AXIS);
+        else if (gamepad1.y) {      // Reset odometry values to field origin
+            robot.initIMU();
+            robot.setPose(poseOrigin);
         }
         else if (gamepad1.x) {      // Reset odometry values aligned against left perimeter wall
             robot.initIMU();
             robot.setPose(poseOdoLeft);
         }
-        else if (gamepad1.y) {      // Reset odometry values aligned against right perimeter wall
+        else if (gamepad1.b) {      // Reset odometry values aligned against right perimeter wall
             robot.initIMU();
             robot.setPose(poseOdoRight);
         }
