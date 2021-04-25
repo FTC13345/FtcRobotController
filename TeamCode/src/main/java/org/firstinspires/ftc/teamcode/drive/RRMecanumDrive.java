@@ -37,7 +37,6 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.odometry.MecabotLocalizer;
-import org.firstinspires.ftc.teamcode.odometry.RealsenseT265CameraLocalizer;
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 import org.firstinspires.ftc.teamcode.util.LynxModuleUtil;

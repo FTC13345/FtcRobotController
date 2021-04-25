@@ -14,7 +14,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.odometry.MecabotLocalizer;
 import org.firstinspires.ftc.teamcode.odometry.OdometryGlobalPosition;
 import org.firstinspires.ftc.teamcode.odometry.RRTrackingWheelLocalizer;
-import org.firstinspires.ftc.teamcode.odometry.RealsenseT265CameraLocalizer;
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 
@@ -27,7 +26,6 @@ public abstract class FtcRobotDAL extends Mecabot {
     protected FtcDashboard dashboard;
     protected Telemetry telemetry;
     // a bunch of localizers since we want to experiment which ones will work reliably
-    protected RealsenseT265CameraLocalizer cameraLocalizer;
     protected RRTrackingWheelLocalizer roadrunnerLocalizer;
     protected MecabotLocalizer triWheelGyroLocalizer;
     protected OdometryGlobalPosition globalPosition;
@@ -53,8 +51,6 @@ public abstract class FtcRobotDAL extends Mecabot {
      * Odometry and Pose related methods.
      */
     private void initOdometry(HardwareMap hardwareMap) {
-
-        cameraLocalizer = new RealsenseT265CameraLocalizer(hardwareMap);
 
         // IMPORTANT: The odometry encoders may be sharing motor ports used for other purpose which sets motor direction
         // The Encoder direction (software setting) should be manipulated by localizer AS NEEDED, without changing motor direction
@@ -86,7 +82,6 @@ public abstract class FtcRobotDAL extends Mecabot {
     // We need to set Pose in multiple localizers that we are running for comparison
     public void setPose(Pose2d pose) {
         // rrmdrive.setPoseEstimate(pose);  // temp disabled since RRMDrive may be using any one of below multiple localizers
-        cameraLocalizer.setPoseEstimate(pose);
         roadrunnerLocalizer.setPoseEstimate(pose);
         triWheelGyroLocalizer.setPoseEstimate(pose);
         globalPosition.setGlobalPosition(pose.getX(), pose.getY(), pose.getHeading());
@@ -99,7 +94,6 @@ public abstract class FtcRobotDAL extends Mecabot {
     }
     public void stop() {
         // stop any localizer and driving threads here
-        cameraLocalizer.stop(); // this is really important otherwise next play does not work
         globalPosition.stop();
     }
     public void update() {
@@ -114,8 +108,6 @@ public abstract class FtcRobotDAL extends Mecabot {
         Canvas fieldOverlay = packet.fieldOverlay();
 
         // draw robot position from each localizer
-        fieldOverlay.setStroke("#D2691E");  // CHOCOATE
-        DashboardUtil.drawRobot(fieldOverlay, cameraLocalizer.getPoseEstimate());
         fieldOverlay.setStroke("#4CAF50");  // GREEN
         DashboardUtil.drawRobot(fieldOverlay, roadrunnerLocalizer.getPoseEstimate());
         fieldOverlay.setStroke("#3F51B5");  // BLUE
@@ -123,8 +115,7 @@ public abstract class FtcRobotDAL extends Mecabot {
         fieldOverlay.setStroke("#B800B8");  // MAGENTA
         DashboardUtil.drawRobot(fieldOverlay, new Pose2d(globalPosition.getX(), globalPosition.getY(), globalPosition.getHeading()));
 
-        // Driver Station Telemetry
-        telemetry.addData("Slamra Confidence", RealsenseT265CameraLocalizer.PoseConfidenceLabel[cameraLocalizer.getPoseConfidence().ordinal()]);
+        // Driver Station Telemetry can go here
 
         // Call the sub-classes to collect any dashboard or telemetry updates (also any other periodic processing)
         gameUpdate(packet);
@@ -161,10 +152,6 @@ public abstract class FtcRobotDAL extends Mecabot {
         telemetry.addAction(() -> {
             // Add here any expensive work that should be done only once just before telemetry update push
         });
-        telemetry.addLine("CAM ")
-                .addData("X", "%.1f", () -> cameraLocalizer.getPoseEstimate().getX())
-                .addData("Y", "%.1f", () -> cameraLocalizer.getPoseEstimate().getY())
-                .addData("Head", "%.2f°", () -> Math.toDegrees(cameraLocalizer.getPoseEstimate().getHeading()));
         telemetry.addLine("GYR ")
                 .addData("X", "%.1f", () -> triWheelGyroLocalizer.getPoseEstimate().getX())
                 .addData("Y", "%.1f", () -> triWheelGyroLocalizer.getPoseEstimate().getY())
