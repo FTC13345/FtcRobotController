@@ -91,7 +91,6 @@ public class UGoalTeleOp extends LinearOpMode {
             intake();
             shootRings();
             wobblePickup();
-            shooterFlywheelVeloPIDTuning();
             robot.update();
             telemetry.update();
             sleep(25);
@@ -202,9 +201,6 @@ public class UGoalTeleOp extends LinearOpMode {
             robot.dropIntakeAssembly();
         }
 
-        /*
-         * Temporarily disabled for shooterFlywheelVeloPIDTuning()
-         *
         if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
              if (!gamepad2DpadDebounce){
                  waMode = WOBBLE_ARM_MODE.BUTTONS;
@@ -220,7 +216,6 @@ public class UGoalTeleOp extends LinearOpMode {
         } else {
             gamepad2DpadDebounce = false;
         }
-         */
 
         if (gamepad2.right_stick_y != 0) {
 
@@ -262,23 +257,25 @@ public class UGoalTeleOp extends LinearOpMode {
         }
     }
 
+    // NOT used in normal operation. Call this method in main loop only if flywheel motor has encoder enabled
+    // AND the gamepad buttons are not used for any other controls.
     public void shooterFlywheelVeloPIDTuning() {
-        if (gamepad2.dpad_up) { // operator trying to move wobble arm UP
+        if (gamepad2.dpad_up) { // operator trying to move tilt platform UP
             if (!gamepad2DpadDebounce){
                 robot.tiltShooterPlatformUP();
             }
             gamepad2DpadDebounce = true;
-        } else if (gamepad2.dpad_down) { // operator trying to move wobble arm DOWN
+        } else if (gamepad2.dpad_down) { // operator trying to move tilt platform DOWN
             if (!gamepad2DpadDebounce){
                 robot.tiltShooterPlatformDOWN();
             }
             gamepad2DpadDebounce = true;
-        } else if (gamepad2.dpad_right) { // operator trying to move wobble arm DOWN
+        } else if (gamepad2.dpad_right) { // operator trying to increase flywheel speed
             if (!gamepad2DpadDebounce){
                 robot.shooterFlywheelStepUP();
             }
             gamepad2DpadDebounce = true;
-        } else if (gamepad2.dpad_left) { // operator trying to move wobble arm DOWN
+        } else if (gamepad2.dpad_left) { // operator trying to decrease flywheel speed
             if (!gamepad2DpadDebounce){
                 robot.shooterFlywheelStepDOWN();
             }

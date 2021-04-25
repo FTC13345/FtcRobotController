@@ -49,9 +49,11 @@ public class UGoalRobot extends FtcRobotDAL {
     static final int        WOBBLE_ARM_DOWN                 = 0;
 
     //Finals
-    static final double SHOOTER_FLYWHEEL_VELO_MAX = 6000f * 28f / 60f;
-    static final double SHOOTER_FLYWHEEL_VELO_MIN = 0.3 * SHOOTER_FLYWHEEL_VELO_MAX;
-    static final double SHOOTER_FLYWHEEL_SPEED = 0.7 * SHOOTER_FLYWHEEL_VELO_MAX;
+// disabled since we are using flywheelMotor without encoder
+//    static final double SHOOTER_FLYWHEEL_VELO_MAX = 6000f * 28f / 60f;
+//    static final double SHOOTER_FLYWHEEL_VELO_MIN = 0.3 * SHOOTER_FLYWHEEL_VELO_MAX;
+//    static final double SHOOTER_FLYWHEEL_SPEED = 0.7 * SHOOTER_FLYWHEEL_VELO_MAX;
+    static final double SHOOTER_FLYWHEEL_SPEED = 0.7;
     static final double SHOOTER_FLYWHEEL_STOP = 0.0;
     static final double SHOOTER_PLATFORM_ANGLE_MIN = 20.0f;
     static final double SHOOTER_PLATFORM_ANGLE_MAX = 35.0f;
@@ -69,8 +71,7 @@ public class UGoalRobot extends FtcRobotDAL {
     public DcMotor wobblePickupArm = null;
     // THis is a motor driven by Spark Mini controller which takes Servo PWM input
     // Please see REV Robotics documentation about Spark Mini and example code ConceptRevSPARKMini
-    //public DcMotorSimple flywheelMotor = null;
-    public DcMotorEx flywheelMotor = null;
+    public DcMotorSimple flywheelMotor = null;
 
     //Servos
     public Servo angleServo = null;
@@ -97,28 +98,27 @@ public class UGoalRobot extends FtcRobotDAL {
         leftODwheel = ahwMap.get(DcMotor.class, "leftODwheel");
         rightODwheel = ahwMap.get(DcMotor.class, "rightODwheel");
         intakeMotor = ahwMap.get(DcMotor.class, "intakeMotor");         // we are using intake motor port for cross encoder
-        wobblePickupArm = ahwMap.get(DcMotor.class, "wobblePickupArm");         // Wobble arm is temporarily disabled while flywheel is using its motor
-        //flywheelMotor = ahwMap.get(DcMotorSimple.class, "flywheelMotorSparkMini");
-        flywheelMotor = ahwMap.get(DcMotorEx.class, "wobblePickupArm");         // Temporary for VeloPID testing only
+        wobblePickupArm = ahwMap.get(DcMotor.class, "wobblePickupArm");
+        flywheelMotor = ahwMap.get(DcMotorSimple.class, "flywheelMotorSparkMini");
 
         // direction depends on hardware installation
         leftODwheel.setDirection(DcMotor.Direction.FORWARD);
         rightODwheel.setDirection(DcMotor.Direction.FORWARD);
         intakeMotor.setDirection(DcMotor.Direction.REVERSE);
         wobblePickupArm.setDirection(DcMotor.Direction.REVERSE);
-        //flywheelMotor.setDirection(DcMotor.Direction.REVERSE);         // Temporary for VeloPID testing using wobbleArm motor
-        flywheelMotor.setDirection(DcMotor.Direction.FORWARD);         // Temporary for VeloPID testing using wobbleArm motor
+        flywheelMotor.setDirection(DcMotor.Direction.REVERSE);
 
         leftODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightODwheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         wobblePickupArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        VoltageSensor batteryVoltageSensor = ahwMap.voltageSensor.iterator().next();
-        flywheelMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
-                80, 0, 15, 12.3 * 12 / batteryVoltageSensor.getVoltage())
-        );
+//        // this code can be used only when flywheelMotor has an encoder port in hardware and variable is DCMotorEx
+//        flywheelMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        VoltageSensor batteryVoltageSensor = ahwMap.voltageSensor.iterator().next();
+//        flywheelMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
+//                80, 0, 15, 12.3 * 12 / batteryVoltageSensor.getVoltage())
+//        );
 
         leftODwheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightODwheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -141,18 +141,19 @@ public class UGoalRobot extends FtcRobotDAL {
 
         ringSensor = ahwMap.get(NormalizedColorSensor.class, "ringColorSensor");
 
+// disabled, we are not using the limit switch
 //        wobbleLowLimit = ahwMap.get(DigitalChannel.class, "wobbleLowLimit");
 //        wobbleLowLimit.setMode(DigitalChannel.Mode.INPUT);
     }
 
     public void gameUpdate(TelemetryPacket packet) {
-        double velocity = flywheelMotor.getVelocity();
 
-        packet.put("upperBound", 2800);
-        packet.put("Flywheel Velocity", velocity);
-        packet.put("lowerBound", 0);
-
-        telemetry.addData("Flywheel Velocity", velocity);
+// disabled since we are using flywheelMotor without encoder
+//        double velocity = flywheelMotor.getVelocity();
+//        packet.put("upperBound", 2800);
+//        packet.put("Flywheel Velocity", velocity);
+//        packet.put("lowerBound", 0);
+//        telemetry.addData("Flywheel Velocity", velocity);
     }
 
     /*
@@ -227,7 +228,9 @@ public class UGoalRobot extends FtcRobotDAL {
      * Ring Shooter Flywheel and Ring Pusher Arm methods
      */
     public void runShooterFlywheel() {
-        flywheelMotor.setVelocity(shooterFlywheelVelocity);
+// disabled since we are using flywheelMotor without encoder
+//        flywheelMotor.setVelocity(shooterFlywheelVelocity);
+        flywheelMotor.setPower(SHOOTER_FLYWHEEL_SPEED);
     }
 
     public void stopShooterFlywheel() {
@@ -239,15 +242,25 @@ public class UGoalRobot extends FtcRobotDAL {
     }
 
     public void shooterFlywheelStepUP() {
-        if (shooterFlywheelVelocity < 0.9 * SHOOTER_FLYWHEEL_VELO_MAX ) {
-            shooterFlywheelVelocity += 50;
-            flywheelMotor.setVelocity(shooterFlywheelVelocity);
+// disabled since we are using flywheelMotor without encoder
+//        if (shooterFlywheelVelocity < 0.9 * SHOOTER_FLYWHEEL_VELO_MAX ) {
+//            shooterFlywheelVelocity += 50;
+//            flywheelMotor.setVelocity(shooterFlywheelVelocity);
+//        }
+        if (shooterFlywheelVelocity < 0.9 ) {
+            shooterFlywheelVelocity += 0.02;
+            flywheelMotor.setPower(shooterFlywheelVelocity);
         }
     }
     public void shooterFlywheelStepDOWN() {
-        if (shooterFlywheelVelocity > 0.1 * SHOOTER_FLYWHEEL_VELO_MAX ) {
-            shooterFlywheelVelocity -= 50;
-            flywheelMotor.setVelocity(shooterFlywheelVelocity);
+// disabled since we are using flywheelMotor without encoder
+//        if (shooterFlywheelVelocity > 0.1 * SHOOTER_FLYWHEEL_VELO_MAX ) {
+//            shooterFlywheelVelocity -= 50;
+//            flywheelMotor.setVelocity(shooterFlywheelVelocity);
+//        }
+        if (shooterFlywheelVelocity > 0.1 ) {
+            shooterFlywheelVelocity -= 0.02;
+            flywheelMotor.setPower(shooterFlywheelVelocity);
         }
     }
 
